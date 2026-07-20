@@ -23,6 +23,16 @@ kolumn** blir full rensas den och ger poäng.
 - **Kombo**: rensar du linjer flera drag i rad växer en multiplikator
   (+25 % per steg i kedjan).
 
+## Publicering på GitHub Pages
+
+Varje push till `main` (eller den nuvarande utvecklingsbranchen) kör
+arbetsflödet `.github/workflows/deploy-pages.yml`, som publicerar spelet till
+branchen `gh-pages`. **Engångssteg:** aktivera Pages under
+*Settings → Pages → Build and deployment*: välj källa **Deploy from a branch**,
+branch **gh-pages** och mapp **/(root)**, och spara. Därefter ligger spelet på:
+
+> https://drdev1337.github.io/Bloxis/
+
 ## Köra spelet
 
 Spelet är en ren webbapp utan byggsteg. Starta en statisk webbserver i
