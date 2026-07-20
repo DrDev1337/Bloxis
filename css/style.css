@@ -133,7 +133,7 @@ html, body {
   overflow-x: hidden;
   position: relative;
 }
-.map-inner { position: relative; width: 100%; }
+.map-inner { position: relative; width: 100%; overflow: hidden; }
 .map-world {
   position: absolute;
   left: 0;
@@ -147,28 +147,67 @@ html, body {
   height: 100%;
   pointer-events: none;
 }
+.map-path .trail { animation: dash-march 1.4s linear infinite; }
+@keyframes dash-march { to { stroke-dashoffset: -16; } }
 .world-banner {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--panel);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
   border: 1px solid var(--panel-border);
   border-radius: 999px;
-  padding: 6px 18px;
+  padding: 7px 20px;
   font-weight: 800;
   font-size: 0.95rem;
   white-space: nowrap;
   pointer-events: none;
   z-index: 2;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
+
+/* Dekorationer och moln */
+.deco {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+  animation: deco-float var(--dur, 4s) ease-in-out var(--delay, 0s) infinite;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35));
+}
+.deco.twinkle { animation: deco-float var(--dur, 4s) ease-in-out var(--delay, 0s) infinite, deco-twinkle 2.6s ease-in-out var(--delay, 0s) infinite; }
+@keyframes deco-float {
+  0%, 100% { transform: translate(-50%, -50%); }
+  50% { transform: translate(-50%, calc(-50% - 9px)); }
+}
+@keyframes deco-twinkle {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.cloud {
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0.5;
+  animation: cloud-drift var(--dur, 60s) linear var(--delay, 0s) infinite;
+  filter: blur(0.5px);
+}
+@keyframes cloud-drift {
+  from { transform: translateX(-90px); }
+  to { transform: translateX(calc(100vw + 90px)); }
+}
+
+/* Kartnoder */
 .map-node {
   position: absolute;
   transform: translate(-50%, -50%);
   width: 66px;
   height: 66px;
   border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.25);
-  background: var(--panel);
+  border: 3px solid hsla(var(--hue, 220), 70%, 75%, 0.5);
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(160deg, hsla(var(--hue, 220), 45%, 38%, 0.9), hsla(var(--hue, 220), 50%, 22%, 0.9));
   color: var(--text);
   font: inherit;
   display: flex;
@@ -177,19 +216,48 @@ html, body {
   justify-content: center;
   cursor: pointer;
   z-index: 3;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.4);
+  animation: node-pop 0.4s cubic-bezier(0.4, 1.6, 0.5, 1) var(--d, 0s) both;
+}
+@keyframes node-pop {
+  from { transform: translate(-50%, -50%) scale(0); }
+  to { transform: translate(-50%, -50%) scale(1); }
 }
 .map-node:active { transform: translate(-50%, -50%) scale(0.92); }
 .map-node .num { font-size: 1.25rem; font-weight: 800; line-height: 1; }
 .map-node .stars { font-size: 0.62rem; letter-spacing: 1px; color: var(--gold); line-height: 1.4; }
-.map-node.done { background: linear-gradient(150deg, var(--accent), var(--accent2)); border-color: rgba(255, 255, 255, 0.5); }
-.map-node.current { animation: node-pulse 1.6s ease-in-out infinite; border-color: var(--gold); }
+.map-node.done {
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(150deg, var(--accent), var(--accent2));
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.map-node.current {
+  animation: node-pop 0.4s cubic-bezier(0.4, 1.6, 0.5, 1) var(--d, 0s) both,
+    node-pulse 1.6s ease-in-out infinite;
+  border-color: var(--gold);
+}
 @keyframes node-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 214, 69, 0.55); }
-  50% { box-shadow: 0 0 0 14px rgba(255, 214, 69, 0); }
+  50% { box-shadow: 0 0 0 16px rgba(255, 214, 69, 0); }
 }
 .map-node.locked { opacity: 0.4; cursor: default; }
 .map-node.locked:active { transform: translate(-50%, -50%); }
+
+/* Studsande kartnål på aktuell bana */
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -125%);
+  font-size: 1.8rem;
+  pointer-events: none;
+  z-index: 5;
+  animation: pin-bounce 1.1s ease-in-out infinite;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+@keyframes pin-bounce {
+  0%, 100% { transform: translate(-50%, -125%); }
+  50% { transform: translate(-50%, -165%); }
+}
 
 /* ===== Spelskärm ===== */
 #screen-game { align-items: center; }
