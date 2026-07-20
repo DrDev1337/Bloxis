@@ -1,0 +1,43 @@
+# Publicerar Bloxis på GitHub Pages vid varje push.
+# Spelet är helt statiskt, så hela repot laddas upp som webbplats.
+name: Publicera till GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/block-blast-mobile-game-xgvyg5
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Hämta koden
+        uses: actions/checkout@v4
+
+      - name: Konfigurera Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Ladda upp webbplatsen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Publicera
+        id: deployment
+        uses: actions/deploy-pages@v4
