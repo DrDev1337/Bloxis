@@ -1,5 +1,7 @@
-/* Bloxis – service worker för offline-stöd. */
-var CACHE = 'bloxis-v1';
+/* Bloxis – service worker för offline-stöd.
+   Strategi: nätverk först (så uppdateringar når fram direkt), cache som
+   reserv när enheten är offline. */
+var CACHE = 'bloxis-v2';
 var ASSETS = [
   '.',
   'index.html',
@@ -31,12 +33,14 @@ self.addEventListener('activate', function (ev) {
 self.addEventListener('fetch', function (ev) {
   if (ev.request.method !== 'GET') return;
   ev.respondWith(
-    caches.match(ev.request).then(function (hit) {
-      return hit || fetch(ev.request).then(function (res) {
+    fetch(ev.request).then(function (res) {
+      if (res && res.ok) {
         var copy = res.clone();
         caches.open(CACHE).then(function (cache) { cache.put(ev.request, copy); });
-        return res;
-      });
+      }
+      return res;
+    }).catch(function () {
+      return caches.match(ev.request);
     })
   );
 });
