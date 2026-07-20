@@ -52,7 +52,7 @@
   var clearAnims = [];     // [{r, c, cell, start}]
   var animRunning = false;
   var CLEAR_MS = 300;
-  var DRAG_LIFT = 60;      // px ovanför fingret så pjäsen syns
+  var TOUCH_LIFT = 40;     // liten lyfthöjd vid pekskärm så fingret inte skymmer pjäsen
 
   /* ===== Skärmbyten ===== */
   function showScreen(name) {
@@ -402,7 +402,10 @@
     drawShapeOn(dragCtx, shape, cellCss);
     dragCanvas.classList.remove('hidden');
 
-    drag = { slot: slotIdx, shape: shape, w: w, h: h, target: null, lines: null };
+    drag = {
+      slot: slotIdx, shape: shape, w: w, h: h, target: null, lines: null,
+      lift: ev.pointerType === 'mouse' ? 0 : TOUCH_LIFT
+    };
     slotEl.classList.add('dragging');
     try { slotEl.setPointerCapture(ev.pointerId); } catch (e) { /* ok */ }
     moveDrag(ev);
@@ -411,7 +414,7 @@
   function moveDrag(ev) {
     if (!drag) return;
     var gx = ev.clientX - drag.w / 2;
-    var gy = ev.clientY - drag.h - DRAG_LIFT;
+    var gy = ev.clientY - drag.h / 2 - drag.lift;
     dragCanvas.style.transform = 'translate3d(' + gx + 'px,' + gy + 'px,0)';
 
     var col = Math.round((gx - boardRect.left) / cellCss);
