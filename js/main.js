@@ -716,36 +716,92 @@
   /* ===== Bankarta ===== */
   var NODE_GAP = 108;
   var MAP_PAD = 70;
+  var WORLD_GAP = 80;   // extra luft mellan världarna, där banderollen bor
+  var WORLD_DECOR = [
+    ['🌲', '🌳', '🌷', '🍄', '🦋'],
+    ['🏔️', '❄️', '⛄', '🧊'],
+    ['🌵', '☀️', '🪨', '🦂']
+  ];
+  var WORLD_EMOJI = ['🌿', '❄️', '🌵'];
+
+  /* Deterministiskt "slump"-värde 0..1 per index, så kartan ser likadan ut varje gång. */
+  function seeded(i) {
+    var x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  /* Mjuk kurva genom nodpunkterna (kvadratiska Bézier-segment via mittpunkter). */
+  function smoothPathD(pts) {
+    if (pts.length < 2) return '';
+    var d = 'M ' + pts[0][0] + ' ' + pts[0][1];
+    for (var i = 1; i < pts.length - 1; i++) {
+      var mx = (pts[i][0] + pts[i + 1][0]) / 2;
+      var my = (pts[i][1] + pts[i + 1][1]) / 2;
+      d += ' Q ' + pts[i][0] + ' ' + pts[i][1] + ' ' + mx + ' ' + my;
+    }
+    var last = pts[pts.length - 1];
+    return d + ' L ' + last[0] + ' ' + last[1];
+  }
+
+  function svgPath(d, stroke, width, dash, cls) {
+    var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke', stroke);
+    p.setAttribute('stroke-width', width);
+    if (dash) p.setAttribute('stroke-dasharray', dash);
+    p.setAttribute('stroke-linecap', 'round');
+    p.setAttribute('vector-effect', 'non-scaling-stroke');
+    if (cls) p.setAttribute('class', cls);
+    return p;
+  }
 
   function renderLevelMap() {
     $('#map-coins').textContent = store.getCoins();
+    var stars = store.getStars();
+    var totalStars = 0;
+    LEVELS.forEach(function (lv, i) { totalStars += stars[i] || 0; });
+    $('#map-stars').textContent = totalStars + '/' + LEVELS.length * 3;
+
     var wrap = $('#level-map');
     wrap.innerHTML = '';
     var inner = document.createElement('div');
     inner.className = 'map-inner';
     var n = LEVELS.length;
-    var h = n * NODE_GAP + MAP_PAD * 2 + WORLDS.length * 50;
+    var h = n * NODE_GAP + MAP_PAD * 2 + WORLDS.length * WORLD_GAP;
     inner.style.height = h + 'px';
 
-    var stars = store.getStars();
     var currentIdx = -1;
     var points = [];
 
-    // världsbakgrunder och banderoller
-    WORLDS.forEach(function (w) {
-      var topY = yForLevel(w.to, h) - NODE_GAP / 2 - 50;
-      var bottomY = yForLevel(w.from, h) + NODE_GAP / 2;
+    // världsbakgrunder, banderoller (vid världens entré nertill), dekor och moln
+    WORLDS.forEach(function (w, wi) {
+      var topY = yForLevel(w.to, h) - NODE_GAP / 2 - WORLD_GAP / 2;
+      var bottomY = yForLevel(w.from, h) + NODE_GAP / 2 + WORLD_GAP / 2;
       var bg = document.createElement('div');
       bg.className = 'map-world';
       bg.style.top = topY + 'px';
       bg.style.height = (bottomY - topY) + 'px';
-      bg.style.background = 'linear-gradient(180deg, hsla(' + w.hue + ',60%,50%,0.14), hsla(' + w.hue + ',60%,40%,0.05))';
+      bg.style.background = 'linear-gradient(180deg, hsla(' + w.hue + ',60%,50%,0.16), hsla(' + w.hue + ',60%,40%,0.04))';
       inner.appendChild(bg);
+
       var banner = document.createElement('div');
       banner.className = 'world-banner';
-      banner.textContent = w.name;
-      banner.style.top = (topY + 12) + 'px';
+      banner.textContent = WORLD_EMOJI[wi] + ' ' + w.name;
+      banner.style.top = (bottomY - 52) + 'px';
       inner.appendChild(banner);
+
+      for (var ci = 0; ci < 2; ci++) {
+        var cloud = document.createElement('div');
+        cloud.className = 'cloud';
+        cloud.textContent = '☁️';
+        var cr = seeded(wi * 31 + ci * 7);
+        cloud.style.top = (topY + 80 + cr * Math.max(120, bottomY - topY - 240)) + 'px';
+        cloud.style.fontSize = (26 + cr * 16) + 'px';
+        cloud.style.setProperty('--dur', (48 + cr * 40) + 's');
+        cloud.style.setProperty('--delay', (-cr * 60) + 's');
+        inner.appendChild(cloud);
+      }
     });
 
     LEVELS.forEach(function (lv, i) {
@@ -756,45 +812,64 @@
       var y = yForLevel(i, h);
       points.push([x, y]);
 
+      // två temadekorationer per bana, på motsatt sida av stigen
+      var world = Math.min(Math.floor(i / 10), WORLDS.length - 1);
+      var decors = WORLD_DECOR[world];
+      for (var di = 0; di < 2; di++) {
+        var r1 = seeded(i * 13 + di * 5 + 1);
+        var r2 = seeded(i * 17 + di * 3 + 2);
+        var deco = document.createElement('div');
+        var emoji = decors[Math.floor(r1 * decors.length)];
+        deco.className = 'deco' + ((emoji === '❄️' || emoji === '☀️' || emoji === '🦋') ? ' twinkle' : '');
+        deco.textContent = emoji;
+        var side = di === 0 ? (x < 50 ? 1 : 0) : Math.round(r1);
+        deco.style.left = (side ? 72 + r2 * 22 : 6 + r2 * 22) + '%';
+        deco.style.top = (y - NODE_GAP / 2 + r1 * NODE_GAP) + 'px';
+        deco.style.fontSize = (17 + r2 * 14) + 'px';
+        deco.style.setProperty('--dur', (3.5 + r1 * 3) + 's');
+        deco.style.setProperty('--delay', (-r2 * 4) + 's');
+        inner.appendChild(deco);
+      }
+
       var el = document.createElement('button');
       el.className = 'map-node' + (done ? ' done' : '') + (unlocked ? '' : ' locked');
+      el.style.setProperty('--hue', WORLDS[world].hue);
+      el.style.setProperty('--d', ((i % 10) * 0.045) + 's');
       var starStr = '';
       for (var s = 1; s <= 3; s++) starStr += s <= (stars[i] || 0) ? '★' : '☆';
       el.innerHTML =
         '<span class="num">' + (unlocked ? (i + 1) : '🔒') + '</span>' +
         (done ? '<span class="stars">' + starStr + '</span>'
-          : '<span class="stars">' + (LEVELS[i].type === 'gems' ? '💎' : LEVELS[i].type === 'ice' ? '🧊' : LEVELS[i].type === 'collect' ? '🎨' : '🎯') + '</span>');
+          : '<span class="stars">' + (lv.type === 'gems' ? '💎' : lv.type === 'ice' ? '🧊' : lv.type === 'collect' ? '🎨' : '🎯') + '</span>');
       el.style.left = x + '%';
       el.style.top = y + 'px';
       if (unlocked) el.addEventListener('click', function () { Sound.click(); startLevel(i); });
       inner.appendChild(el);
     });
 
-    // markera aktuell bana
+    // markera aktuell bana med puls + studsande kartnål
     if (currentIdx === -1) currentIdx = n - 1;
     var nodes = inner.querySelectorAll('.map-node');
     if (nodes[currentIdx] && !nodes[currentIdx].classList.contains('locked')) {
       nodes[currentIdx].classList.add('current');
+      var pin = document.createElement('div');
+      pin.className = 'map-pin';
+      pin.textContent = '📍';
+      pin.style.left = points[currentIdx][0] + '%';
+      pin.style.top = points[currentIdx][1] + 'px';
+      inner.appendChild(pin);
     }
 
-    // stig mellan noderna
+    // stig: hel kurva med vandrande prickar + guldspår för avklarad sträcka
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'map-path');
     svg.setAttribute('viewBox', '0 0 100 ' + h);
     svg.setAttribute('preserveAspectRatio', 'none');
-    var d = '';
-    points.forEach(function (p, i) {
-      d += (i === 0 ? 'M' : ' L') + p[0] + ' ' + p[1];
-    });
-    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', d);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', 'rgba(255,255,255,0.25)');
-    path.setAttribute('stroke-width', '3');
-    path.setAttribute('stroke-dasharray', '1 7');
-    path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('vector-effect', 'non-scaling-stroke');
-    svg.appendChild(path);
+    svg.appendChild(svgPath(smoothPathD(points), 'rgba(255,255,255,0.28)', '3', '1 7', 'trail'));
+    if (currentIdx > 0) {
+      var donePts = points.slice(0, currentIdx + 1);
+      svg.appendChild(svgPath(smoothPathD(donePts), 'rgba(255,214,69,0.45)', '5', null, null));
+    }
     inner.insertBefore(svg, inner.firstChild);
 
     wrap.appendChild(inner);
@@ -807,7 +882,7 @@
   /* Banorna löper nedifrån och upp, som i Candy Crush. */
   function yForLevel(i, totalH) {
     var world = Math.floor(i / 10);
-    return totalH - MAP_PAD - i * NODE_GAP - world * 50 - 40;
+    return totalH - MAP_PAD - i * NODE_GAP - world * WORLD_GAP - 40;
   }
 
   /* ===== Hjälp ===== */
