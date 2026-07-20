@@ -25,18 +25,18 @@
           <button id="btn-levels" class="btn big">&#129513;&ensp;Banor</button>
           <button id="btn-help" class="btn">S&aring; spelar du</button>
         </div>
-        <p class="best-line">Rekord: <span id="menu-best">0</span></p>
+        <p class="best-line">Rekord: <span id="menu-best">0</span> &ensp;&bull;&ensp; &#128176; <span id="menu-coins">0</span></p>
       </div>
     </section>
 
-    <!-- ===== Banval ===== -->
+    <!-- ===== Bankarta ===== -->
     <section id="screen-levels" class="screen">
       <header class="bar">
         <button class="btn icon btn-back" aria-label="Tillbaka">&#8592;</button>
         <h2>Banor</h2>
-        <span class="bar-spacer"></span>
+        <span class="coin-chip">&#128176; <span id="map-coins">0</span></span>
       </header>
-      <div id="level-grid"></div>
+      <div id="level-map"></div>
     </section>
 
     <!-- ===== Spelskärm ===== -->
@@ -47,6 +47,7 @@
           <div id="hud-score">0</div>
           <div id="hud-sub"></div>
         </div>
+        <span class="coin-chip" id="game-coins-chip">&#128176; <span id="game-coins">0</span></span>
         <button id="btn-restart" class="btn icon" aria-label="B&ouml;rja om">&#10227;</button>
       </header>
       <div id="hud-objective" class="hidden"></div>
@@ -58,6 +59,12 @@
         <div class="slot" data-slot="0"><canvas></canvas></div>
         <div class="slot" data-slot="1"><canvas></canvas></div>
         <div class="slot" data-slot="2"><canvas></canvas></div>
+      </div>
+      <div id="boosters">
+        <button class="booster" data-booster="hammer">&#128296;<span class="price">30</span></button>
+        <button class="booster" data-booster="bomb">&#128163;<span class="price">60</span></button>
+        <button class="booster" data-booster="swap">&#128260;<span class="price">20</span></button>
+        <button class="booster" data-booster="undo">&#8617;&#65039;<span class="price">25</span></button>
       </div>
     </section>
 

@@ -8,12 +8,33 @@ kolumn** blir full rensas den och ger poäng.
 
 - **∞ Oändligt läge** – spela så länge du kan. Spelet tar slut när ingen av
   dina pjäser får plats. Rekordet sparas på enheten.
-- **🗺️ Banor** – 20 banor med stigande svårighetsgrad och två måltyper:
+- **🧩 Banor** – 30 banor på en scrollbar bankarta med tre världar
+  (Gröna ängarna, Frostbergen, Solnedgångsöknen) och fyra måltyper:
   - 🎯 **Poängbanor**: nå poängmålet innan dragen tar slut.
-  - 💎 **Ädelstensbanor**: rensa alla ädelstenar innan dragen tar slut.
+  - 💎 **Ädelstensbanor**: rensa alla ädelstenar.
+  - 🧊 **Isbanor**: rensa all is – is kräver två rensningar (spricker först).
+  - 🎨 **Färgjakt**: samla ett antal block av en viss färg.
 
   Varje klarad bana ger 1–3 stjärnor (fler drag kvar = fler stjärnor) och låser
   upp nästa bana. Framstegen sparas på enheten.
+
+## Mynt och boosters
+
+Klarade banor ger mynt (10 × stjärnor), oändligt läge ger poäng/200. För mynt
+köper du boosters direkt i spelet:
+
+| Booster | Pris | Effekt |
+| --- | --- | --- |
+| 🔨 Hammare | 30 | Ta bort ett enskilt block |
+| 💣 Bomb | 60 | Spräng ett 3×3-område |
+| 🔄 Byt | 20 | Slumpa om de tre pjäserna |
+| ↩️ Ångra | 25 | Ångra senaste draget |
+
+## Juice
+
+Partikelexplosioner, flygande poängsiffror, skärmskak vid multirensningar,
+beröm-texter, syntetiserade ljudeffekter (WebAudio – inga ljudfiler) och
+haptisk vibration på mobil.
 
 ## Poäng
 

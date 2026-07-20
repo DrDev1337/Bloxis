@@ -110,20 +110,64 @@ html, body {
 #hud-score { font-size: 1.7rem; font-weight: 800; line-height: 1.1; }
 #hud-sub { font-size: 0.85rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ===== Banval ===== */
-#level-grid {
+/* ===== Bankarta ===== */
+.coin-chip {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.coin-chip.flash { animation: coin-flash 0.4s ease; }
+@keyframes coin-flash {
+  0%, 100% { background: var(--panel); }
+  50% { background: rgba(255, 93, 108, 0.45); }
+}
+
+#level-map {
   flex: 1;
   overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 12px;
-  padding: 16px;
-  align-content: start;
+  overflow-x: hidden;
+  position: relative;
 }
-.level-cell {
-  aspect-ratio: 1;
-  border-radius: 16px;
+.map-inner { position: relative; width: 100%; }
+.map-world {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+.map-path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.world-banner {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
   border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+.map-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.25);
   background: var(--panel);
   color: var(--text);
   font: inherit;
@@ -131,15 +175,21 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
   cursor: pointer;
+  z-index: 3;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
-.level-cell:active { transform: scale(0.95); }
-.level-cell .num { font-size: 1.5rem; font-weight: 800; }
-.level-cell .stars { font-size: 0.8rem; letter-spacing: 2px; color: var(--gold); }
-.level-cell .type-icon { font-size: 0.75rem; color: var(--text-dim); }
-.level-cell.locked { opacity: 0.35; cursor: default; }
-.level-cell.locked:active { transform: none; }
+.map-node:active { transform: translate(-50%, -50%) scale(0.92); }
+.map-node .num { font-size: 1.25rem; font-weight: 800; line-height: 1; }
+.map-node .stars { font-size: 0.62rem; letter-spacing: 1px; color: var(--gold); line-height: 1.4; }
+.map-node.done { background: linear-gradient(150deg, var(--accent), var(--accent2)); border-color: rgba(255, 255, 255, 0.5); }
+.map-node.current { animation: node-pulse 1.6s ease-in-out infinite; border-color: var(--gold); }
+@keyframes node-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 214, 69, 0.55); }
+  50% { box-shadow: 0 0 0 14px rgba(255, 214, 69, 0); }
+}
+.map-node.locked { opacity: 0.4; cursor: default; }
+.map-node.locked:active { transform: translate(-50%, -50%); }
 
 /* ===== Spelskärm ===== */
 #screen-game { align-items: center; }
@@ -191,12 +241,80 @@ html, body {
 #tray {
   flex: 0 0 auto;
   width: min(94vw, 58dvh, 560px);
-  height: clamp(90px, 17dvh, 150px);
+  height: clamp(80px, 15dvh, 140px);
   display: flex;
   gap: 10px;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0 8px;
+  padding: 10px 0 6px;
+}
+
+/* ===== Boosters ===== */
+#boosters {
+  flex: 0 0 auto;
+  width: min(94vw, 58dvh, 560px);
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 2px 0 12px;
+}
+.booster {
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.25rem;
+  border-radius: 14px;
+  padding: 8px 14px 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  touch-action: manipulation;
+  transition: transform 0.08s ease;
+}
+.booster:active { transform: scale(0.92); }
+.booster .price { font-size: 0.68rem; font-weight: 700; color: var(--gold); }
+.booster.armed {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: rgba(255, 255, 255, 0.6);
+  animation: node-pulse 1.2s ease-in-out infinite;
+}
+.booster:disabled { opacity: 0.35; }
+
+/* ===== Skärmskak och flygande poäng ===== */
+#board-wrap.shake { animation: shake 0.3s ease; }
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(5px, -4px); }
+  60% { transform: translate(-4px, -3px); }
+  80% { transform: translate(3px, 4px); }
+}
+.fly-score {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-weight: 900;
+  font-size: 1.4rem;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  z-index: 20;
+  animation: fly-up 0.9s ease-out forwards;
+}
+@keyframes fly-up {
+  0% { opacity: 0; margin-top: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; margin-top: -70px; }
+}
+.collect-chip {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  border-radius: 4px;
+  vertical-align: -0.08em;
+  margin-right: 2px;
 }
 .slot {
   flex: 1;
