@@ -1,0 +1,19 @@
+{
+  "name": "Bloxis",
+  "short_name": "Bloxis",
+  "description": "Placera block och rensa rader! Oändligt läge och banor med nivåer.",
+  "lang": "sv",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14162b",
+  "theme_color": "#14162b",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
