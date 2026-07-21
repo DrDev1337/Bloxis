@@ -1,6 +1,6 @@
 # Publicerar Bloxis på GitHub Pages vid varje push.
-# Spelet är helt statiskt, så hela repot publiceras till gh-pages-branchen,
-# som GitHub Pages aktiveras automatiskt för.
+# Spelet är statiskt i repo-roten; levelmap-demon (React) byggs först och
+# publiceras under /levelmap/dist/. Allt hamnar på gh-pages-branchen.
 name: Publicera till GitHub Pages
 
 on:
@@ -24,8 +24,23 @@ jobs:
       - name: Hämta koden
         uses: actions/checkout@v4
 
+      - name: Sätt upp Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: levelmap/package-lock.json
+
+      - name: Bygg levelmap-demon
+        working-directory: levelmap
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build
+
       - name: Publicera till gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .
+          exclude_assets: '.github,levelmap/node_modules,levelmap/src'
