@@ -24,14 +24,15 @@
       </div>
       <div class="menu-inner">
         <h1 class="logo"><span>B</span><span>L</span><span>O</span><span>X</span><span>I</span><span>S</span></h1>
-        <p class="tagline">Ett förtrollat blockäventyr</p>
+        <p class="tagline" data-l="tagline">Ett förtrollat blockäventyr</p>
         <div class="menu-buttons">
-          <button id="btn-endless" class="btn big primary">&infin;&ensp;O&auml;ndligt l&auml;ge</button>
-          <button id="btn-levels" class="btn big"><img class="twe" src="assets/icons/puzzle.svg" alt="">&ensp;Banor</button>
-          <button id="btn-daily" class="btn big"><img class="twe" src="assets/icons/calendar.svg" alt="">&ensp;Dagens utmaning<span id="daily-badge" class="badge hidden">!</span></button>
-          <button id="btn-help" class="btn">S&aring; spelar du</button>
+          <button id="btn-endless" class="btn big primary">&infin;&ensp;<span data-l="menuEndless">O&auml;ndligt l&auml;ge</span></button>
+          <button id="btn-levels" class="btn big"><img class="twe" src="assets/icons/puzzle.svg" alt="">&ensp;<span data-l="menuLevels">Banor</span></button>
+          <button id="btn-daily" class="btn big"><img class="twe" src="assets/icons/calendar.svg" alt="">&ensp;<span data-l="menuDaily">Dagens utmaning</span><span id="daily-badge" class="badge hidden">!</span></button>
+          <button id="btn-quests" class="btn big"><img class="twe" src="assets/icons/scroll.svg" alt="">&ensp;<span data-l="menuQuests">Veckouppdrag</span><span id="quest-badge" class="badge hidden">!</span></button>
+          <button id="btn-help" class="btn" data-l="menuHelp">S&aring; spelar du</button>
         </div>
-        <p class="best-line">Rekord: <span id="menu-best">0</span> &ensp;&bull;&ensp; <img class="twe" src="assets/icons/coin.svg" alt=""> <span id="menu-coins">0</span> &ensp;&bull;&ensp; <img class="twe" src="assets/icons/flame.svg" alt=""> <span id="menu-streak">0</span></p>
+        <p class="best-line"><span data-l="record">Rekord:</span> <span id="menu-best">0</span> &ensp;&bull;&ensp; <img class="twe" src="assets/icons/coin.svg" alt=""> <span id="menu-coins">0</span> &ensp;&bull;&ensp; <img class="twe" src="assets/icons/flame.svg" alt=""> <span id="menu-streak">0</span></p>
       </div>
     </section>
 
@@ -96,6 +97,7 @@
     <canvas id="drag-piece" class="hidden"></canvas>
   </div>
 
+  <script src="js/lang.js"></script>
   <script src="js/shapes.js"></script>
   <script src="js/levels.js"></script>
   <script src="js/game.js"></script>
