@@ -137,7 +137,7 @@
     return {
       unlock: function () { ac(); loadSamples(); },
       ctx: ac,
-      star: function (i) { tone(700 + i * 200, 0.22, 'triangle', 0.16); },
+      star: function (i) { tone(700 + i * 200, 0.24, 'triangle', 0.22); tone(1400 + i * 400, 0.18, 'sine', 0.08, 0.03); },
       click: function () { if (!sample('click', 0.4)) tone(600, 0.05, 'sine', 0.06); },
       place: function () {
         if (!sample('place', 0.55)) { tone(300, 0.07, 'triangle', 0.1); tone(420, 0.06, 'triangle', 0.07, 0.03); }
@@ -156,7 +156,15 @@
       coin: function () {
         if (!sample('coin', 0.4)) { tone(988, 0.07, 'square', 0.05); tone(1319, 0.14, 'square', 0.05, 0.07); }
       },
-      win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.2, 'triangle', 0.14, i * 0.12); }); },
+      win: function () {
+        sample('confirm', 0.6);
+        [[523, 0], [659, 0.09], [784, 0.18], [1047, 0.3]].forEach(function (n) {
+          tone(n[0], 0.24, 'triangle', 0.22, n[1]);
+        });
+        tone(262, 0.6, 'sine', 0.14, 0.3);      // bas under fanfaren
+        tone(1047, 0.75, 'triangle', 0.18, 0.46);
+        tone(1568, 0.6, 'sine', 0.1, 0.52);     // skimmer överst
+      },
       lose: function () { [330, 262, 196].forEach(function (f, i) { tone(f, 0.22, 'sawtooth', 0.06, i * 0.16); }); }
     };
   })();
@@ -951,8 +959,10 @@
     }
   }
 
-  /* Fullskärmsfirande: konfettiregn, titel och stjärnor som flyger in. */
-  function celebrate(starCount, title, after) {
+  /* Fullskärmsfirande: konfettiregn, titel, stjärnor som flyger in och
+     en inforad (poäng/mynt). Konfettin drivs med Web Animations API –
+     CSS-variabler i keyframes fungerar inte i Safari/WebKit. */
+  function celebrate(starCount, title, infoHtml, after) {
     var cel = document.getElementById('celebrate');
     if (!cel) {
       cel = document.createElement('div');
@@ -978,15 +988,37 @@
     }
     cel.appendChild(row);
 
-    for (var c = 0; c < 40; c++) {
+    if (infoHtml) {
+      var info = document.createElement('div');
+      info.className = 'cel-info';
+      info.innerHTML = twe(infoHtml);
+      cel.appendChild(info);
+    }
+
+    var fallH = window.innerHeight + 80;
+    for (var c = 0; c < 56; c++) {
       var p = document.createElement('span');
       p.className = 'confetti';
-      p.style.left = (2 + seeded(c * 7 + 1) * 96) + '%';
+      var r1 = seeded(c * 7 + 1), r2 = seeded(c * 3 + 2), r3 = seeded(c * 5 + 3);
+      p.style.left = (2 + r1 * 96) + '%';
+      p.style.width = (6 + r2 * 6) + 'px';
+      p.style.height = (10 + r3 * 8) + 'px';
+      if (c % 5 === 0) p.style.borderRadius = '50%';
       p.style.background = ['#ffce6b', '#7d5cff', '#2fc2a5', '#ff6dc8'][c % 4];
-      p.style.animationDelay = (seeded(c * 3 + 2) * 0.7) + 's';
-      p.style.animationDuration = (1.8 + seeded(c * 5 + 3) * 1.2) + 's';
-      p.style.setProperty('--cdx', ((seeded(c * 11 + 4) - 0.5) * 180) + 'px');
       cel.appendChild(p);
+      if (p.animate) {
+        p.animate([
+          { transform: 'translate3d(0, -30px, 0) rotate(0deg)', opacity: 1 },
+          { transform: 'translate3d(' + ((r1 - 0.5) * 220) + 'px, ' + fallH + 'px, 0) rotate(' + (360 + r3 * 540) + 'deg)', opacity: 0.9 }
+        ], {
+          duration: 1700 + r3 * 1500,
+          delay: r2 * 650,
+          easing: 'cubic-bezier(0.25, 0.1, 0.6, 1)',
+          fill: 'both'
+        });
+      } else {
+        p.style.opacity = '0';
+      }
     }
 
     playStarSounds(starCount, 450, 450);
@@ -994,7 +1026,7 @@
     setTimeout(function () {
       cel.classList.add('hidden');
       if (after) after();
-    }, 1400 + starCount * 450);
+    }, 1700 + starCount * 450);
   }
 
   function startDaily() {
@@ -1171,7 +1203,7 @@
           var dCoins = firstWinToday ? 30 + 5 * Math.min(d.streak, 10) : 0;
           if (dCoins) store.addCoins(dCoins);
           Sound.win();
-          celebrate(g.stars(), 'Utmaning klarad!', function () {
+          celebrate(g.stars(), 'Utmaning klarad!', null, function () {
             if (game !== g) return;
             showOverlay({
               title: 'Dagens utmaning klarad!',
@@ -1205,24 +1237,14 @@
         stats.levelsWon++;
         saveStats();
         Sound.win();
-        celebrate(stars, 'Bana ' + (levelIndex + 1) + ' klarad!', function () {
-          if (game !== g) return;
-          showOverlay({
-            title: 'Bana ' + (levelIndex + 1) + ' klarad!',
-            stars: stars,
-            html: '<span class="score-big">' + g.score + ' p</span>+' + coinsWon + ' 💰',
-            buttons: [
-              {
-                label: 'Fortsätt', primary: true,
-                fn: function () {
-                  pendingUnlock = { idx: levelIndex, first: prevStars === 0 };
-                  showScreen('levels');
-                }
-              },
-              { label: 'Spela igen', fn: function () { startLevel(levelIndex); } }
-            ]
+        // firande → direkt tillbaka till kartan där progressionen spelas upp
+        celebrate(stars, 'Bana ' + (levelIndex + 1) + ' klarad!',
+          '<b>' + g.score + ' p</b> • +' + coinsWon + ' 💰',
+          function () {
+            if (game !== g || !screens.game.classList.contains('active')) return;
+            pendingUnlock = { idx: levelIndex, first: prevStars === 0 };
+            showScreen('levels');
           });
-        });
       } else {
         Sound.lose();
         showOverlay({
