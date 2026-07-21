@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+<circle cx="24" cy="20" r="14" fill="rgba(255,214,69,0.22)"/>
+<path d="M8 14 Q8 5 24 5 Q40 5 40 14 L40 17 L8 17 Z" fill="#b8834e" stroke="#5f3b1e" stroke-width="1.7"/>
+<rect x="6.5" y="15" width="35" height="4" rx="2" fill="#ffce6b" stroke="#c67c2e" stroke-width="1.3"/>
+<path d="M9 25 Q16 20 24 20 Q32 20 39 25 L39 24 H9 Z" fill="#ffe9a8"/>
+<circle cx="17" cy="23.5" r="3" fill="#ffd645" stroke="#c67c2e" stroke-width="1"/>
+<circle cx="25" cy="22.5" r="3.4" fill="#ffce6b" stroke="#c67c2e" stroke-width="1"/>
+<circle cx="32" cy="24" r="2.8" fill="#ffd645" stroke="#c67c2e" stroke-width="1"/>
+<rect x="7" y="24" width="34" height="16" rx="2.5" fill="#8a5a33" stroke="#5f3b1e" stroke-width="1.8"/>
+<rect x="20.5" y="24" width="7" height="7" rx="2" fill="#ffce6b" stroke="#c67c2e" stroke-width="1.3"/>
+<path d="M10 28 V37 M38 28 V37" stroke="#6e4526" stroke-width="1.4"/>
+<path d="M12 10 l1 2 2 0.3 -1.5 1.4 0.4 2 -1.9 -1 -1.9 1 0.4 -2 -1.5 -1.4 2 -0.3 Z" fill="#fff3d6"/>
+<path d="M35 8 l0.8 1.6 1.7 0.25 -1.2 1.2 0.3 1.7 -1.6 -0.85 -1.6 0.85 0.3 -1.7 -1.2 -1.2 1.7 -0.25 Z" fill="#fff3d6"/>
+</svg>

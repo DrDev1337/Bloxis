@@ -35,6 +35,11 @@ kolumn** blir full rensas den och ger poäng.
   Alla banor är spelbarhetsvaliderade med en heuristisk bot som spelar
   varje bana tiotals gånger.
 
+  På kartan finns dessutom en **skattkista per värld** vid vägkanten –
+  den låses upp när banan intill är klarad och ger en engångsbelöning i
+  mynt (mer i senare världar). Efter en banvinst **vandrar avataren**
+  längs vägen till nästa nod med små skutt och fotsteg.
+
   Varje klarad bana ger 1–3 stjärnor (fler drag kvar = fler stjärnor) och låser
   upp nästa bana. Framstegen sparas på enheten.
 

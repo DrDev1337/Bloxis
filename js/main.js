@@ -2268,6 +2268,17 @@
     return d;
   }
 
+  /* Punkt på kubisk Bézier för segment i→i+1 vid t (0..1). */
+  function bezPoint(pts, i, t) {
+    var c = crControls(pts, i);
+    var p0 = pts[i], p1 = pts[i + 1];
+    var u = 1 - t;
+    return [
+      u * u * u * p0[0] + 3 * u * u * t * c[0] + 3 * u * t * t * c[2] + t * t * t * p1[0],
+      u * u * u * p0[1] + 3 * u * u * t * c[1] + 3 * u * t * t * c[3] + t * t * t * p1[1]
+    ];
+  }
+
   /* Ett enskilt vägsegment i→i+1, för upplåsningsanimationen. */
   function segmentD(pts, i) {
     var c = crControls(pts, i);
@@ -2649,6 +2660,40 @@
       inner.appendChild(el);
     });
 
+    // skattkistor: en per värld vid vägkanten halvvägs in – öppnas
+    // (en gång) när banan intill är klarad och ger mynt
+    var chestsOpen = store.getJson('bloxis.chests', {});
+    WORLDS.forEach(function (w, wi) {
+      var a = w.from + 5;
+      if (a + 1 >= points.length) return;
+      var mid = bezPoint(points, a, 0.5);
+      var cxPct = mid[0] + (mid[0] < 50 ? 17 : -17);
+      var reward = 30 + wi * 10;
+      var claimed = !!chestsOpen[wi];
+      var ready = !claimed && (stars[a] || 0) > 0;
+      var chest = document.createElement('button');
+      chest.className = 'map-chest' + (claimed ? ' opened' : ready ? ' ready' : ' waiting');
+      chest.setAttribute('aria-label', claimed ? 'Öppnad kista' : 'Skattkista');
+      chest.innerHTML = propImg(claimed ? 'chest-open' : 'chest') +
+        (ready ? '<span class="chest-coins">+' + reward + ' ' + twe('💰') + '</span>' : '');
+      chest.style.left = cxPct + '%';
+      chest.style.top = mid[1] + 'px';
+      if (ready) {
+        chest.addEventListener('click', function () {
+          var co = store.getJson('bloxis.chests', {});
+          if (co[wi]) return;
+          co[wi] = true;
+          store.setJson('bloxis.chests', co);
+          store.addCoins(reward);
+          Sound.coin();
+          buzz([30, 40, 30]);
+          showToast('🎉 Kistan öppnad: +' + reward + ' 💰');
+          renderLevelMap();
+        });
+      }
+      inner.appendChild(chest);
+    });
+
     // markera aktuell bana med puls + studsande kartnål
     if (currentIdx === -1) currentIdx = n - 1;
     var nodes = inner.querySelectorAll('.map-node');
@@ -2727,17 +2772,26 @@
         segEl.style.transition = 'stroke-dashoffset 0.7s ease';
         segEl.setAttribute('stroke-dashoffset', '0');
       }, 850);
-      // 3. kartnålen hoppar dit i en båge
+      // 3. avataren vandrar dit längs vägen, med gung och små skutt
       setTimeout(function () {
         if (!pin || !pin.animate) { finishUnlock(); return; }
         var w = wrap.clientWidth;
-        var dx = (points[currentIdx][0] - points[pu.idx][0]) / 100 * w;
-        var dy = points[currentIdx][1] - points[pu.idx][1];
-        var anim = pin.animate([
-          { transform: 'translate(0, 0)' },
-          { transform: 'translate(' + dx / 2 + 'px, ' + (dy - 85) + 'px)' },
-          { transform: 'translate(' + dx + 'px, ' + dy + 'px)' }
-        ], { duration: 750, easing: 'ease-in-out' });
+        var kf = [];
+        var N = 22;
+        for (var k = 0; k <= N; k++) {
+          var t = k / N;
+          var p = bezPoint(points, pu.idx, t);
+          var dx = (p[0] - points[pu.idx][0]) / 100 * w;
+          var dy = p[1] - points[pu.idx][1];
+          var bob = Math.abs(Math.sin(t * Math.PI * 5)) * 9;      // fem små skutt
+          var tilt = Math.sin(t * Math.PI * 10) * 5;               // gungar i takt
+          kf.push({ transform: 'translate(' + dx.toFixed(1) + 'px, ' + (dy - bob).toFixed(1) + 'px) rotate(' + tilt.toFixed(1) + 'deg)' });
+        }
+        var anim = pin.animate(kf, { duration: 1050, easing: 'linear' });
+        var stepSounds = [0, 210, 420, 630, 840];
+        stepSounds.forEach(function (ms, si) {
+          setTimeout(function () { Sound.click(); buzz(8); }, ms);
+        });
         anim.onfinish = finishUnlock;
       }, 950);
       // scrolla med
