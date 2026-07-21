@@ -14,6 +14,16 @@
   var store = {
     getBest: function () { return +localStorage.getItem('bloxis.best') || 0; },
     setBest: function (v) { localStorage.setItem('bloxis.best', String(v)); },
+    /* Rekord per oändligt-konfiguration (storlek + svårighet). */
+    getBestFor: function (cfg) {
+      var v = +localStorage.getItem('bloxis.best.' + cfg.size + '.' + cfg.diff) || 0;
+      if (!v && cfg.size === 8 && cfg.diff === 'klassisk') v = this.getBest();
+      return v;
+    },
+    setBestFor: function (cfg, v) {
+      localStorage.setItem('bloxis.best.' + cfg.size + '.' + cfg.diff, String(v));
+      if (v > this.getBest()) this.setBest(v); // totalrekordet på menyn
+    },
     getCoins: function () { return +localStorage.getItem('bloxis.coins') || 0; },
     addCoins: function (n) { localStorage.setItem('bloxis.coins', String(this.getCoins() + n)); },
     spendCoins: function (n) {
@@ -98,10 +108,30 @@
   var comboPop = $('#combo-pop');
   var overlay = $('#overlay');
 
+  /* ===== Oändligt läge: svårighet och brädstorlek ===== */
+  var DIFF_ORDER = ['latt', 'klassisk', 'svar'];
+  var DIFFS = {
+    latt: { label: '🌱 Lätt', ramp: { t2: 15, t3: 40 } },
+    klassisk: { label: '🎯 Klassisk', ramp: { t2: 6, t3: 16 } },
+    svar: { label: '🔥 Svår', ramp: null }
+  };
+  var SIZE_OPTS = [8, 10, 12];
+
+  function getEndlessCfg() {
+    try {
+      var c = JSON.parse(localStorage.getItem('bloxis.endless.cfg'));
+      if (c && SIZE_OPTS.indexOf(c.size) >= 0 && DIFFS[c.diff]) return c;
+    } catch (e) { /* ok */ }
+    return { size: 8, diff: 'klassisk' };
+  }
+
   /* ===== Tillstånd ===== */
   var game = null;
   var mode = 'endless';
   var levelIndex = 0;
+  var endlessCfg = getEndlessCfg();
+
+  function bsize() { return game ? game.size : 8; }
   var dpr = Math.max(1, window.devicePixelRatio || 1);
   var boardRect = null;    // CSS-pixlar, cachas under drag/resize
   var cellCss = 0;         // cellstorlek i CSS-pixlar
@@ -210,7 +240,7 @@
     var rect = boardWrap.getBoundingClientRect();
     if (rect.width < 10) return;
     boardRect = rect;
-    cellCss = rect.width / SIZE;
+    cellCss = rect.width / bsize();
     boardCanvas.width = Math.round(rect.width * dpr);
     boardCanvas.height = Math.round(rect.height * dpr);
     renderBoard();
@@ -221,7 +251,8 @@
   function renderBoard() {
     if (!game) return;
     var ctx = boardCtx;
-    var cell = boardCanvas.width / SIZE;
+    var S = game.size;
+    var cell = boardCanvas.width / S;
     ctx.clearRect(0, 0, boardCanvas.width, boardCanvas.height);
 
     roundRectPath(ctx, 0, 0, boardCanvas.width, boardCanvas.height, cell * 0.25);
@@ -235,8 +266,8 @@
       drag.lines.cols.forEach(function (x) { hlCols[x] = true; });
     }
 
-    for (r = 0; r < SIZE; r++) {
-      for (c = 0; c < SIZE; c++) {
+    for (r = 0; r < S; r++) {
+      for (c = 0; c < S; c++) {
         var x = c * cell, y = r * cell;
         var pad = cell * 0.06;
         roundRectPath(ctx, x + pad, y + pad, cell - pad * 2, cell - pad * 2, cell * 0.14);
@@ -301,7 +332,7 @@
   }
 
   function spawnEffects(cleared) {
-    var cell = boardCanvas.width / SIZE;
+    var cell = boardCanvas.width / bsize();
     var now = performance.now();
     cleared.forEach(function (cc) {
       clearAnims.push({ r: cc.r, c: cc.c, cell: cc.cell, start: now });
@@ -330,8 +361,8 @@
     var el = document.createElement('div');
     el.className = 'fly-score';
     el.textContent = '+' + points;
-    el.style.left = ((sumC / cleared.length + 0.5) / SIZE * 100) + '%';
-    el.style.top = ((sumR / cleared.length + 0.5) / SIZE * 100) + '%';
+    el.style.left = ((sumC / cleared.length + 0.5) / bsize() * 100) + '%';
+    el.style.top = ((sumR / cleared.length + 0.5) / bsize() * 100) + '%';
     boardWrap.appendChild(el);
     setTimeout(function () { el.remove(); }, 950);
   }
@@ -375,7 +406,8 @@
     $('#game-coins').textContent = store.getCoins();
     updateBoosterBar();
     if (mode === 'endless') {
-      hudSub.textContent = 'Rekord: ' + Math.max(store.getBest(), game.score);
+      hudSub.textContent = endlessCfg.size + '×' + endlessCfg.size + ' • Rekord: ' +
+        Math.max(store.getBestFor(endlessCfg), game.score);
       hudObjective.classList.add('hidden');
       return;
     }
@@ -455,9 +487,51 @@
   function hideOverlay() { overlay.classList.add('hidden'); }
 
   /* ===== Spelflöde ===== */
-  function startEndless() {
+  function showEndlessChooser() {
+    var cfg = getEndlessCfg();
+    var html =
+      '<p><b>Brädstorlek</b></p>' +
+      '<div class="choice-row" data-group="size">' +
+      SIZE_OPTS.map(function (s) {
+        return '<button class="choice' + (s === cfg.size ? ' sel' : '') + '" data-v="' + s + '">' + s + '&times;' + s + '</button>';
+      }).join('') +
+      '</div>' +
+      '<p style="margin-top:12px"><b>Svårighet</b></p>' +
+      '<div class="choice-row" data-group="diff">' +
+      DIFF_ORDER.map(function (d) {
+        return '<button class="choice' + (d === cfg.diff ? ' sel' : '') + '" data-v="' + d + '">' + DIFFS[d].label + '</button>';
+      }).join('') +
+      '</div>' +
+      '<p class="choice-hint">Större bräde ger mer plats. Lätt och Klassisk börjar med enkla former och släpper in svårare efter hand &ndash; Svår kör alla former direkt.</p>';
+    showOverlay({
+      title: 'Oändligt läge',
+      html: html,
+      buttons: [{
+        label: 'Starta', primary: true,
+        fn: function () {
+          var size = +document.querySelector('#ov-text .choice-row[data-group="size"] .sel').getAttribute('data-v');
+          var diff = document.querySelector('#ov-text .choice-row[data-group="diff"] .sel').getAttribute('data-v');
+          endlessCfg = { size: size, diff: diff };
+          localStorage.setItem('bloxis.endless.cfg', JSON.stringify(endlessCfg));
+          startEndless(endlessCfg);
+        }
+      }]
+    });
+    document.querySelectorAll('#ov-text .choice-row').forEach(function (row) {
+      row.addEventListener('click', function (ev) {
+        var b = ev.target.closest('.choice');
+        if (!b) return;
+        row.querySelectorAll('.choice').forEach(function (x) { x.classList.remove('sel'); });
+        b.classList.add('sel');
+        Sound.click();
+      });
+    });
+  }
+
+  function startEndless(cfg) {
+    endlessCfg = cfg || endlessCfg;
     mode = 'endless';
-    game = new Game({ mode: 'endless' });
+    game = new Game({ mode: 'endless', size: endlessCfg.size, shapeRamp: DIFFS[endlessCfg.diff].ramp });
     armedBooster = null;
     showScreen('game');
     updateHud();
@@ -512,7 +586,7 @@
 
   function restartCurrent() {
     Sound.click();
-    if (mode === 'endless') startEndless();
+    if (mode === 'endless') startEndless(endlessCfg);
     else startLevel(levelIndex);
   }
 
@@ -522,8 +596,8 @@
     setTimeout(function () {
       if (game !== g) return; // spelet har redan startats om
       if (mode === 'endless') {
-        var isRecord = g.score > store.getBest();
-        if (isRecord) store.setBest(g.score);
+        var isRecord = g.score > store.getBestFor(endlessCfg);
+        if (isRecord) store.setBestFor(endlessCfg, g.score);
         var coins = Math.floor(g.score / 200);
         if (coins > 0) { store.addCoins(coins); Sound.coin(); }
         Sound.lose();
@@ -531,10 +605,12 @@
           title: 'Spelet är slut!',
           html: (isRecord ? '&#127881; Nytt rekord!' : 'Bra spelat!') +
             '<span class="score-big">' + g.score + ' p</span>' +
-            'Rekord: ' + store.getBest() +
+            endlessCfg.size + '×' + endlessCfg.size + ' ' + DIFFS[endlessCfg.diff].label +
+            ' &bull; Rekord: ' + store.getBestFor(endlessCfg) +
             (coins > 0 ? ' &bull; +' + coins + ' &#128176;' : ''),
           buttons: [
-            { label: 'Spela igen', primary: true, fn: startEndless },
+            { label: 'Spela igen', primary: true, fn: function () { startEndless(endlessCfg); } },
+            { label: 'Ändra läge', fn: showEndlessChooser },
             { label: 'Till menyn', fn: function () { showScreen('menu'); } }
           ]
         });
@@ -644,9 +720,10 @@
   function applyArmedBooster(ev) {
     if (!armedBooster || !game || game.status !== 'playing') return false;
     var rect = boardWrap.getBoundingClientRect();
-    var c = Math.floor((ev.clientX - rect.left) / (rect.width / SIZE));
-    var r = Math.floor((ev.clientY - rect.top) / (rect.height / SIZE));
-    if (r < 0 || c < 0 || r >= SIZE || c >= SIZE) return false;
+    var S = game.size;
+    var c = Math.floor((ev.clientX - rect.left) / (rect.width / S));
+    var r = Math.floor((ev.clientY - rect.top) / (rect.height / S));
+    if (r < 0 || c < 0 || r >= S || c >= S) return false;
     var kind = armedBooster;
     var removed = kind === 'hammer' ? game.hammer(r, c) : game.bomb(r, c);
     if (!removed || !removed.length) return true; // träffade tomt – behåll beväpning
@@ -680,7 +757,7 @@
     var shape = game.pieces[slotIdx];
     if (!shape) return;
     boardRect = boardWrap.getBoundingClientRect();
-    cellCss = boardRect.width / SIZE;
+    cellCss = boardRect.width / game.size;
 
     var w = shape.w * cellCss, h = shape.h * cellCss;
     dragCanvas.width = Math.round(w * dpr);
@@ -710,7 +787,7 @@
     var col = Math.round((gx - boardRect.left) / cellCss);
     var row = Math.round((gy - boardRect.top) / cellCss);
     var valid = row >= 0 && col >= 0 &&
-      row + drag.shape.h <= SIZE && col + drag.shape.w <= SIZE &&
+      row + drag.shape.h <= game.size && col + drag.shape.w <= game.size &&
       game.canPlaceAt(drag.shape, row, col);
     drag.target = { row: row, col: col, valid: valid };
     drag.lines = valid ? game.previewLines(drag.shape, row, col) : null;
@@ -1016,7 +1093,7 @@
   }
 
   /* ===== Knappar ===== */
-  $('#btn-endless').addEventListener('click', function () { Sound.unlock(); Sound.click(); startEndless(); });
+  $('#btn-endless').addEventListener('click', function () { Sound.unlock(); Sound.click(); showEndlessChooser(); });
   $('#btn-levels').addEventListener('click', function () { Sound.unlock(); Sound.click(); showScreen('levels'); });
   $('#btn-help').addEventListener('click', function () { Sound.click(); showHelp(); });
   $('#btn-restart').addEventListener('click', restartCurrent);

@@ -3,7 +3,7 @@
   'use strict';
 
   var Shapes = global.BloxisShapes;
-  var SIZE = 8;
+  var DEFAULT_SIZE = 8;
 
   /* En cell är null eller { c: färgindex, gem: bool, ice: 0|1|2 }
      ice=2: hel is (kräver två rensningar), ice=1: sprucken is. */
@@ -20,7 +20,8 @@
     opts = opts || {};
     this.mode = opts.mode || 'endless';       // 'endless' | 'level'
     this.level = opts.level || null;           // bandefinition vid mode 'level'
-    this.size = SIZE;
+    this.size = opts.size || DEFAULT_SIZE;     // brädets sida (banor är alltid 8)
+    this.shapeRamp = opts.shapeRamp || null;   // { t2, t3 }: drag då nivå 2/3-former släpps in
     this.score = 0;
     this.combo = 0;                            // pågående kombokedja
     this.movesUsed = 0;
@@ -29,8 +30,8 @@
     this.collected = 0;                        // insamlade block (mål 'collect')
     this._undo = null;                         // ett stegs ångra
     this.board = [];
-    for (var r = 0; r < SIZE; r++) {
-      this.board.push(new Array(SIZE).fill(null));
+    for (var r = 0; r < this.size; r++) {
+      this.board.push(new Array(this.size).fill(null));
     }
     if (this.level && this.level.board) this._loadBoard(this.level.board);
     this.gemsLeft = this._count(function (c) { return c.gem; });
@@ -40,9 +41,10 @@
   }
 
   Game.prototype._loadBoard = function (rows) {
-    for (var r = 0; r < SIZE; r++) {
+    var n = Math.min(rows.length, this.size);
+    for (var r = 0; r < n; r++) {
       var row = rows[r] || '';
-      for (var c = 0; c < SIZE; c++) {
+      for (var c = 0; c < Math.min(row.length, this.size); c++) {
         var ch = row[c] || '.';
         if (ch === '#') this.board[r][c] = { c: (r * 3 + c * 5) % 8, gem: false, ice: 0 };
         else if (ch === 'G') this.board[r][c] = { c: 0, gem: true, ice: 0 };
@@ -53,7 +55,7 @@
 
   Game.prototype._count = function (pred) {
     var n = 0;
-    for (var r = 0; r < SIZE; r++) for (var c = 0; c < SIZE; c++) {
+    for (var r = 0; r < this.size; r++) for (var c = 0; c < this.size; c++) {
       if (this.board[r][c] && pred(this.board[r][c])) n++;
     }
     return n;
@@ -73,15 +75,15 @@
     for (var i = 0; i < shape.cells.length; i++) {
       var r = row + shape.cells[i][0];
       var c = col + shape.cells[i][1];
-      if (r < 0 || c < 0 || r >= SIZE || c >= SIZE) return false;
+      if (r < 0 || c < 0 || r >= this.size || c >= this.size) return false;
       if (this.board[r][c]) return false;
     }
     return true;
   };
 
   Game.prototype.canPlaceAnywhere = function (shape) {
-    for (var r = 0; r <= SIZE - shape.h; r++) {
-      for (var c = 0; c <= SIZE - shape.w; c++) {
+    for (var r = 0; r <= this.size - shape.h; r++) {
+      for (var c = 0; c <= this.size - shape.w; c++) {
         if (this.canPlaceAt(shape, r, c)) return true;
       }
     }
@@ -95,13 +97,22 @@
     return false;
   };
 
+  /* Max formnivå just nu, utifrån svårighetsstegringen. */
+  Game.prototype.maxTier = function () {
+    if (!this.shapeRamp) return 3;
+    if (this.movesUsed < this.shapeRamp.t2) return 1;
+    if (this.movesUsed < this.shapeRamp.t3) return 2;
+    return 3;
+  };
+
   /* Fyller på tre nya pjäser. Försöker (upp till 25 ggr) hitta en uppsättning
      där minst en pjäs går att lägga, som en mild barmhärtighetsregel.
      På samlabanor garanteras minst en pjäs i målfärgen, annars kan målet
      bli omöjligt att nå. */
   Game.prototype.refill = function () {
+    var tier = this.maxTier();
     for (var attempt = 0; attempt < 25; attempt++) {
-      var set = [Shapes.randomShape(), Shapes.randomShape(), Shapes.randomShape()];
+      var set = [Shapes.randomShape(tier), Shapes.randomShape(tier), Shapes.randomShape(tier)];
       if (this.level && this.level.type === 'collect') {
         var color = this.level.color;
         if (!set.some(function (sh) { return sh.color === color; })) {
@@ -123,14 +134,14 @@
   /* Hittar fulla rader och kolumner. */
   Game.prototype.fullLines = function () {
     var rows = [], cols = [], r, c, full;
-    for (r = 0; r < SIZE; r++) {
+    for (r = 0; r < this.size; r++) {
       full = true;
-      for (c = 0; c < SIZE; c++) if (!this.board[r][c]) { full = false; break; }
+      for (c = 0; c < this.size; c++) if (!this.board[r][c]) { full = false; break; }
       if (full) rows.push(r);
     }
-    for (c = 0; c < SIZE; c++) {
+    for (c = 0; c < this.size; c++) {
       full = true;
-      for (r = 0; r < SIZE; r++) if (!this.board[r][c]) { full = false; break; }
+      for (r = 0; r < this.size; r++) if (!this.board[r][c]) { full = false; break; }
       if (full) cols.push(c);
     }
     return { rows: rows, cols: cols };
@@ -223,7 +234,7 @@
     var coords = [];
     for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
       var rr = r + dr, cc = c + dc;
-      if (rr >= 0 && cc >= 0 && rr < SIZE && cc < SIZE && this.board[rr][cc]) coords.push([rr, cc]);
+      if (rr >= 0 && cc >= 0 && rr < this.size && cc < this.size && this.board[rr][cc]) coords.push([rr, cc]);
     }
     if (!coords.length) return null;
     this._snapshot();
@@ -248,6 +259,7 @@
     this._snapshot();
 
     var i, r, c;
+    var size = this.size;
     for (i = 0; i < shape.cells.length; i++) {
       this.board[row + shape.cells[i][0]][col + shape.cells[i][1]] = { c: shape.color, gem: false, ice: 0 };
     }
@@ -263,10 +275,10 @@
     var seen = {};
 
     lines.rows.forEach(function (rr) {
-      for (var cc = 0; cc < SIZE; cc++) seen[rr + ',' + cc] = true;
+      for (var cc = 0; cc < size; cc++) seen[rr + ',' + cc] = true;
     });
     lines.cols.forEach(function (cc) {
-      for (var rr = 0; rr < SIZE; rr++) seen[rr + ',' + cc] = true;
+      for (var rr = 0; rr < size; rr++) seen[rr + ',' + cc] = true;
     });
     for (var key in seen) {
       var parts = key.split(',');

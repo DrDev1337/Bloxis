@@ -474,4 +474,26 @@ html, body {
 #ov-text li { margin-bottom: 6px; }
 #ov-buttons { display: flex; flex-direction: column; gap: 10px; }
 
+/* Väljarchips i overlay (brädstorlek/svårighet) */
+.choice-row { display: flex; gap: 8px; justify-content: center; margin-top: 6px; }
+.choice {
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  flex: 1;
+  max-width: 110px;
+  touch-action: manipulation;
+}
+.choice:active { transform: scale(0.95); }
+.choice.sel {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: rgba(255, 255, 255, 0.6);
+}
+.choice-hint { font-size: 0.85rem; margin-top: 12px; }
+
 .hidden { display: none !important; }
