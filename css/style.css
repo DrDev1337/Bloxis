@@ -1,4 +1,11 @@
 /* Bloxis – stil. Mörkt tema, pek-optimerat för mobil och surfplatta. */
+@font-face {
+  font-family: 'Baloo 2';
+  src: url('../assets/fonts/Baloo2.ttf') format('truetype');
+  font-weight: 400 800;
+  font-display: swap;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
@@ -19,7 +26,7 @@ html, body {
   overscroll-behavior: none;
   background: var(--bg1);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Baloo 2', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
   user-select: none;
@@ -669,5 +676,16 @@ html, body {
   10%, 85% { opacity: 1; transform: translate(-50%, 0); }
   100% { opacity: 0; transform: translate(-50%, -30px); }
 }
+
+/* ===== Twemoji – konsekventa ikoner på alla plattformar ===== */
+.twe {
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.16em;
+  display: inline-block;
+}
+.booster .twe { width: 1.45em; height: 1.45em; }
+#tutor-hand img { width: 2.3rem; height: 2.3rem; display: block; }
+.ach-row .ach-icon .twe { width: 1.35em; height: 1.35em; }
 
 .hidden { display: none !important; }

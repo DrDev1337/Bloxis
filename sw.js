@@ -1,7 +1,7 @@
 /* Bloxis – service worker för offline-stöd.
    Strategi: nätverk först (så uppdateringar når fram direkt), cache som
    reserv när enheten är offline. */
-var CACHE = 'bloxis-v2';
+var CACHE = 'bloxis-v3';
 var ASSETS = [
   '.',
   'index.html',
@@ -10,6 +10,7 @@ var ASSETS = [
   'js/levels.js',
   'js/game.js',
   'js/main.js',
+  'assets/fonts/Baloo2.ttf',
   'manifest.webmanifest',
   'icons/icon.svg'
 ];

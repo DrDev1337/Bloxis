@@ -1,6 +1,17 @@
 /* Bloxis level map – all animation sker på transform/opacity (kompositor-
    vänligt, inga layoutpass). Färger kommer från theme.ts via CSS-variabler. */
 
+@font-face {
+  font-family: 'Baloo 2';
+  src: url('../fonts/Baloo2.ttf') format('truetype');
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+.lm-root {
+  font-family: 'Baloo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 .lm-root {
   position: relative;
   width: 100%;
