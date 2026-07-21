@@ -5,7 +5,7 @@
 import React, {
   useCallback, useEffect, useMemo, useRef, useState
 } from 'react';
-import { WorldTheme, themeA } from './theme';
+import { PropKind, WorldTheme, themeA } from './theme';
 import './levelmap.css';
 
 export interface LevelData {
@@ -48,17 +48,20 @@ function nodePos(i: number, totalH: number): Pt {
   };
 }
 
-/** Mjuk kurva genom punkterna (kvadratiska segment via mittpunkter). */
+/** Mjuk kurva som går exakt genom varje nodpunkt (Catmull-Rom → Bézier). */
 function smoothPath(pts: Pt[]): string {
   if (pts.length < 2) return '';
-  let d = `M ${pts[0].xPct} ${pts[0].y}`;
-  for (let i = 1; i < pts.length - 1; i++) {
-    const mx = (pts[i].xPct + pts[i + 1].xPct) / 2;
-    const my = (pts[i].y + pts[i + 1].y) / 2;
-    d += ` Q ${pts[i].xPct} ${pts[i].y} ${mx} ${my}`;
+  const at = (i: number) => pts[Math.max(0, Math.min(pts.length - 1, i))];
+  let d = `M ${pts[0].xPct.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+    const c1x = p1.xPct + (p2.xPct - p0.xPct) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.xPct - (p3.xPct - p1.xPct) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)} ${c2x.toFixed(2)} ${c2y.toFixed(2)} ${p2.xPct.toFixed(2)} ${p2.y.toFixed(2)}`;
   }
-  const last = pts[pts.length - 1];
-  return `${d} L ${last.xPct} ${last.y}`;
+  return d;
 }
 
 /** Böljande kullsilhuett som SVG-path (fylls ner till botten). */
@@ -115,6 +118,116 @@ function Avatar({ theme }: { theme: WorldTheme }) {
       <path d="M32 9 Q29 3 25 8" stroke={a.body} strokeWidth="4" fill="none" strokeLinecap="round" />
     </svg>
   );
+}
+
+/* ===== Biotop-rekvisita (allt ritat i kod, färger från temat) ===== */
+
+function MapProp({ kind, theme }: { kind: PropKind; theme: WorldTheme }) {
+  const c = theme.props;
+  switch (kind) {
+    case 'pine':
+      return (
+        <svg viewBox="0 0 44 58" width="100%" height="100%">
+          <rect x="19" y="42" width="6" height="12" rx="2" fill={c.trunk} />
+          <path d="M22 2 L38 24 L28 24 L40 40 L4 40 L16 24 L6 24 Z" fill={c.leaf2} />
+          <path d="M22 2 L32 16 L12 16 Z" fill={c.leaf1} />
+        </svg>
+      );
+    case 'snowPine':
+      return (
+        <svg viewBox="0 0 44 58" width="100%" height="100%">
+          <rect x="19" y="42" width="6" height="12" rx="2" fill={c.trunk} />
+          <path d="M22 2 L38 24 L28 24 L40 40 L4 40 L16 24 L6 24 Z" fill={c.leaf2} />
+          <path d="M22 2 L31 14 L13 14 Z" fill={c.snow} />
+          <path d="M13 24 L31 24 L28 28 L16 28 Z" fill={c.snow} opacity="0.9" />
+        </svg>
+      );
+    case 'tree':
+      return (
+        <svg viewBox="0 0 52 58" width="100%" height="100%">
+          <rect x="23" y="38" width="7" height="18" rx="2.5" fill={c.trunk} />
+          <ellipse cx="26" cy="24" rx="21" ry="18" fill={c.leaf2} />
+          <ellipse cx="18" cy="18" rx="12" ry="10" fill={c.leaf1} />
+          <ellipse cx="34" cy="27" rx="11" ry="9" fill={c.leaf1} opacity="0.7" />
+        </svg>
+      );
+    case 'flower':
+      return (
+        <svg viewBox="0 0 26 40" width="100%" height="100%">
+          <path d="M13 16 Q12 30 13 38" stroke={c.leaf2} strokeWidth="2.6" fill="none" strokeLinecap="round" />
+          <path d="M13 27 Q7 24 5 20" stroke={c.leaf2} strokeWidth="2.4" fill="none" strokeLinecap="round" />
+          {[0, 60, 120, 180, 240, 300].map(a => (
+            <ellipse key={a} cx="13" cy="10" rx="4" ry="6.5"
+              transform={`rotate(${a} 13 10)`} fill={c.accent} />
+          ))}
+          <circle cx="13" cy="10" r="3.4" fill={c.snow} />
+        </svg>
+      );
+    case 'mushroom':
+      return (
+        <svg viewBox="0 0 34 34" width="100%" height="100%">
+          <rect x="13" y="16" width="8" height="14" rx="3.5" fill={c.snow} />
+          <path d="M2 17 Q17 -6 32 17 Q17 23 2 17 Z" fill={c.accent} />
+          <circle cx="10" cy="11" r="2.4" fill={c.snow} />
+          <circle cx="20" cy="7" r="2" fill={c.snow} />
+          <circle cx="25" cy="13" r="1.8" fill={c.snow} />
+        </svg>
+      );
+    case 'rock':
+    case 'snowRock':
+      return (
+        <svg viewBox="0 0 44 30" width="100%" height="100%">
+          <path d="M6 28 L2 18 L10 8 L26 4 L40 12 L42 24 L36 28 Z" fill={c.stone1} />
+          <path d="M6 28 L10 16 L24 12 L36 28 Z" fill={c.stone2} />
+          {kind === 'snowRock' && <path d="M2 18 L10 8 L26 4 L40 12 L34 14 L18 10 L8 18 Z" fill={c.snow} />}
+        </svg>
+      );
+    case 'snowman':
+      return (
+        <svg viewBox="0 0 34 44" width="100%" height="100%">
+          <circle cx="17" cy="31" r="12" fill={c.snow} />
+          <circle cx="17" cy="13" r="8.5" fill={c.snow} />
+          <circle cx="14" cy="11" r="1.3" fill="#2b2144" />
+          <circle cx="20" cy="11" r="1.3" fill="#2b2144" />
+          <path d="M17 13.5 L21 15 L17 16.5 Z" fill="#ff9f45" />
+          <path d="M5 22 L11 27 M29 22 L23 27" stroke={theme.props.trunk} strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    case 'crystal':
+      return (
+        <svg viewBox="0 0 34 40" width="100%" height="100%">
+          <path d="M12 38 L6 20 L12 8 L17 14 Z" fill={c.accent} opacity="0.85" />
+          <path d="M17 38 L14 12 L20 2 L26 14 L22 38 Z" fill={c.accent} />
+          <path d="M20 2 L26 14 L22 38 L20 30 Z" fill={c.stone2} opacity="0.5" />
+          <path d="M17 10 L19 6 L21 10 L19 16 Z" fill={c.snow} opacity="0.85" />
+        </svg>
+      );
+  }
+}
+
+interface ScatterProp { kind: PropKind; xPct: number; y: number; size: number; flip: boolean; }
+
+/** Strö rekvisita längs vägen, på motsatt sida om noden + lite fritt. */
+function scatterProps(points: Pt[], theme: WorldTheme): ScatterProp[] {
+  const kinds = theme.props.kinds;
+  const out: ScatterProp[] = [];
+  points.forEach((p, i) => {
+    for (let k = 0; k < 2; k++) {
+      const r1 = seeded(i * 13 + k * 7 + 1);
+      const r2 = seeded(i * 29 + k * 3 + 5);
+      const r3 = seeded(i * 41 + k * 11 + 9);
+      // håll undan från vägen: motsatt sida om noden, annars slumpad kant
+      const side = k === 0 ? (p.xPct > 50 ? 0 : 1) : Math.round(r3);
+      out.push({
+        kind: kinds[Math.floor(r1 * kinds.length)],
+        xPct: side ? 68 + r2 * 26 : 6 + r2 * 26,
+        y: p.y - NODE_GAP / 2 + r1 * NODE_GAP,
+        size: 30 + r2 * 30,
+        flip: r3 > 0.5
+      });
+    }
+  });
+  return out;
 }
 
 /* ===== Parallaxlagrens innehåll ===== */
@@ -427,6 +540,7 @@ export default function LevelMap({ levels, currentId, onLevelSelect, theme = the
 
   const roadD = smoothPath(points);
   const doneD = currentIdx > 0 ? smoothPath(points.slice(0, currentIdx + 1)) : '';
+  const props = useMemo(() => scatterProps(points, theme), [points, theme]);
 
   return (
     <div ref={rootRef} className="lm-root" style={cssVars}>
@@ -454,6 +568,26 @@ export default function LevelMap({ levels, currentId, onLevelSelect, theme = the
               strokeWidth={2.5} strokeDasharray="6 12" strokeLinecap="round"
               vectorEffect="non-scaling-stroke" />
           </svg>
+
+          {props.map((pr, i) => (
+            <div
+              key={`prop-${i}`}
+              style={{
+                position: 'absolute',
+                left: `${pr.xPct}%`,
+                top: pr.y,
+                width: pr.size,
+                height: pr.size * 1.2,
+                marginLeft: -pr.size / 2,
+                marginTop: -pr.size * 1.1,
+                transform: pr.flip ? 'scaleX(-1)' : undefined,
+                pointerEvents: 'none',
+                filter: 'drop-shadow(0 5px 4px rgba(20, 35, 20, 0.3))'
+              }}
+            >
+              <MapProp kind={pr.kind} theme={theme} />
+            </div>
+          ))}
 
           {levels.map((lv, i) => {
             const p = points[i];

@@ -2,6 +2,11 @@
    Allt visuellt (färger, gradienter, dekor) styrs härifrån så att varje
    värld kan få eget tema utan att röra komponenten. */
 
+/** Rekvisita som kan strös längs vägen. Ritas i kod av komponenten. */
+export type PropKind =
+  | 'pine' | 'tree' | 'flower' | 'mushroom' | 'rock'
+  | 'snowPine' | 'snowman' | 'crystal' | 'snowRock';
+
 export interface WorldTheme {
   name: string;
   /** Himmelsgradient, topp → botten */
@@ -35,6 +40,17 @@ export interface WorldTheme {
   foliage1: string;
   foliage2: string;
   avatar: { body: string; belly: string; eye: string };
+  /** Biotopens rekvisita längs vägen + färger den ritas med */
+  props: {
+    kinds: PropKind[];
+    trunk: string;      // trädstammar
+    leaf1: string;      // ljusare grönska/kron-färg
+    leaf2: string;      // mörkare grönska
+    stone1: string;     // sten, ljus
+    stone2: string;     // sten, skugga
+    snow: string;       // snö/highlights
+    accent: string;     // blommor/svamphattar/kristaller
+  };
 }
 
 /** Tema A: Gröna ängarna – mjukt, soligt godislandskap. */
@@ -65,7 +81,17 @@ export const themeA: WorldTheme = {
   water: { surface: '#5fc9e8', deep: '#3a9fd0', sparkle: 'rgba(255, 255, 255, 0.9)' },
   foliage1: '#3d8f4d',
   foliage2: '#2e7340',
-  avatar: { body: '#ff6dc8', belly: '#ffd2ec', eye: '#2b2144' }
+  avatar: { body: '#ff6dc8', belly: '#ffd2ec', eye: '#2b2144' },
+  props: {
+    kinds: ['pine', 'tree', 'flower', 'mushroom', 'rock', 'tree', 'pine'],
+    trunk: '#8a5a33',
+    leaf1: '#67c46f',
+    leaf2: '#3d9e50',
+    stone1: '#b9c0bb',
+    stone2: '#8e968f',
+    snow: '#ffffff',
+    accent: '#ff5d6c'
+  }
 };
 
 /** Tema B: Frostbergen – kyligt blått, redo för nivå 21-40. */
@@ -96,7 +122,17 @@ export const themeB: WorldTheme = {
   water: { surface: '#9fd9f0', deep: '#5aa8d8', sparkle: 'rgba(255, 255, 255, 0.95)' },
   foliage1: '#5d86b8',
   foliage2: '#456a99',
-  avatar: { body: '#ff6dc8', belly: '#ffd2ec', eye: '#2b2144' }
+  avatar: { body: '#ff6dc8', belly: '#ffd2ec', eye: '#2b2144' },
+  props: {
+    kinds: ['snowPine', 'snowman', 'crystal', 'snowRock', 'snowPine', 'crystal'],
+    trunk: '#5d4a3a',
+    leaf1: '#4d8a6a',
+    leaf2: '#336650',
+    stone1: '#c9d8e5',
+    stone2: '#93a8bc',
+    snow: '#ffffff',
+    accent: '#8fd8f5'
+  }
 };
 
 export const themes: WorldTheme[] = [themeA, themeB];
