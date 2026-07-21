@@ -2227,6 +2227,14 @@
     ['crystals', 'orb', 'rock', 'candle']
   ];
   var WORLD_BADGE = ['tree', 'snowflake', 'cactus', 'star-prop', 'volcano', 'ghostprop', 'crystals'];
+  /* Markens grundljushet per värld: dagsljusa världar ljusa, nattvärldar djupare. */
+  var WORLD_LIGHT = [48, 52, 50, 34, 38, 33, 38];
+  /* Rekvisita som står på marken och ska ha slagskugga. */
+  var GROUNDED = {
+    tree: 1, pine: 1, flower: 1, mushroom: 1, peak: 1, snowman: 1, cactus: 1,
+    rock: 1, tumbleweed: 1, volcano: 1, lavarock: 1, deadtree: 1, crystals: 1,
+    orb: 1, candle: 1
+  };
   var DECOR_TWINKLE = { snowflake: 1, 'star-prop': 1, comet: 1, flameprop: 1, candle: 1 };
 
   function propImg(name) {
@@ -2365,6 +2373,29 @@
     var svg = svgEl('svg', { viewBox: '0 0 100 ' + segH, preserveAspectRatio: 'none' });
     var si, sr, b, r, yBase, light, alpha, fill;
 
+    // stora organiska "öar" av ljusare mark vid vägens sidor ger djup
+    var nBlob = Math.max(3, Math.round(segH / 240));
+    for (var bi = 0; bi < nBlob; bi++) {
+      var br = seeded(wi * 61 + bi * 23 + 4);
+      var side2 = bi % 2;
+      var bx = side2 ? 74 + br * 18 : 8 + br * 18;
+      var by = 90 + seeded(bi * 31 + wi * 7) * (segH - 180);
+      var brx = 11 + br * 9;
+      var bry = brx * 1.5;
+      svg.appendChild(svgEl('ellipse', {
+        cx: bx, cy: by + 7, rx: brx, ry: bry,
+        fill: 'hsla(' + w.hue + ', 55%, 16%, 0.16)'
+      }));
+      svg.appendChild(svgEl('ellipse', {
+        cx: bx, cy: by, rx: brx, ry: bry,
+        fill: 'hsla(' + w.hue + ', 62%, 74%, 0.2)'
+      }));
+      svg.appendChild(svgEl('ellipse', {
+        cx: bx - brx * 0.15, cy: by - bry * 0.2, rx: brx * 0.6, ry: bry * 0.5,
+        fill: 'hsla(' + w.hue + ', 70%, 86%, 0.14)'
+      }));
+    }
+
     if (wi === 3 || wi === 6) { // stjärnor i rymden och gnistor i grottan
       var nStars = wi === 3 ? 26 : 14;
       for (si = 0; si < nStars; si++) {
@@ -2497,10 +2528,13 @@
       bg.className = 'map-world';
       bg.style.top = topY + 'px';
       bg.style.height = (bottomY - topY) + 'px';
-      // rik, opak mark med schackrutigt gräsmönster à la godissagor
+      // ljus, mättad mark med solglöd, schackrutigt gräs och mjuk vinjett
+      var L0 = WORLD_LIGHT[wi] || 45;
       bg.style.background =
-        'repeating-conic-gradient(hsla(' + w.hue + ', 55%, 72%, 0.055) 0% 25%, transparent 0% 50%) 0 0/76px 76px, ' +
-        'linear-gradient(180deg, hsl(' + w.hue + ', 38%, 30%), hsl(' + w.hue + ', 44%, 19%))';
+        'radial-gradient(130% 90% at 50% 50%, transparent 55%, hsla(' + w.hue + ', 60%, 10%, 0.22) 100%), ' +
+        'radial-gradient(150% 46% at 50% 0%, hsla(' + w.hue + ', 80%, 88%, 0.22), transparent 70%), ' +
+        'repeating-conic-gradient(hsla(' + w.hue + ', 65%, 90%, 0.07) 0% 25%, transparent 0% 50%) 0 0/96px 96px, ' +
+        'linear-gradient(180deg, hsl(' + w.hue + ', 54%, ' + (L0 + 6) + '%), hsl(' + w.hue + ', 60%, ' + (L0 - 9) + '%))';
       bg.appendChild(terrainSVG(w, wi, bottomY - topY));
       inner.appendChild(bg);
 
@@ -2565,17 +2599,19 @@
       // två temadekorationer per bana, på motsatt sida av stigen
       var world = worldOf(i);
       var decors = WORLD_DECOR[world];
-      for (var di = 0; di < 2; di++) {
+      for (var di = 0; di < 3; di++) {
         var r1 = seeded(i * 13 + di * 5 + 1);
         var r2 = seeded(i * 17 + di * 3 + 2);
         var deco = document.createElement('div');
         var prop = decors[Math.floor(r1 * decors.length)];
-        deco.className = 'deco' + (DECOR_TWINKLE[prop] ? ' twinkle' : '');
+        deco.className = 'deco' +
+          (DECOR_TWINKLE[prop] ? ' twinkle' : '') +
+          (GROUNDED[prop] ? ' grounded' : '');
         deco.innerHTML = propImg(prop);
-        var side = di === 0 ? (x < 50 ? 1 : 0) : Math.round(r1);
-        deco.style.left = (side ? 72 + r2 * 22 : 6 + r2 * 22) + '%';
-        deco.style.top = (y - NODE_GAP / 2 + r1 * NODE_GAP) + 'px';
-        deco.style.width = (26 + r2 * 20) + 'px';
+        var side = di === 0 ? (x < 50 ? 1 : 0) : (di === 1 ? Math.round(r1) : (x < 50 ? 0 : 1));
+        deco.style.left = (side ? 70 + r2 * 24 : 4 + r2 * 24) + '%';
+        deco.style.top = (y - NODE_GAP / 2 + ((di + r1) / 3) * NODE_GAP) + 'px';
+        deco.style.width = (30 + r2 * 28 - di * 5) + 'px';
         deco.style.setProperty('--dur', (3.5 + r1 * 3) + 's');
         deco.style.setProperty('--delay', (-r2 * 4) + 's');
         inner.appendChild(deco);
