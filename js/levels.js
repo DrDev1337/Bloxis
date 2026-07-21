@@ -34,7 +34,7 @@
       ]
     },
     { // 5 – färgjakt: gula block
-      type: 'collect', color: 2, count: 12, moves: 22, board: E
+      type: 'collect', color: 2, count: 10, moves: 24, board: E
     },
     { // 6 – trappa
       type: 'score', target: 1200, moves: 26, board: [
@@ -69,7 +69,7 @@
 
     /* ===== Värld 2: Frostbergen ===== */
     { // 11 – färgjakt: blå block
-      type: 'collect', color: 5, count: 16, moves: 26, board: E
+      type: 'collect', color: 5, count: 12, moves: 28, board: E
     },
     { // 12 – isflak
       type: 'ice', moves: 28, board: [
@@ -102,7 +102,7 @@
       ]
     },
     { // 17 – färgjakt: röda block bland bråte
-      type: 'collect', color: 0, count: 18, moves: 30, board: [
+      type: 'collect', color: 0, count: 14, moves: 32, board: [
         '........','..#..#..','........','#......#',
         '#......#','........','..#..#..','........'
       ]
@@ -134,7 +134,7 @@
       ]
     },
     { // 22 – färgjakt: gröna block
-      type: 'collect', color: 3, count: 22, moves: 32, board: E
+      type: 'collect', color: 3, count: 16, moves: 34, board: E
     },
     { // 23 – hörnstenar
       type: 'gems', moves: 30, board: [
@@ -155,7 +155,7 @@
       ]
     },
     { // 26 – färgjakt: lila block bland bråte
-      type: 'collect', color: 6, count: 24, moves: 34, board: [
+      type: 'collect', color: 6, count: 18, moves: 36, board: [
         '#......#','........','..#..#..','........',
         '........','..#..#..','........','#......#'
       ]
