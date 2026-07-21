@@ -792,6 +792,8 @@ html, body {
 }
 .ward-name { font-size: 0.72rem; line-height: 1.15; }
 .ward-price { font-size: 0.72rem; color: var(--gold); font-weight: 700; }
+.ward-item.ach-locked svg { filter: grayscale(1) brightness(0.65); }
+.ward-item.ach-locked .ward-price { font-size: 0.64rem; }
 
 /* ===== Vinstfirande ===== */
 #celebrate {

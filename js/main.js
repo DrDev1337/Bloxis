@@ -347,6 +347,18 @@
     { id: 'streak3', icon: '🔥', name: 'På rad', desc: '3 dagars streak i dagliga utmaningen', coins: 40, test: function (s) { return s.maxStreak >= 3; } }
   ];
 
+  var ACH_BY_ID = {};
+  ACH.forEach(function (a) { ACH_BY_ID[a.id] = a; });
+
+  /* Garderobsföremål som låses upp av utmärkelser (kan inte köpas). */
+  var ACH_GEAR = {
+    world1: 'Lagerkrans',
+    streak3: 'Månkrona',
+    combo5: 'Månstav',
+    score5k: 'Stjärnspira',
+    levels10: 'Drakfjäll-färgen'
+  };
+
   function checkAchievements() {
     var unlocked = store.getJson('bloxis.ach', {});
     var newOnes = [];
@@ -361,7 +373,8 @@
       store.setJson('bloxis.ach', unlocked);
       newOnes.forEach(function (a, i) {
         setTimeout(function () {
-          showToast('🏅 ' + a.name + '  +' + a.coins + ' 💰');
+          showToast('🏅 ' + a.name + '  +' + a.coins + ' 💰' +
+            (ACH_GEAR[a.id] ? ' • 🎁 ' + ACH_GEAR[a.id] + '!' : ''));
           Sound.coin();
         }, i * 3200);
       });
@@ -383,9 +396,10 @@
     var unlocked = store.getJson('bloxis.ach', {});
     var html = ACH.map(function (a) {
       var got = unlocked[a.id];
+      var gear = ACH_GEAR[a.id] ? ' • 🎁 ' + ACH_GEAR[a.id] : '';
       return '<div class="ach-row' + (got ? '' : ' locked') + '">' +
         '<span class="ach-icon">' + a.icon + '</span>' +
-        '<span><div class="ach-name">' + a.name + '</div><div class="ach-desc">' + a.desc + '</div></span>' +
+        '<span><div class="ach-name">' + a.name + '</div><div class="ach-desc">' + a.desc + gear + '</div></span>' +
         '<span class="ach-coins">' + (got ? '✓' : '+' + a.coins + ' 💰') + '</span></div>';
     }).join('');
     showOverlay({
@@ -434,7 +448,8 @@
     { id: 'eld', name: 'Eldröd', body: '#ff6b5d', belly: '#ffd9d2', price: 60 },
     { id: 'frost', name: 'Frostvit', body: '#dde5f2', belly: '#ffffff', price: 80 },
     { id: 'natt', name: 'Nattsvart', body: '#4a4460', belly: '#b9b2d0', price: 80 },
-    { id: 'guld', name: 'Gyllene', body: '#ffd27a', belly: '#fff3d6', price: 150 }
+    { id: 'guld', name: 'Gyllene', body: '#ffd27a', belly: '#fff3d6', price: 150 },
+    { id: 'drake', name: 'Drakfjäll', body: '#3aa88f', belly: '#c2ead9', ach: 'levels10' }
   ];
   var AVATAR_HATS = [
     { id: 'ingen', name: 'Bara öron', price: 0 },
@@ -444,7 +459,9 @@
     { id: 'viking', name: 'Vikingahjälm', price: 110 },
     { id: 'riddare', name: 'Riddarhjälm', price: 120 },
     { id: 'gloria', name: 'Gloria', price: 140 },
-    { id: 'krona', name: 'Guldkrona', price: 150 }
+    { id: 'krona', name: 'Guldkrona', price: 150 },
+    { id: 'lagerkrans', name: 'Lagerkrans', ach: 'world1' },
+    { id: 'mankrona', name: 'Månkrona', ach: 'streak3' }
   ];
   var AVATAR_ITEMS = [
     { id: 'ingen', name: 'Inget', price: 0 },
@@ -452,7 +469,9 @@
     { id: 'skold', name: 'Sköld', price: 100 },
     { id: 'lykta', name: 'Lykta', price: 110 },
     { id: 'svard', name: 'Svärd', price: 120 },
-    { id: 'bok', name: 'Trollbok', price: 130 }
+    { id: 'bok', name: 'Trollbok', price: 130 },
+    { id: 'manstav', name: 'Månstav', ach: 'combo5' },
+    { id: 'spira', name: 'Stjärnspira', ach: 'score5k' }
   ];
   var AVATAR_LISTS = { hat: AVATAR_HATS, color: AVATAR_COLORS, item: AVATAR_ITEMS };
 
@@ -511,6 +530,22 @@
         '<path d="M33.5 14 Q39 12 39.5 5 Q34.5 7 32 12 Z" fill="#f2e8d0" stroke="#c9b89a" stroke-width="1"/>' +
         '<path d="M12 16.5 Q12 7 23 7 Q34 7 34 16.5 Z" fill="#9aa8bc" stroke="#6e7c92" stroke-width="1.2"/>' +
         '<rect x="12" y="13.8" width="22" height="2.7" fill="#c67c2e"/>';
+    } else if (hatId === 'lagerkrans') {
+      hat =
+        '<ellipse cx="13.5" cy="14" rx="3.1" ry="1.7" fill="#c9b23d" transform="rotate(-42 13.5 14)"/>' +
+        '<ellipse cx="16" cy="10.5" rx="3.1" ry="1.7" fill="#b8a13d" transform="rotate(-22 16 10.5)"/>' +
+        '<ellipse cx="19.5" cy="8.3" rx="3.1" ry="1.7" fill="#c9b23d" transform="rotate(-8 19.5 8.3)"/>' +
+        '<ellipse cx="32.5" cy="14" rx="3.1" ry="1.7" fill="#c9b23d" transform="rotate(42 32.5 14)"/>' +
+        '<ellipse cx="30" cy="10.5" rx="3.1" ry="1.7" fill="#b8a13d" transform="rotate(22 30 10.5)"/>' +
+        '<ellipse cx="26.5" cy="8.3" rx="3.1" ry="1.7" fill="#c9b23d" transform="rotate(8 26.5 8.3)"/>' +
+        '<circle cx="23" cy="7.6" r="1.4" fill="#ffce6b"/>';
+    } else if (hatId === 'mankrona') {
+      hat =
+        '<path d="M13 16.5 L13 10.5 L18 13 L23 8.5 L28 13 L33 10.5 L33 16.5 Z" fill="#d6dde8" stroke="#8fa0b8" stroke-width="1.2"/>' +
+        '<path d="M23.5 1.5 A 4.4 4.4 0 1 0 27.3 8 A 3.4 3.4 0 1 1 23.5 1.5 Z" fill="#ffe9a8"/>' +
+        '<circle cx="17.5" cy="12.6" r="1.1" fill="#7d5cff"/>' +
+        '<circle cx="28.5" cy="12.6" r="1.1" fill="#2fc2a5"/>' +
+        '<rect x="13" y="14.4" width="20" height="2.2" fill="#b9c4d6"/>';
     } else if (hatId === 'gloria') {
       hat =
         '<path d="M14 11 Q17 4 21 9" stroke="' + col.body + '" stroke-width="4" fill="none" stroke-linecap="round"/>' +
@@ -547,6 +582,17 @@
         '<rect x="37.5" y="27" width="7" height="9.2" rx="2" fill="rgba(255,206,107,0.35)" stroke="#4a4460" stroke-width="1.4"/>' +
         '<circle cx="41" cy="31.6" r="2.1" fill="#ffe9a8"/>' +
         '<rect x="39.1" y="36" width="3.8" height="1.7" rx="0.8" fill="#4a4460"/>';
+    } else if (itemId === 'manstav') {
+      item =
+        '<line x1="37.5" y1="45" x2="42.5" y2="28" stroke="#6b5a8f" stroke-width="2.8" stroke-linecap="round"/>' +
+        '<path d="M42 19.5 A 4.9 4.9 0 1 0 45.6 27.4 A 3.7 3.7 0 1 1 42 19.5 Z" fill="#dfe6ff"/>' +
+        '<circle cx="38.4" cy="31.5" r="0.9" fill="#dfe6ff"/>' +
+        '<circle cx="44.4" cy="30.5" r="0.7" fill="#dfe6ff"/>';
+    } else if (itemId === 'spira') {
+      item =
+        '<line x1="38" y1="45" x2="42.5" y2="30" stroke="#c67c2e" stroke-width="2.8" stroke-linecap="round"/>' +
+        '<circle cx="43" cy="26.6" r="3.5" fill="#7d5cff" stroke="#ffce6b" stroke-width="1.4"/>' +
+        '<path d="M43 18.5 l1 2.1 2.3 0.35 -1.7 1.6 0.4 2.3 -2 -1.1 -2 1.1 0.4 -2.3 -1.7 -1.6 2.3 -0.35 Z" fill="#ffce6b"/>';
     } else if (itemId === 'bok') {
       item =
         '<g transform="rotate(8 40 36)">' +
@@ -564,19 +610,30 @@
       hat + item + '</svg>';
   }
 
+  /* Ägs föremålet? Utmärkelseföremål ägs via sin upplåsta achievement. */
+  function avatarOwns(av, type, it) {
+    if (it.ach) return !!store.getJson('bloxis.ach', {})[it.ach];
+    return av.owned[type].indexOf(it.id) >= 0;
+  }
+
   function showWardrobe() {
     var av = getAvatar();
     function itemHtml(type, it) {
-      var owned = av.owned[type].indexOf(it.id) >= 0;
+      var owned = avatarOwns(av, type, it);
       var equipped = av[type] === it.id;
       var preview =
         type === 'hat' ? avatarSvg(it.id, av.color, av.item, 38) :
         type === 'color' ? avatarSvg(av.hat, it.id, av.item, 38) :
         avatarSvg(av.hat, av.color, it.id, 38);
-      return '<button class="ward-item' + (equipped ? ' equipped' : '') + '" data-type="' + type + '" data-id="' + it.id + '">' +
+      var label = equipped ? '✓ Vald'
+        : owned ? 'Byt'
+        : it.ach ? '🏅 Utmärkelse'
+        : it.price + ' 💰';
+      return '<button class="ward-item' + (equipped ? ' equipped' : '') + (it.ach && !owned ? ' ach-locked' : '') + '"' +
+        ' data-type="' + type + '" data-id="' + it.id + '">' +
         preview +
         '<span class="ward-name">' + it.name + '</span>' +
-        '<span class="ward-price">' + (equipped ? '✓ Vald' : owned ? 'Byt' : it.price + ' 💰') + '</span>' +
+        '<span class="ward-price">' + label + '</span>' +
         '</button>';
     }
     showOverlay({
@@ -599,8 +656,13 @@
         var list = AVATAR_LISTS[type];
         var it = list.filter(function (x) { return x.id === id; })[0];
         var a = getAvatar();
-        var owned = a.owned[type].indexOf(id) >= 0;
+        var owned = avatarOwns(a, type, it);
         if (!owned) {
+          if (it.ach) {
+            var req = ACH_BY_ID[it.ach];
+            showToast('🏅 Lås upp "' + req.name + '": ' + req.desc);
+            return;
+          }
           if (!store.spendCoins(it.price)) {
             showToast('Du behöver ' + it.price + ' 💰 – spela banor och utmaningar!');
             return;
