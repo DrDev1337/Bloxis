@@ -4,8 +4,8 @@
 
 /** Rekvisita som kan strös längs vägen. Ritas i kod av komponenten. */
 export type PropKind =
-  | 'pine' | 'tree' | 'flower' | 'mushroom' | 'rock'
-  | 'snowPine' | 'snowman' | 'crystal' | 'snowRock';
+  | 'pine' | 'tree' | 'flower' | 'mushroom' | 'rock' | 'stump' | 'bush'
+  | 'snowPine' | 'snowman' | 'crystal' | 'snowRock' | 'deadTree';
 
 export interface WorldTheme {
   name: string;
@@ -40,9 +40,13 @@ export interface WorldTheme {
   foliage1: string;
   foliage2: string;
   avatar: { body: string; belly: string; eye: string };
+  /** Landskapsform i parallaxlagren: mjuka kullar eller taggiga bergstoppar */
+  terrain: 'hills' | 'peaks';
   /** Biotopens rekvisita längs vägen + färger den ritas med */
   props: {
     kinds: PropKind[];
+    /** Små markdetaljer som strös tätt: grästuvor eller snödrivor */
+    ground: 'grass' | 'snow';
     trunk: string;      // trädstammar
     leaf1: string;      // ljusare grönska/kron-färg
     leaf2: string;      // mörkare grönska
@@ -82,8 +86,10 @@ export const themeA: WorldTheme = {
   foliage1: '#3d8f4d',
   foliage2: '#2e7340',
   avatar: { body: '#ff6dc8', belly: '#ffd2ec', eye: '#2b2144' },
+  terrain: 'hills',
   props: {
-    kinds: ['pine', 'tree', 'flower', 'mushroom', 'rock', 'tree', 'pine'],
+    kinds: ['pine', 'tree', 'flower', 'mushroom', 'rock', 'tree', 'pine', 'bush', 'stump', 'tree'],
+    ground: 'grass',
     trunk: '#8a5a33',
     leaf1: '#67c46f',
     leaf2: '#3d9e50',
@@ -123,8 +129,10 @@ export const themeB: WorldTheme = {
   foliage1: '#5d86b8',
   foliage2: '#456a99',
   avatar: { body: '#ff6dc8', belly: '#ffd2ec', eye: '#2b2144' },
+  terrain: 'peaks',
   props: {
-    kinds: ['snowPine', 'snowman', 'crystal', 'snowRock', 'snowPine', 'crystal'],
+    kinds: ['snowPine', 'snowman', 'crystal', 'snowRock', 'snowPine', 'crystal', 'deadTree', 'snowPine'],
+    ground: 'snow',
     trunk: '#5d4a3a',
     leaf1: '#4d8a6a',
     leaf2: '#336650',

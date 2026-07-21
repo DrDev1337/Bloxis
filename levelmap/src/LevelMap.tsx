@@ -74,6 +74,38 @@ function ridge(yBase: number, amp: number, freq: number, phase: number, h: numbe
   return `${d} L 100 ${h} Z`;
 }
 
+/** Y-värde på en kullsilhuett vid given x (för att sätta träd på åsen). */
+function ridgeY(x: number, yBase: number, amp: number, freq: number, phase: number): number {
+  return yBase + Math.sin((x / 100) * Math.PI * 2 * freq + phase) * amp;
+}
+
+/** Taggig bergskedja med snökrön. Topphöjder varieras deterministiskt. */
+function peaksPath(yBase: number, amp: number, n: number, seedBase: number, h: number) {
+  let d = `M 0 ${h} L 0 ${yBase}`;
+  const caps: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const x0 = (i / n) * 100;
+    const x2 = ((i + 1) / n) * 100;
+    const xm = x0 + (x2 - x0) * (0.38 + seeded(seedBase + i * 7 + 2) * 0.24);
+    const peakY = yBase - amp * (0.55 + seeded(seedBase + i) * 0.45);
+    const valleyY = yBase - amp * seeded(seedBase + i * 3 + 1) * 0.18;
+    d += ` L ${xm.toFixed(1)} ${peakY.toFixed(1)} L ${x2.toFixed(1)} ${valleyY.toFixed(1)}`;
+    // snökrön: följer sidorna en bit ner med hackig underkant
+    const t = 0.3;
+    const lx = x0 + (xm - x0) * (1 - t), ly = valleyY + (peakY - valleyY) * (1 - t) + (yBase - valleyY) * 0;
+    const rx = xm + (x2 - xm) * t, ry = peakY + (valleyY - peakY) * t;
+    const capLy = peakY + (ly - peakY);
+    caps.push(
+      `M ${lx.toFixed(1)} ${capLy.toFixed(1)} L ${xm.toFixed(1)} ${peakY.toFixed(1)} ` +
+      `L ${rx.toFixed(1)} ${ry.toFixed(1)} ` +
+      `L ${(xm + (rx - xm) * 0.5).toFixed(1)} ${(ry + 9).toFixed(1)} ` +
+      `L ${xm.toFixed(1)} ${(peakY + (ry - peakY) * 0.75).toFixed(1)} ` +
+      `L ${(lx + (xm - lx) * 0.45).toFixed(1)} ${(capLy + 8).toFixed(1)} Z`
+    );
+  }
+  return { d: `${d} L 100 ${h} Z`, caps };
+}
+
 /* ===== Småkomponenter (ren SVG, inga assets) ===== */
 
 function Stars({ count, theme }: { count: number; theme: WorldTheme }) {
@@ -202,17 +234,47 @@ function MapProp({ kind, theme }: { kind: PropKind; theme: WorldTheme }) {
           <path d="M17 10 L19 6 L21 10 L19 16 Z" fill={c.snow} opacity="0.85" />
         </svg>
       );
+    case 'stump':
+      return (
+        <svg viewBox="0 0 34 28" width="100%" height="100%">
+          <path d="M5 8 L5 22 Q17 28 29 22 L29 8 Z" fill={c.trunk} />
+          <ellipse cx="17" cy="8" rx="12" ry="5.5" fill="#d9b384" />
+          <ellipse cx="17" cy="8" rx="7" ry="3.2" fill="none" stroke={c.trunk} strokeWidth="1.3" opacity="0.6" />
+          <ellipse cx="17" cy="8" rx="3" ry="1.4" fill="none" stroke={c.trunk} strokeWidth="1.2" opacity="0.6" />
+        </svg>
+      );
+    case 'bush':
+      return (
+        <svg viewBox="0 0 46 30" width="100%" height="100%">
+          <ellipse cx="14" cy="20" rx="13" ry="9.5" fill={c.leaf2} />
+          <ellipse cx="31" cy="21" rx="12" ry="8.5" fill={c.leaf2} />
+          <ellipse cx="22" cy="14" rx="12" ry="9" fill={c.leaf1} />
+          <ellipse cx="18" cy="11" rx="5" ry="3" fill={c.snow} opacity="0.3" />
+          <circle cx="12" cy="16" r="1.6" fill={c.accent} />
+          <circle cx="29" cy="14" r="1.6" fill={c.accent} />
+        </svg>
+      );
+    case 'deadTree':
+      return (
+        <svg viewBox="0 0 40 52" width="100%" height="100%">
+          <path d="M19 50 L19 20 M19 26 L9 14 M19 32 L30 20 M19 20 L14 8 M19 20 L26 6"
+            stroke={c.trunk} strokeWidth="3.4" fill="none" strokeLinecap="round" />
+          <path d="M8 13 L11 12 M13 7 L16 7 M25 5 L28 6 M29 19 L32 19"
+            stroke={c.snow} strokeWidth="2.6" fill="none" strokeLinecap="round" />
+        </svg>
+      );
   }
 }
 
 interface ScatterProp { kind: PropKind; xPct: number; y: number; size: number; flip: boolean; }
+interface GroundMark { xPct: number; y: number; size: number; }
 
 /** Strö rekvisita längs vägen, på motsatt sida om noden + lite fritt. */
 function scatterProps(points: Pt[], theme: WorldTheme): ScatterProp[] {
   const kinds = theme.props.kinds;
   const out: ScatterProp[] = [];
   points.forEach((p, i) => {
-    for (let k = 0; k < 2; k++) {
+    for (let k = 0; k < 4; k++) {
       const r1 = seeded(i * 13 + k * 7 + 1);
       const r2 = seeded(i * 29 + k * 3 + 5);
       const r3 = seeded(i * 41 + k * 11 + 9);
@@ -220,10 +282,29 @@ function scatterProps(points: Pt[], theme: WorldTheme): ScatterProp[] {
       const side = k === 0 ? (p.xPct > 50 ? 0 : 1) : Math.round(r3);
       out.push({
         kind: kinds[Math.floor(r1 * kinds.length)],
-        xPct: side ? 68 + r2 * 26 : 6 + r2 * 26,
-        y: p.y - NODE_GAP / 2 + r1 * NODE_GAP,
-        size: 30 + r2 * 30,
+        xPct: side ? 68 + r2 * 27 : 5 + r2 * 27,
+        y: p.y - NODE_GAP / 2 + ((k + r1) / 4) * NODE_GAP,
+        size: 24 + r2 * 36,
         flip: r3 > 0.5
+      });
+    }
+  });
+  // sortera på y så props längre "ner" ritas över dem längre bort
+  return out.sort((a, b) => a.y - b.y);
+}
+
+/** Små markdetaljer (grästuvor/snödrivor) – tätt men diskret. */
+function scatterGround(points: Pt[]): GroundMark[] {
+  const out: GroundMark[] = [];
+  points.forEach((p, i) => {
+    for (let k = 0; k < 4; k++) {
+      const r1 = seeded(i * 61 + k * 17 + 3);
+      const r2 = seeded(i * 83 + k * 5 + 8);
+      const side = Math.round(seeded(i * 7 + k));
+      out.push({
+        xPct: side ? 58 + r1 * 38 : 4 + r1 * 38,
+        y: p.y - NODE_GAP / 2 + r2 * NODE_GAP,
+        size: 9 + r1 * 9
       });
     }
   });
@@ -238,14 +319,21 @@ function BackgroundLayer({ theme, height }: { theme: WorldTheme; height: number 
     const n = Math.max(2, Math.round(height / 420));
     for (let b = 0; b < n; b++) {
       const r = seeded(b * 17 + 3);
-      out.push(
-        <path
-          key={b}
-          d={ridge(height - 90 - b * ((height - 160) / n), 24 + r * 18, 1.1 + r, r * 6.28, height)}
-          fill={theme.hillsFar}
-          opacity={0.5 - b * (0.3 / n)}
-        />
-      );
+      const yBase = height - 90 - b * ((height - 160) / n);
+      const opacity = 0.5 - b * (0.3 / n);
+      if (theme.terrain === 'peaks') {
+        const pk = peaksPath(yBase, 120 + r * 90, 4 + Math.round(r * 2), b * 31, height);
+        out.push(<path key={b} d={pk.d} fill={theme.hillsFar} opacity={opacity} />);
+        pk.caps.forEach((cap, ci) => out.push(
+          <path key={`${b}c${ci}`} d={cap} fill={theme.props.snow} opacity={opacity + 0.25} />
+        ));
+      } else {
+        out.push(
+          <path key={b}
+            d={ridge(yBase, 24 + r * 18, 1.1 + r, r * 6.28, height)}
+            fill={theme.hillsFar} opacity={opacity} />
+        );
+      }
     }
     return out;
   }, [theme, height]);
@@ -283,14 +371,33 @@ function MidLayer({ theme, height }: { theme: WorldTheme; height: number }) {
     const n = Math.max(2, Math.round(height / 360));
     for (let b = 0; b < n; b++) {
       const r = seeded(b * 29 + 7);
-      out.push(
-        <path
-          key={b}
-          d={ridge(height - 60 - b * ((height - 140) / n), 30 + r * 22, 1.4 + r * 0.8, r * 6.28 + 2, height)}
-          fill={b % 2 ? theme.hillsMid : theme.hillsNear}
-          opacity={0.55 - b * (0.25 / n)}
-        />
-      );
+      const yBase = height - 60 - b * ((height - 140) / n);
+      const fill = b % 2 ? theme.hillsMid : theme.hillsNear;
+      const opacity = 0.55 - b * (0.25 / n);
+      if (theme.terrain === 'peaks') {
+        const pk = peaksPath(yBase, 90 + r * 70, 5 + Math.round(r * 2), b * 53 + 13, height);
+        out.push(<path key={b} d={pk.d} fill={fill} opacity={opacity} />);
+        pk.caps.forEach((cap, ci) => out.push(
+          <path key={`${b}c${ci}`} d={cap} fill={theme.props.snow} opacity={opacity + 0.3} />
+        ));
+      } else {
+        const amp = 30 + r * 22, freq = 1.4 + r * 0.8, phase = r * 6.28 + 2;
+        out.push(
+          <path key={b} d={ridge(yBase, amp, freq, phase, height)} fill={fill} opacity={opacity} />
+        );
+        // skogssiluett längs åsen: små granar som följer kullens kurva
+        for (let tx = 3; tx <= 97; tx += 6.5) {
+          const tr = seeded(b * 71 + tx * 13);
+          if (tr < 0.35) continue;
+          const ty = ridgeY(tx + tr * 3, yBase, amp, freq, phase);
+          const tw = 1.6 + tr * 1.3, th = 20 + tr * 18;
+          out.push(
+            <path key={`${b}t${tx}`}
+              d={`M ${(tx - tw).toFixed(1)} ${ty.toFixed(1)} L ${tx.toFixed(1)} ${(ty - th).toFixed(1)} L ${(tx + tw).toFixed(1)} ${ty.toFixed(1)} Z`}
+              fill={theme.hillsNear} opacity={opacity + 0.12} />
+          );
+        }
+      }
     }
     return out;
   }, [theme, height]);
@@ -541,6 +648,7 @@ export default function LevelMap({ levels, currentId, onLevelSelect, theme = the
   const roadD = smoothPath(points);
   const doneD = currentIdx > 0 ? smoothPath(points.slice(0, currentIdx + 1)) : '';
   const props = useMemo(() => scatterProps(points, theme), [points, theme]);
+  const ground = useMemo(() => scatterGround(points), [points]);
 
   return (
     <div ref={rootRef} className="lm-root" style={cssVars}>
@@ -568,6 +676,24 @@ export default function LevelMap({ levels, currentId, onLevelSelect, theme = the
               strokeWidth={2.5} strokeDasharray="6 12" strokeLinecap="round"
               vectorEffect="non-scaling-stroke" />
           </svg>
+
+          {ground.map((g, i) => (
+            <svg
+              key={`gr-${i}`}
+              width={g.size} height={g.size * 0.6}
+              viewBox="0 0 12 7"
+              style={{
+                position: 'absolute', left: `${g.xPct}%`, top: g.y,
+                marginLeft: -g.size / 2, pointerEvents: 'none'
+              }}
+            >
+              {theme.props.ground === 'grass'
+                ? <path d="M1 7 Q1.6 3 2.4 6.8 M4.4 7 Q5 1.5 5.8 6.8 M8 7 Q8.6 3.5 9.4 6.8"
+                    stroke={theme.props.leaf2} strokeWidth="1.1" fill="none"
+                    strokeLinecap="round" opacity="0.55" />
+                : <ellipse cx="6" cy="4.6" rx="5.4" ry="2.2" fill={theme.props.snow} opacity="0.4" />}
+            </svg>
+          ))}
 
           {props.map((pr, i) => (
             <div
