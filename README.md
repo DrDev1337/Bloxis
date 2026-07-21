@@ -47,6 +47,10 @@ kolumn** blir full rensas den och ger poäng.
   Vinster bygger en 🔥 streak och ger extra mynt; en kalender visar veckans
   resultat.
 
+- **🗒️ Veckouppdrag** – tre uppdrag per vecka (samma för alla, byts varje
+  måndag): rensa linjer, nå kombos, klara banor, samla stjärnor m.m.
+  Progressbarer i menyn och mynt när du hämtar belöningen.
+
 ## Guide, utmärkelser och inställningar
 
 - Helt nya spelare möts av en **interaktiv guide** som lär ut placering och
@@ -54,7 +58,8 @@ kolumn** blir full rensas den och ger poäng.
 - **🏅 Utmärkelser**: 12 achievements (kombo, multirensningar, streaks m.m.)
   som ger mynt när de låses upp.
 - **⚙️ Inställningar**: ljudeffekter, bakgrundsmusik (genererad med WebAudio),
-  vibration och **färgblindläge** (unika symboler på varje blockfärg).
+  vibration, **färgblindläge** (unika symboler på varje blockfärg) och
+  **språk** – hela spelet finns på svenska och engelska (`js/lang.js`).
 
 ## Avatar och garderob
 
@@ -121,11 +126,27 @@ haptisk vibration på mobil.
 - **Kombo**: rensar du linjer flera drag i rad växer en multiplikator
   (+25 % per steg i kedjan).
 
+## Tester och CI
+
+Testsviten ligger i `tests/` och körs i CI på varje push – **deployen
+gatas av att testerna är gröna**:
+
+```bash
+node tests/smoke-mech.js     # spellogik: alla mekaniker + ångra
+node tests/audit-levels.js   # bandefinitioner: inga självrensande linjer m.m.
+node tests/botval.js         # deterministisk bot spelar alla 84 banor
+node tests/e2e.js            # Playwright-e2e i Chromium (egen statisk server)
+```
+
+Botvalideringen är seedad och därmed helt reproducerbar; poäng- och
+färgjaktsbanor rapporteras men gatar inte (boten är strukturellt svag på
+dem).
+
 ## Publicering på GitHub Pages
 
 Varje push till `main` (eller den nuvarande utvecklingsbranchen) kör
-arbetsflödet `.github/workflows/deploy-pages.yml`, som publicerar spelet till
-branchen `gh-pages`. **Engångssteg:** aktivera Pages under
+arbetsflödet `.github/workflows/deploy-pages.yml`: först testjobbet,
+därefter publicering av spelet till branchen `gh-pages`. **Engångssteg:** aktivera Pages under
 *Settings → Pages → Build and deployment*: välj källa **Deploy from a branch**,
 branch **gh-pages** och mapp **/(root)**, och spara. Därefter ligger spelet på:
 

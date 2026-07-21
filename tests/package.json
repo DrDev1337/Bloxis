@@ -1,0 +1,8 @@
+{
+  "name": "bloxis-tests",
+  "private": true,
+  "description": "Testberoenden för Bloxis (Playwright för e2e).",
+  "dependencies": {
+    "playwright": "^1.49.1"
+  }
+}

@@ -1,7 +1,7 @@
-# Publicerar Bloxis på GitHub Pages vid varje push.
-# Spelet är statiskt i repo-roten; levelmap-demon (React) byggs först och
-# publiceras under /levelmap/dist/. Allt hamnar på gh-pages-branchen.
-name: Publicera till GitHub Pages
+# Testar och publicerar Bloxis på GitHub Pages vid varje push.
+# Testjobbet gatar publiceringen: logiksmoke, banaudit och botvalidering
+# körs i ren Node, därefter e2e i Chromium via Playwright.
+name: Testa och publicera
 
 on:
   push:
@@ -18,8 +18,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hämta koden
+        uses: actions/checkout@v4
+
+      - name: Sätt upp Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Logiksmoke (mekaniker)
+        run: node tests/smoke-mech.js
+
+      - name: Banaudit
+        run: node tests/audit-levels.js
+
+      - name: Botvalidering (spelbarhet)
+        run: BOT_N=10 BOT_MIN=15 node tests/botval.js
+
+      - name: Installera Playwright
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: E2E i Chromium
+        run: node tests/e2e.js
+
   deploy:
     runs-on: ubuntu-latest
+    needs: test
     steps:
       - name: Hämta koden
         uses: actions/checkout@v4
@@ -48,4 +78,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .
-          exclude_assets: '.github,levelmap/node_modules,levelmap/src'
+          exclude_assets: '.github,levelmap/node_modules,levelmap/src,tests'
