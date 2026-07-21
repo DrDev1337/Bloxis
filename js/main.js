@@ -56,9 +56,33 @@
   })();
   function saveSettings() { store.setJson('bloxis.settings', settings); }
 
-  /* ===== Ljud (syntetiserat med WebAudio – inga filer) ===== */
+  /* ===== Twemoji: byter emojitecken mot lokala SVG:er (CC-BY 4.0) så
+     ikonerna ser likadana ut på alla plattformar. ===== */
+  var TWEMOJI = {
+    '🏅': '1f3c5', '⚙': '2699', '📅': '1f4c5', '🧩': '1f9e9', '💰': '1f4b0',
+    '🔥': '1f525', '🔨': '1f528', '💣': '1f4a3', '🔄': '1f504', '↩': '21a9',
+    '🔒': '1f512', '💎': '1f48e', '🧊': '1f9ca', '🎨': '1f3a8', '🎯': '1f3af',
+    '📍': '1f4cd', '☁': '2601', '🌲': '1f332', '🌳': '1f333', '🌷': '1f337',
+    '🍄': '1f344', '🦋': '1f98b', '🏔': '1f3d4', '❄': '2744', '⛄': '26c4',
+    '🌵': '1f335', '☀': '2600', '🪨': '1faa8', '🦂': '1f982', '⭐': '2b50',
+    '🌙': '1f319', '☄': '2604', '🪐': '1fa90', '🌿': '1f33f', '🌟': '1f31f',
+    '🎉': '1f389', '🏆': '1f3c6', '👆': '1f446', '🔊': '1f50a', '🎵': '1f3b5',
+    '📳': '1f4f3', '👁': '1f441', '🌱': '1f331', '🧹': '1f9f9', '💥': '1f4a5',
+    '🌋': '1f30b', '⚡': '26a1', '🗺': '1f5fa', '🧰': '1f9f0'
+  };
+  var TW_RE = new RegExp('(' + Object.keys(TWEMOJI).join('|') + ')\\uFE0F?', 'g');
+  function twe(html) {
+    return String(html).replace(TW_RE, function (_, ch) {
+      return '<img class="twe" draggable="false" alt="' + ch + '" src="assets/twemoji/' + TWEMOJI[ch] + '.svg">';
+    });
+  }
+
+  /* ===== Ljud: Kenney-samplingar (CC0) med syntetiserad reserv ===== */
   var Sound = (function () {
     var ctx = null;
+    var buffers = {};
+    var samplesRequested = false;
+    var SAMPLE_FILES = ['click', 'place', 'confirm', 'coin', 'boom', 'swap'];
     function ac() {
       if (!ctx) {
         var AC = window.AudioContext || window.webkitAudioContext;
@@ -66,6 +90,34 @@
       }
       if (ctx && ctx.state === 'suspended') ctx.resume();
       return ctx;
+    }
+    function loadSamples() {
+      if (samplesRequested || !window.fetch) return;
+      var c = ac();
+      if (!c) return;
+      samplesRequested = true;
+      SAMPLE_FILES.forEach(function (name) {
+        fetch('assets/kenney/audio/' + name + '.ogg')
+          .then(function (r) { return r.ok ? r.arrayBuffer() : Promise.reject(new Error('http ' + r.status)); })
+          .then(function (ab) { return c.decodeAudioData(ab); })
+          .then(function (buf) { buffers[name] = buf; })
+          .catch(function () { /* synth-reserven tar över */ });
+      });
+    }
+    /* Spelar en sampling. Returnerar false om synth-reserven ska användas. */
+    function sample(name, vol) {
+      if (!settings.sound) return true;
+      var c = ac();
+      var buf = buffers[name];
+      if (!c || !buf) return false;
+      var src = c.createBufferSource();
+      var g = c.createGain();
+      src.buffer = buf;
+      g.gain.value = vol || 0.5;
+      src.connect(g);
+      g.connect(c.destination);
+      src.start();
+      return true;
     }
     function tone(freq, dur, type, vol, delay) {
       if (!settings.sound) return;
@@ -83,19 +135,27 @@
       o.stop(t + dur + 0.03);
     }
     return {
-      unlock: function () { ac(); },
+      unlock: function () { ac(); loadSamples(); },
       ctx: ac,
       star: function (i) { tone(700 + i * 200, 0.22, 'triangle', 0.16); },
-      click: function () { tone(600, 0.05, 'sine', 0.06); },
-      place: function () { tone(300, 0.07, 'triangle', 0.1); tone(420, 0.06, 'triangle', 0.07, 0.03); },
+      click: function () { if (!sample('click', 0.4)) tone(600, 0.05, 'sine', 0.06); },
+      place: function () {
+        if (!sample('place', 0.55)) { tone(300, 0.07, 'triangle', 0.1); tone(420, 0.06, 'triangle', 0.07, 0.03); }
+      },
       clear: function (n) {
+        sample('confirm', Math.min(0.3 + n * 0.12, 0.65));
         for (var i = 0; i < Math.min(n + 1, 5); i++) {
           tone(440 * Math.pow(1.26, i), 0.13, 'triangle', 0.13, i * 0.055);
         }
       },
       ice: function () { tone(1200, 0.08, 'square', 0.05); tone(900, 0.1, 'square', 0.04, 0.04); },
-      boom: function () { tone(90, 0.35, 'sawtooth', 0.2); tone(60, 0.4, 'sawtooth', 0.15, 0.05); },
-      coin: function () { tone(988, 0.07, 'square', 0.05); tone(1319, 0.14, 'square', 0.05, 0.07); },
+      boom: function () {
+        if (!sample('boom', 0.65)) { tone(90, 0.35, 'sawtooth', 0.2); tone(60, 0.4, 'sawtooth', 0.15, 0.05); }
+      },
+      swap: function () { if (!sample('swap', 0.45)) this.click(); },
+      coin: function () {
+        if (!sample('coin', 0.4)) { tone(988, 0.07, 'square', 0.05); tone(1319, 0.14, 'square', 0.05, 0.07); }
+      },
       win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.2, 'triangle', 0.14, i * 0.12); }); },
       lose: function () { [330, 262, 196].forEach(function (f, i) { tone(f, 0.22, 'sawtooth', 0.06, i * 0.16); }); }
     };
@@ -304,7 +364,7 @@
   var toastTimer = null;
   function showToast(msg) {
     var el = $('#toast');
-    el.textContent = msg;
+    el.innerHTML = twe(msg);
     el.classList.remove('hidden');
     void el.offsetWidth;
     clearTimeout(toastTimer);
@@ -680,15 +740,15 @@
     var left = game.movesLeft();
     var lv = game.level;
     if (lv.type === 'score') {
-      hudObjective.innerHTML = '&#127919; M&aring;l: <b>' + lv.target + '</b> p &bull; ' + left + ' drag kvar';
+      hudObjective.innerHTML = twe('🎯 Mål: <b>' + lv.target + '</b> p • ' + left + ' drag kvar');
     } else if (lv.type === 'gems') {
-      hudObjective.innerHTML = '&#128142; <b>' + game.gemsLeft + '</b> kvar &bull; ' + left + ' drag kvar';
+      hudObjective.innerHTML = twe('💎 <b>' + game.gemsLeft + '</b> kvar • ' + left + ' drag kvar');
     } else if (lv.type === 'ice') {
-      hudObjective.innerHTML = '&#129482; <b>' + game.iceLeft + '</b> kvar &bull; ' + left + ' drag kvar';
+      hudObjective.innerHTML = twe('🧊 <b>' + game.iceLeft + '</b> kvar • ' + left + ' drag kvar');
     } else {
-      hudObjective.innerHTML =
+      hudObjective.innerHTML = twe(
         '<span class="collect-chip" style="background:' + Shapes.PALETTE[lv.color] + '"></span>' +
-        '<b>' + game.collectLeft() + '</b> kvar &bull; ' + left + ' drag kvar';
+        '<b>' + game.collectLeft() + '</b> kvar • ' + left + ' drag kvar');
     }
   }
 
@@ -720,7 +780,7 @@
 
   /* ===== Overlay ===== */
   function showOverlay(cfg) {
-    $('#ov-title').textContent = cfg.title;
+    $('#ov-title').innerHTML = twe(cfg.title);
     var starsEl = $('#ov-stars');
     if (cfg.stars != null) {
       var html = '';
@@ -732,7 +792,7 @@
     } else {
       starsEl.classList.add('hidden');
     }
-    $('#ov-text').innerHTML = cfg.html || '';
+    $('#ov-text').innerHTML = twe(cfg.html || '');
     var btnWrap = $('#ov-buttons');
     btnWrap.innerHTML = '';
     (cfg.buttons || []).forEach(function (b) {
@@ -811,15 +871,15 @@
 
   function objectiveHtml(lv) {
     if (lv.type === 'score') {
-      return '<p style="font-size:1.05rem">&#127919; Nå <b>' + lv.target + ' poäng</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
+      return '<p style="font-size:1.05rem">🎯 Nå <b>' + lv.target + ' poäng</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
         '<p>Rensa flera linjer samtidigt och kedja rensningar för kombobonus.</p>';
     }
     if (lv.type === 'gems') {
-      return '<p style="font-size:1.05rem">&#128142; Rensa alla <b>' + countChar(lv.board, 'G') + ' ädelstenar</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
+      return '<p style="font-size:1.05rem">💎 Rensa alla <b>' + countChar(lv.board, 'G') + ' ädelstenar</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
         '<p>En ädelsten försvinner när dess rad eller kolumn blir full.</p>';
     }
     if (lv.type === 'ice') {
-      return '<p style="font-size:1.05rem">&#129482; Rensa all is (<b>' + countChar(lv.board, 'I') + ' rutor</b>) på högst <b>' + lv.moves + ' drag</b>.</p>' +
+      return '<p style="font-size:1.05rem">🧊 Rensa all is (<b>' + countChar(lv.board, 'I') + ' rutor</b>) på högst <b>' + lv.moves + ' drag</b>.</p>' +
         '<p>Is kräver <b>två</b> rensningar: den första spräcker isen, den andra tar bort den.</p>';
     }
     var name = COLOR_NAMES[lv.color];
@@ -1002,11 +1062,11 @@
         Sound.lose();
         showOverlay({
           title: 'Spelet är slut!',
-          html: (isRecord ? '&#127881; Nytt rekord!' : 'Bra spelat!') +
+          html: (isRecord ? '🎉 Nytt rekord!' : 'Bra spelat!') +
             '<span class="score-big">' + g.score + ' p</span>' +
             endlessCfg.size + '×' + endlessCfg.size + ' ' + DIFFS[endlessCfg.diff].label +
             ' &bull; Rekord: ' + store.getBestFor(endlessCfg) +
-            (coins > 0 ? ' &bull; +' + coins + ' &#128176;' : ''),
+            (coins > 0 ? ' &bull; +' + coins + ' 💰' : ''),
           buttons: [
             { label: 'Spela igen', primary: true, fn: function () { startEndless(endlessCfg); } },
             { label: 'Ändra läge', fn: showEndlessChooser },
@@ -1036,7 +1096,7 @@
             stars: g.stars(),
             html: '<span class="score-big">' + g.score + ' p</span>' +
               '🔥 Streak: <b>' + d.streak + '</b> dagar' +
-              (dCoins ? ' &bull; +' + dCoins + ' &#128176;' : '') +
+              (dCoins ? ' &bull; +' + dCoins + ' 💰' : '') +
               calendarHtml(),
             buttons: [{ label: 'Till menyn', primary: true, fn: function () { showScreen('menu'); } }]
           });
@@ -1072,7 +1132,7 @@
         showOverlay({
           title: 'Bana ' + (levelIndex + 1) + ' klarad!',
           stars: stars,
-          html: '<span class="score-big">' + g.score + ' p</span>+' + coinsWon + ' &#128176;',
+          html: '<span class="score-big">' + g.score + ' p</span>+' + coinsWon + ' 💰',
           buttons: buttons
         });
         playStarSounds(stars);
@@ -1148,7 +1208,7 @@
     if (kind === 'swap') {
       store.spendCoins(price);
       game.swapPieces();
-      Sound.click();
+      Sound.swap();
       stats.boosters.swap = true;
       saveStats();
       renderTray(true);
@@ -1443,14 +1503,14 @@
 
       var banner = document.createElement('div');
       banner.className = 'world-banner';
-      banner.textContent = WORLD_EMOJI[wi] + ' ' + w.name;
+      banner.innerHTML = twe(WORLD_EMOJI[wi] + ' ' + w.name);
       banner.style.top = (bottomY - 52) + 'px';
       inner.appendChild(banner);
 
       for (var ci = 0; ci < 2; ci++) {
         var cloud = document.createElement('div');
         cloud.className = 'cloud';
-        cloud.textContent = '☁️';
+        cloud.innerHTML = twe('☁️');
         var cr = seeded(wi * 31 + ci * 7);
         cloud.style.top = (topY + 80 + cr * Math.max(120, bottomY - topY - 240)) + 'px';
         cloud.style.fontSize = (26 + cr * 16) + 'px';
@@ -1477,7 +1537,7 @@
         var deco = document.createElement('div');
         var emoji = decors[Math.floor(r1 * decors.length)];
         deco.className = 'deco' + ((emoji === '❄️' || emoji === '☀️' || emoji === '🦋') ? ' twinkle' : '');
-        deco.textContent = emoji;
+        deco.innerHTML = twe(emoji);
         var side = di === 0 ? (x < 50 ? 1 : 0) : Math.round(r1);
         deco.style.left = (side ? 72 + r2 * 22 : 6 + r2 * 22) + '%';
         deco.style.top = (y - NODE_GAP / 2 + r1 * NODE_GAP) + 'px';
@@ -1493,10 +1553,10 @@
       el.style.setProperty('--d', ((i % 10) * 0.045) + 's');
       var starStr = '';
       for (var s = 1; s <= 3; s++) starStr += s <= (stars[i] || 0) ? '★' : '☆';
-      el.innerHTML =
+      el.innerHTML = twe(
         '<span class="num">' + (unlocked ? (i + 1) : '🔒') + '</span>' +
         (done ? '<span class="stars">' + starStr + '</span>'
-          : '<span class="stars">' + (lv.type === 'gems' ? '💎' : lv.type === 'ice' ? '🧊' : lv.type === 'collect' ? '🎨' : '🎯') + '</span>');
+          : '<span class="stars">' + (lv.type === 'gems' ? '💎' : lv.type === 'ice' ? '🧊' : lv.type === 'collect' ? '🎨' : '🎯') + '</span>'));
       el.style.left = x + '%';
       el.style.top = y + 'px';
       if (unlocked) el.addEventListener('click', function () { Sound.click(); startLevel(i); });
@@ -1510,7 +1570,7 @@
       nodes[currentIdx].classList.add('current');
       var pin = document.createElement('div');
       pin.className = 'map-pin';
-      pin.textContent = '📍';
+      pin.innerHTML = twe('📍');
       pin.style.left = points[currentIdx][0] + '%';
       pin.style.top = points[currentIdx][1] + 'px';
       inner.appendChild(pin);
@@ -1553,10 +1613,11 @@
         '<li><b>Dra</b> pjäserna från lådan och släpp dem på brädet.</li>' +
         '<li>Fyll en hel <b>rad eller kolumn</b> så rensas den och ger poäng.</li>' +
         '<li>Rensa flera linjer samtidigt och kedja ihop rensningar för <b>kombopoäng</b>.</li>' +
-        '<li><b>&#129482; Is</b> kräver två rensningar. <b>&#128142; Ädelstenar</b> rensas med sin rad.</li>' +
-        '<li><b>Boosters</b> köps med mynt: &#128296; ta bort ett block, &#128163; spräng 3&times;3, &#128260; byt pjäser, &#8617;&#65039; ångra.</li>' +
+        '<li><b>🧊 Is</b> kräver två rensningar. <b>💎 Ädelstenar</b> rensas med sin rad.</li>' +
+        '<li><b>Boosters</b> köps med mynt: 🔨 ta bort ett block, 💣 spräng 3&times;3, 🔄 byt pjäser, ↩️ ångra.</li>' +
         '<li>Mynt tjänar du på banor, dagliga utmaningar och utmärkelser.</li>' +
-        '</ul>',
+        '</ul>' +
+        '<p style="font-size:0.72rem;opacity:0.7;margin-top:10px">Ikoner: Twemoji (CC-BY 4.0) &bull; Ljud: Kenney.nl (CC0) &bull; Typsnitt: Baloo 2 (OFL)</p>',
       buttons: [
         { label: 'Spela guiden', fn: function () { startTutorial(function () { showScreen('menu'); }); } },
         { label: 'Stäng', primary: true, fn: function () {} }
