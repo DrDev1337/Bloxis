@@ -2294,6 +2294,16 @@
     return d + ' L 100 ' + segH + ' Z';
   }
 
+  /* Samma böljande ås som ridgeD men som öppen linje (för ljusa kammar). */
+  function ridgeLineD(yBase, amp, freq, phase) {
+    var d = '';
+    for (var x = 0; x <= 100; x += 4) {
+      var y = yBase + Math.sin((x / 100) * Math.PI * 2 * freq + phase) * amp;
+      d += (x === 0 ? 'M ' : ' L ') + x + ' ' + y.toFixed(1);
+    }
+    return d;
+  }
+
   /* Taggig bergsås. Returnerar även topparnas positioner för snötäcken. */
   function peaksD(yBase, amp, n, segH) {
     var d = 'M 0 ' + segH + ' L 0 ' + yBase;
@@ -2308,42 +2318,105 @@
     return { d: d + ' L 100 ' + segH + ' Z', tops: tops };
   }
 
-  /* Målad terräng för ett världssegment: kullar, berg med snö eller dyner med sol. */
-  function terrainSVG(w, wi, segH) {
-    var svg = document.createElementNS(SVGNS, 'svg');
-    svg.setAttribute('viewBox', '0 0 100 ' + segH);
-    svg.setAttribute('preserveAspectRatio', 'none');
+  function svgEl(name, attrs) {
+    var el = document.createElementNS(SVGNS, name);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
 
-    if (wi === 3) { // rymden: gnistrande stjärnor
-      for (var si = 0; si < 26; si++) {
-        var sr = seeded(wi * 71 + si * 3);
-        var e2 = document.createElementNS(SVGNS, 'ellipse');
-        e2.setAttribute('cx', (sr * 97 + 1.5).toFixed(1));
-        e2.setAttribute('cy', Math.round(seeded(si * 7 + 2) * (segH - 60) + 30));
-        e2.setAttribute('rx', (0.3 + sr * 0.5).toFixed(2));
-        e2.setAttribute('ry', (1.2 + sr * 2).toFixed(1));
-        e2.setAttribute('fill', 'rgba(255,255,255,' + (0.2 + sr * 0.4).toFixed(2) + ')');
-        svg.appendChild(e2);
+  /* Rad med gransiluetter för Viskande skogen. */
+  function pinesD(yBase, hAmp, n, segH) {
+    var d = 'M 0 ' + segH + ' L 0 ' + yBase;
+    for (var i = 0; i < n; i++) {
+      var x0 = (i / n) * 100;
+      var x1 = ((i + 1) / n) * 100;
+      var mid = (x0 + x1) / 2;
+      var hgt = hAmp * (0.7 + seeded(i * 7 + n) * 0.6);
+      d += ' L ' + x0.toFixed(1) + ' ' + yBase +
+        ' L ' + mid.toFixed(1) + ' ' + (yBase - hgt).toFixed(1) +
+        ' L ' + x1.toFixed(1) + ' ' + yBase;
+    }
+    return d + ' L 100 ' + segH + ' Z';
+  }
+
+  /* Kantiga kristallspiror för Kristallgrottan. */
+  function crystalsD(yBase, amp, n, segH, seedBase) {
+    var d = 'M 0 ' + segH + ' L 0 ' + yBase;
+    for (var i = 0; i < n; i++) {
+      var r = seeded(seedBase + i * 11);
+      var x0 = (i / n) * 100 + r * 3;
+      var x1 = ((i + 1) / n) * 100;
+      var tip = x0 + (x1 - x0) * (0.3 + r * 0.4);
+      d += ' L ' + x0.toFixed(1) + ' ' + yBase +
+        ' L ' + tip.toFixed(1) + ' ' + (yBase - amp * (0.6 + r * 0.8)).toFixed(1) +
+        ' L ' + x1.toFixed(1) + ' ' + (yBase - r * 14).toFixed(1);
+    }
+    return d + ' L 100 ' + yBase + ' L 100 ' + segH + ' Z';
+  }
+
+  /* Målad terräng för ett världssegment – varje värld har sitt eget sceneri. */
+  function terrainSVG(w, wi, segH) {
+    var svg = svgEl('svg', { viewBox: '0 0 100 ' + segH, preserveAspectRatio: 'none' });
+    var si, sr, b, r, yBase, light, alpha, fill;
+
+    if (wi === 3 || wi === 6) { // stjärnor i rymden och gnistor i grottan
+      var nStars = wi === 3 ? 26 : 14;
+      for (si = 0; si < nStars; si++) {
+        sr = seeded(wi * 71 + si * 3);
+        svg.appendChild(svgEl('ellipse', {
+          cx: (sr * 97 + 1.5).toFixed(1),
+          cy: Math.round(seeded(si * 7 + 2) * (segH - 60) + 30),
+          rx: (0.3 + sr * 0.5).toFixed(2),
+          ry: (1.2 + sr * 2).toFixed(1),
+          fill: wi === 3
+            ? 'rgba(255,255,255,' + (0.2 + sr * 0.4).toFixed(2) + ')'
+            : 'hsla(310, 90%, 80%, ' + (0.15 + sr * 0.35).toFixed(2) + ')'
+        }));
       }
+    }
+    if (wi === 3) { // rymden: måne med kratrar och en ringplanet
+      // x-skalan är ~4x y-skalan i segmentets viewBox, därav ry ≈ 4 * rx
+      var mx = 24 + seeded(9) * 20, my = segH * 0.22;
+      svg.appendChild(svgEl('ellipse', { cx: mx, cy: my, rx: 8, ry: 32, fill: 'rgba(255,233,168,0.06)' }));
+      svg.appendChild(svgEl('ellipse', { cx: mx, cy: my, rx: 5.5, ry: 22, fill: 'rgba(245,238,214,0.5)' }));
+      svg.appendChild(svgEl('ellipse', { cx: mx - 1.6, cy: my - 6, rx: 1.2, ry: 4.8, fill: 'rgba(180,170,140,0.4)' }));
+      svg.appendChild(svgEl('ellipse', { cx: mx + 1.9, cy: my + 8, rx: 0.85, ry: 3.4, fill: 'rgba(180,170,140,0.35)' }));
+      var px = 74, py = segH * 0.6;
+      svg.appendChild(svgEl('ellipse', { cx: px, cy: py, rx: 3.4, ry: 13.5, fill: 'hsla(265, 55%, 62%, 0.5)' }));
+      svg.appendChild(svgEl('ellipse', {
+        cx: px, cy: py, rx: 7, ry: 8, fill: 'none',
+        stroke: 'hsla(45, 80%, 70%, 0.45)', 'stroke-width': 1.1
+      }));
     }
     if (wi === 2) { // öken: sol med glöd
       var sx = 20 + seeded(wi * 5 + 1) * 60;
       [[16, 60, 0.12], [10, 38, 0.2], [6, 22, 0.45]].forEach(function (ring) {
-        var e = document.createElementNS(SVGNS, 'ellipse');
-        e.setAttribute('cx', sx); e.setAttribute('cy', 120);
-        e.setAttribute('rx', ring[0]); e.setAttribute('ry', ring[1]);
-        e.setAttribute('fill', 'hsla(45, 90%, 65%, ' + ring[2] + ')');
-        svg.appendChild(e);
+        svg.appendChild(svgEl('ellipse', {
+          cx: sx, cy: 120, rx: ring[0], ry: ring[1],
+          fill: 'hsla(45, 90%, 65%, ' + ring[2] + ')'
+        }));
       });
+    }
+    if (wi === 4) { // Drakberget: mörk vulkankon med glödande topp
+      var vx = 26 + seeded(41) * 48;
+      var vTop = segH - 300;
+      svg.appendChild(svgFill(
+        'M ' + (vx - 40) + ' ' + segH + ' L ' + vx + ' ' + vTop +
+        ' L ' + (vx + 40) + ' ' + segH + ' Z',
+        'hsla(355, 30%, 12%, 0.6)'));
+      // segmentets x-skala är ~4x y-skalan (preserveAspectRatio none),
+      // så en rund glöd behöver ry ≈ 4 * rx
+      svg.appendChild(svgEl('ellipse', { cx: vx, cy: vTop + 14, rx: 6, ry: 24, fill: 'hsla(25, 95%, 55%, 0.16)' }));
+      svg.appendChild(svgEl('ellipse', { cx: vx, cy: vTop + 10, rx: 2.2, ry: 9, fill: 'hsla(25, 95%, 60%, 0.75)' }));
     }
 
     var bands = Math.max(3, Math.round(segH / 300));
-    for (var b = 0; b < bands; b++) {
-      var r = seeded(wi * 97 + b * 13);
-      var yBase = segH - 50 - b * ((segH - 140) / bands) + (r - 0.5) * 50;
-      var light = 26 + b * 5 + r * 6;
-      var alpha = Math.max(0.08, 0.2 - b * 0.025);
-      var fill = 'hsla(' + w.hue + ', 45%, ' + light + '%, ' + alpha + ')';
+    for (b = 0; b < bands; b++) {
+      r = seeded(wi * 97 + b * 13);
+      yBase = segH - 50 - b * ((segH - 140) / bands) + (r - 0.5) * 50;
+      light = 26 + b * 5 + r * 6;
+      alpha = Math.max(0.08, 0.2 - b * 0.025);
+      fill = 'hsla(' + w.hue + ', 45%, ' + light + '%, ' + alpha + ')';
       if (wi === 1) { // berg med snötoppar
         var pk = peaksD(yBase, 90 + r * 70, 3 + Math.round(r * 2), segH);
         svg.appendChild(svgFill(pk.d, fill));
@@ -2353,10 +2426,40 @@
             ' L ' + (t[0] + 2.2) + ' ' + (t[1] + 26) + ' Z',
             'rgba(255,255,255,' + (0.25 + alpha) + ')'));
         });
+      } else if (wi === 5) { // granskog i lager med dis mellan
+        svg.appendChild(svgFill(pinesD(yBase, 60 + r * 40, 7 + Math.round(r * 4), segH),
+          'hsla(' + w.hue + ', 35%, ' + (14 + b * 5) + '%, ' + (alpha + 0.1).toFixed(2) + ')'));
+        svg.appendChild(svgEl('ellipse', {
+          cx: 25 + r * 50, cy: yBase + 14, rx: 42, ry: 9,
+          fill: 'rgba(200,200,230,' + (0.05 + r * 0.04).toFixed(2) + ')'
+        }));
+      } else if (wi === 6) { // kristallspiror som glöder
+        var cd = crystalsD(yBase, 70 + r * 50, 5 + Math.round(r * 3), segH, wi * 31 + b * 7);
+        svg.appendChild(svgFill(cd, 'hsla(' + w.hue + ', 60%, ' + (light + 12) + '%, ' + (alpha + 0.08).toFixed(2) + ')'));
+      } else if (wi === 4) { // kantiga lavaklippor
+        var vk = peaksD(yBase, 60 + r * 40, 4 + Math.round(r * 2), segH);
+        svg.appendChild(svgFill(vk.d, fill));
       } else { // kullar respektive dyner
         var amp = wi === 2 ? 34 + r * 26 : 22 + r * 18;
         var freq = wi === 2 ? 0.9 + r * 0.6 : 1.3 + r * 0.9;
         svg.appendChild(svgFill(ridgeD(yBase, amp, freq, r * 6.28, segH), fill));
+        if (wi === 0) { // blomsterprickar på ängskullarna
+          for (var fi = 0; fi < 4; fi++) {
+            var fr = seeded(b * 17 + fi * 5 + 3);
+            svg.appendChild(svgEl('ellipse', {
+              cx: (fr * 94 + 3).toFixed(1),
+              cy: (yBase + 8 + fr * 18).toFixed(1),
+              rx: (0.35 + fr * 0.25).toFixed(2),
+              ry: (1.4 + fr * 1).toFixed(2),
+              fill: ['#ff6dc8', '#ffd645', '#f3ecdc'][fi % 3],
+              opacity: (0.25 + fr * 0.3).toFixed(2)
+            }));
+          }
+        }
+        if (wi === 2) { // ljus dynkam
+          svg.appendChild(svgPath(ridgeLineD(yBase, amp, freq, r * 6.28),
+            'hsla(40, 70%, 70%, ' + (alpha * 0.9).toFixed(2) + ')', '1', null, null));
+        }
       }
     }
     return svg;
@@ -2392,23 +2495,50 @@
       bg.appendChild(terrainSVG(w, wi, bottomY - topY));
       inner.appendChild(bg);
 
+      var wStars = 0, wMax = (w.to - w.from + 1) * 3;
+      for (var li = w.from; li <= w.to; li++) wStars += stars[li] || 0;
       var banner = document.createElement('div');
       banner.className = 'world-banner';
-      banner.innerHTML = twe(WORLD_EMOJI[wi] + ' ' + w.name);
-      banner.style.top = (bottomY - 52) + 'px';
+      banner.innerHTML = twe(WORLD_EMOJI[wi] + ' ' + w.name) +
+        '<span class="wb-stars">' + twe('⭐') + ' ' + wStars + '/' + wMax + '</span>';
+      banner.style.top = (bottomY - 58) + 'px';
       inner.appendChild(banner);
 
-      for (var ci = 0; ci < 2; ci++) {
-        var cloud = document.createElement('div');
-        cloud.className = 'cloud';
-        cloud.innerHTML = twe('☁️');
-        var cr = seeded(wi * 31 + ci * 7);
-        cloud.style.top = (topY + 80 + cr * Math.max(120, bottomY - topY - 240)) + 'px';
-        cloud.style.fontSize = (26 + cr * 16) + 'px';
-        cloud.style.setProperty('--dur', (48 + cr * 40) + 's');
-        cloud.style.setProperty('--delay', (-cr * 60) + 's');
-        inner.appendChild(cloud);
+      // moln bara i världar med himmel (inte rymden, lavan eller grottan)
+      if (wi === 0 || wi === 1 || wi === 2 || wi === 5) {
+        for (var ci = 0; ci < 2; ci++) {
+          var cloud = document.createElement('div');
+          cloud.className = 'cloud';
+          cloud.innerHTML = twe('☁️');
+          var cr = seeded(wi * 31 + ci * 7);
+          cloud.style.top = (topY + 80 + cr * Math.max(120, bottomY - topY - 240)) + 'px';
+          cloud.style.fontSize = (26 + cr * 16) + 'px';
+          cloud.style.setProperty('--dur', (48 + cr * 40) + 's');
+          cloud.style.setProperty('--delay', (-cr * 60) + 's');
+          inner.appendChild(cloud);
+        }
       }
+
+      // ambient väder per värld
+      var segTop = topY, segH2 = bottomY - topY;
+      function ambient(cls, count, maker) {
+        for (var ai = 0; ai < count; ai++) {
+          var ar = seeded(wi * 53 + ai * 19 + 5);
+          var ar2 = seeded(wi * 29 + ai * 7 + 11);
+          var el2 = document.createElement('span');
+          el2.className = cls;
+          el2.style.left = (3 + ar * 92) + '%';
+          el2.style.top = (segTop + 40 + ar2 * (segH2 - 90)) + 'px';
+          el2.style.setProperty('--dur', maker.dur(ar) + 's');
+          el2.style.setProperty('--delay', (-ar2 * maker.dur(ar)) + 's');
+          if (maker.size) el2.style.fontSize = maker.size(ar) + 'px';
+          inner.appendChild(el2);
+        }
+      }
+      if (wi === 1) ambient('snowflake', 9, { dur: function (r2) { return 7 + r2 * 6; } });
+      if (wi === 4) ambient('ember', 7, { dur: function (r2) { return 4.5 + r2 * 3; } });
+      if (wi === 5) ambient('fogband', 3, { dur: function (r2) { return 30 + r2 * 20; } });
+      if (wi === 6) ambient('glint', 8, { dur: function (r2) { return 2.2 + r2 * 2; } });
     });
 
     LEVELS.forEach(function (lv, i) {
@@ -2501,7 +2631,9 @@
     svg.appendChild(svgPath(roadD, 'rgba(225,203,160,0.32)', '10', null, null));
     var goldTo = animateUnlock ? pu.idx : currentIdx;
     if (goldTo > 0) {
-      svg.appendChild(svgPath(smoothPathD(points.slice(0, goldTo + 1)), 'rgba(255,214,69,0.45)', '10', null, null));
+      var goldD = smoothPathD(points.slice(0, goldTo + 1));
+      svg.appendChild(svgPath(goldD, 'rgba(255,214,69,0.14)', '20', null, null)); // mjuk glöd
+      svg.appendChild(svgPath(goldD, 'rgba(255,214,69,0.45)', '10', null, null));
     }
     var segEl = null;
     if (animateUnlock) {
