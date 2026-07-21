@@ -47,6 +47,31 @@
     setJson: function (key, v) { localStorage.setItem(key, JSON.stringify(v)); }
   };
 
+  /* Vilken värld hör bana i till? */
+  function worldOf(i) {
+    for (var w = 0; w < WORLDS.length; w++) {
+      if (i <= WORLDS[w].to) return w;
+    }
+    return WORLDS.length - 1;
+  }
+
+  /* Engångsmigrering: banlistan växte från 5 världar à 10 banor till
+     7 världar à 12 – flytta sparade stjärnor till de nya indexen
+     (position 0-8 behålls, gamla finalen på plats 9 blir plats 11). */
+  (function migrateStars() {
+    if ((+localStorage.getItem('bloxis.levelsVer') || 1) >= 2) return;
+    var old = store.getStars();
+    var moved = {};
+    Object.keys(old).forEach(function (k) {
+      var i = +k;
+      if (isNaN(i)) return;
+      var w = Math.floor(i / 10), p = i % 10;
+      moved[w * 12 + (p < 9 ? p : 11)] = old[k];
+    });
+    localStorage.setItem('bloxis.stars', JSON.stringify(moved));
+    localStorage.setItem('bloxis.levelsVer', '2');
+  })();
+
   /* ===== Inställningar ===== */
   var settings = (function () {
     var def = { sound: true, music: true, vibration: true, colorblind: false };
@@ -73,7 +98,8 @@
     '🌵': '1f335', '☀': '2600', '🪨': '1faa8', '🦂': '1f982',
     '🌙': '1f319', '☄': '2604', '🪐': '1fa90', '🌿': '1f33f',
     '👆': '1f446', '🌱': '1f331', '🧹': '1f9f9', '💥': '1f4a5',
-    '🌋': '1f30b', '⚡': '26a1', '🗺': '1f5fa', '🧰': '1f9f0'
+    '🌋': '1f30b', '⚡': '26a1', '🗺': '1f5fa', '🧰': '1f9f0',
+    '👻': '1f47b', '🔮': '1f52e', '🦇': '1f987', '🕯': '1f56f'
   };
   var TW_RE = new RegExp('(' + Object.keys(ICONS).concat(Object.keys(TWEMOJI)).join('|') + ')\\uFE0F?', 'g');
   function twe(html) {
@@ -346,7 +372,7 @@
     { id: 'levels10', icon: '🗺️', name: 'Vandraren', desc: 'Klara 10 banor', coins: 30, test: function (s) { return s.levelsWon >= 10; } },
     { id: 'world1', icon: '🌿', name: 'Ängarnas mästare', desc: 'Tre stjärnor på alla banor i värld 1', coins: 60, test: function () {
       var st = store.getStars();
-      for (var i = 0; i < 10; i++) if ((st[i] || 0) < 3) return false;
+      for (var i = WORLDS[0].from; i <= WORLDS[0].to; i++) if ((st[i] || 0) < 3) return false;
       return true;
     } },
     { id: 'boosters', icon: '🧰', name: 'Verktygslådan', desc: 'Använd alla fyra boosters', coins: 20, test: function (s) { return Object.keys(s.boosters || {}).length >= 4; } },
@@ -974,6 +1000,9 @@
       : opts.ice ? (opts.ice > 1 ? '#bfe6ff' : '#8fd0f5')
       : opts.sand ? '#e0aa52'
       : opts.egg ? '#5a4d80'
+      : opts.ghost ? '#8b84ad'
+      : opts.key ? '#e8a94b'
+      : opts.lock ? '#6e7787'
       : Shapes.PALETTE[colorIdx % Shapes.PALETTE.length];
     // bas med djup: ljus topp -> mörkare botten
     var base = ctx.createLinearGradient(0, y + pad, 0, y + pad + s);
@@ -1079,7 +1108,63 @@
       ctx.fillStyle = opts.egg <= 4 ? '#ffb3a8' : '#ffe9a8';
       ctx.fillText(label, x + size * 0.68, y + size * 0.78);
     }
-    if (settings.colorblind && !opts.gem && !opts.ice && !opts.sand && !opts.egg) {
+    if (opts.ghost) {
+      // liten ande som svävar i blocket
+      var gx = x + size / 2, gy = y + size * 0.5;
+      var gw = size * 0.24;
+      ctx.beginPath();
+      ctx.moveTo(gx - gw, gy + gw * 1.1);
+      ctx.lineTo(gx - gw, gy - gw * 0.2);
+      ctx.arc(gx, gy - gw * 0.2, gw, Math.PI, 0);
+      ctx.lineTo(gx + gw, gy + gw * 1.1);
+      ctx.quadraticCurveTo(gx + gw * 0.55, gy + gw * 0.55, gx + gw * 0.33, gy + gw * 1.1);
+      ctx.quadraticCurveTo(gx, gy + gw * 0.55, gx - gw * 0.33, gy + gw * 1.1);
+      ctx.quadraticCurveTo(gx - gw * 0.55, gy + gw * 0.55, gx - gw, gy + gw * 1.1);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(235,232,250,0.95)';
+      ctx.fill();
+      ctx.fillStyle = '#3d3359';
+      ctx.beginPath();
+      ctx.arc(gx - gw * 0.4, gy - gw * 0.15, size * 0.045, 0, Math.PI * 2);
+      ctx.arc(gx + gw * 0.4, gy - gw * 0.15, size * 0.045, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (opts.key) {
+      // nyckel
+      var kx = x + size * 0.42, ky = y + size * 0.4;
+      ctx.strokeStyle = '#fff3d6';
+      ctx.lineWidth = Math.max(1.5, size * 0.06);
+      ctx.beginPath();
+      ctx.arc(kx, ky, size * 0.13, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(kx + size * 0.1, ky + size * 0.1);
+      ctx.lineTo(kx + size * 0.3, ky + size * 0.3);
+      ctx.moveTo(kx + size * 0.22, ky + size * 0.28);
+      ctx.lineTo(kx + size * 0.3, ky + size * 0.2);
+      ctx.stroke();
+    }
+    if (opts.lock) {
+      // hänglås på stenblock
+      var lx = x + size / 2, ly = y + size * 0.58;
+      ctx.strokeStyle = '#454f5e';
+      ctx.lineWidth = Math.max(1.5, size * 0.055);
+      ctx.beginPath();
+      ctx.arc(lx, ly - size * 0.14, size * 0.11, Math.PI, 0);
+      ctx.stroke();
+      var lw = size * 0.32, lh = size * 0.26;
+      roundRectPath(ctx, lx - lw / 2, ly - size * 0.14, lw, lh, size * 0.05);
+      ctx.fillStyle = '#c9b23d';
+      ctx.fill();
+      ctx.strokeStyle = '#8f7c22';
+      ctx.lineWidth = Math.max(1, size * 0.03);
+      ctx.stroke();
+      ctx.fillStyle = '#5a4d20';
+      ctx.beginPath();
+      ctx.arc(lx, ly - size * 0.02, size * 0.04, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (settings.colorblind && !opts.gem && !opts.ice && !opts.sand && !opts.egg && !opts.ghost && !opts.key && !opts.lock) {
       drawCbSymbol(ctx, x, y, size, colorIdx % 8);
     }
     if (opts.ice === 1) {
@@ -1203,7 +1288,8 @@
         var cellData = game.board[r][c];
         if (cellData) {
           drawBlock(ctx, x, y, cell, cellData.c, {
-            gem: cellData.gem, ice: cellData.ice, sand: cellData.sand, egg: cellData.egg
+            gem: cellData.gem, ice: cellData.ice, sand: cellData.sand, egg: cellData.egg,
+            ghost: cellData.ghost, key: cellData.key, lock: cellData.lock
           });
         } else if (game.mist && game.mist[r][c]) {
           drawMist(ctx, x, y, cell, r * S + c);
@@ -1229,6 +1315,9 @@
         ice: a.cell.ice,
         sand: a.cell.sand,
         egg: a.cell.egg,
+        ghost: a.cell.ghost,
+        key: a.cell.key,
+        lock: a.cell.lock,
         alpha: 1 - tt,
         scale: 1 - tt * 0.7
       });
@@ -1309,6 +1398,9 @@
         : cc.cell.ice ? '#bfe6ff'
         : cc.cell.sand ? '#e0aa52'
         : cc.cell.egg ? '#c9b8ff'
+        : cc.cell.ghost ? '#dcd7f5'
+        : cc.cell.key ? '#ffce6b'
+        : cc.cell.lock ? '#c9b23d'
         : Shapes.PALETTE[cc.cell.c % Shapes.PALETTE.length];
       for (var i = 0; i < 6; i++) {
         particles.push({
@@ -1418,6 +1510,10 @@
       hudObjective.innerHTML = ic('mist') + ' <b>' + game.mistLeft + '</b> kvar • ' + left + ' drag kvar';
     } else if (lv.type === 'eggs') {
       hudObjective.innerHTML = ic('egg') + ' <b>' + game.eggsLeft + '</b> kvar • ' + left + ' drag kvar';
+    } else if (lv.type === 'ghosts') {
+      hudObjective.innerHTML = ic('ghost') + ' <b>' + game.ghostsLeft + '</b> kvar • ' + left + ' drag kvar';
+    } else if (lv.type === 'keys') {
+      hudObjective.innerHTML = ic('key') + ' <b>' + game.keysLeft + '</b> kvar • ' + left + ' drag kvar';
     } else {
       hudObjective.innerHTML = twe(
         '<span class="collect-chip" style="background:' + Shapes.PALETTE[lv.color] + '"></span>' +
@@ -1566,6 +1662,14 @@
       return '<p style="font-size:1.05rem">' + ic('egg') + ' Rädda alla <b>' + countChar(lv.board, 'E') + ' drakägg</b> innan de kläcks!</p>' +
         '<p>Varje ägg har en <b>nedräkning</b> (' + (lv.eggTimer || 12) + ' drag). Rensa äggets rad eller kolumn i tid – kläcks ett ägg är banan förlorad.</p>';
     }
+    if (lv.type === 'ghosts') {
+      return '<p style="font-size:1.05rem">' + ic('ghost') + ' Fånga alla <b>' + countChar(lv.board, 'A') + ' andar</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
+        '<p>Andarna <b>svävar</b> till en ny ruta var ' + (lv.ghostEvery || 2) + ':e drag – rensa raden eller kolumnen där en ande står innan den smiter!</p>';
+    }
+    if (lv.type === 'keys') {
+      return '<p style="font-size:1.05rem">' + ic('key') + ' Samla alla <b>' + countChar(lv.board, 'K') + ' nycklar</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
+        '<p>' + ic('lock') + ' Låsen kan <b>inte rensas</b> och står i vägen tills alla nycklar är samlade – då krossas de på en gång.</p>';
+    }
     if (lv.type === 'score') {
       return '<p style="font-size:1.05rem">🎯 Nå <b>' + lv.target + ' poäng</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
         '<p>Rensa flera linjer samtidigt och kedja rensningar för kombobonus.</p>';
@@ -1597,7 +1701,7 @@
     levelIndex = idx;
     game = new Game({ mode: 'level', level: LEVELS[idx] });
     armedBooster = null;
-    setGameGlow(WORLDS[Math.min(Math.floor(idx / 10), WORLDS.length - 1)].hue);
+    setGameGlow(WORLDS[worldOf(idx)].hue);
     showScreen('game');
     updateHud();
     renderTray(true);
@@ -2117,9 +2221,11 @@
     ['🏔️', '❄️', '⛄', '🧊'],
     ['🌵', '☀️', '🪨', '🦂'],
     ['⭐', '🌙', '☄️', '🪐'],
-    ['🌋', '🪨', '🔥', '☄️']
+    ['🌋', '🪨', '🔥', '☄️'],
+    ['🌲', '👻', '🍄', '🦇', '🕯️'],
+    ['💎', '🔮', '🪨', '🕯️']
   ];
-  var WORLD_EMOJI = ['🌿', '❄️', '🌵', '🌟', '🌋'];
+  var WORLD_EMOJI = ['🌿', '❄️', '🌵', '🌟', '🌋', '👻', '🔮'];
 
   /* Deterministiskt "slump"-värde 0..1 per index, så kartan ser likadan ut varje gång. */
   function seeded(i) {
@@ -2314,7 +2420,7 @@
       points.push([x, y]);
 
       // två temadekorationer per bana, på motsatt sida av stigen
-      var world = Math.min(Math.floor(i / 10), WORLDS.length - 1);
+      var world = worldOf(i);
       var decors = WORLD_DECOR[world];
       for (var di = 0; di < 2; di++) {
         var r1 = seeded(i * 13 + di * 5 + 1);
@@ -2335,7 +2441,7 @@
       var el = document.createElement('button');
       el.className = 'map-node' + (done ? ' done' : '') + (unlocked ? '' : ' locked');
       el.style.setProperty('--hue', WORLDS[world].hue);
-      el.style.setProperty('--d', ((i % 10) * 0.045) + 's');
+      el.style.setProperty('--d', ((i - WORLDS[world].from) * 0.045) + 's');
       var starStr = '';
       for (var s = 1; s <= 3; s++) starStr += s <= (stars[i] || 0) ? '★' : '☆';
       el.innerHTML = twe(
@@ -2348,6 +2454,8 @@
             : lv.type === 'sand' ? ic('sand')
             : lv.type === 'mist' ? ic('mist')
             : lv.type === 'eggs' ? ic('egg')
+            : lv.type === 'ghosts' ? ic('ghost')
+            : lv.type === 'keys' ? ic('key')
             : '🎯') + '</span>'));
       el.style.left = x + '%';
       el.style.top = y + 'px';
@@ -2468,8 +2576,7 @@
 
   /* Banorna löper nedifrån och upp, som i Candy Crush. */
   function yForLevel(i, totalH) {
-    var world = Math.floor(i / 10);
-    return totalH - MAP_PAD - i * NODE_GAP - world * WORLD_GAP - 40;
+    return totalH - MAP_PAD - i * NODE_GAP - worldOf(i) * WORLD_GAP - 40;
   }
 
   /* ===== Hjälp ===== */
@@ -2483,6 +2590,7 @@
         '<li>Rensa flera linjer samtidigt och kedja ihop rensningar för <b>kombopoäng</b>.</li>' +
         '<li><b>🧊 Is</b> kräver två rensningar. <b>💎 Ädelstenar</b> rensas med sin rad.</li>' +
         '<li>' + ic('sand') + ' <b>Sand</b> sprider sig om den får stå. ' + ic('mist') + ' <b>Stjärndimma</b> lyfts av en rensning intill. ' + ic('egg') + ' <b>Drakägg</b> måste rensas innan nedräkningen når noll.</li>' +
+        '<li>' + ic('ghost') + ' <b>Andar</b> svävar till en ny ruta med jämna mellanrum. ' + ic('key') + ' <b>Nycklar</b> öppnar ' + ic('lock') + ' <b>låsen</b> – lås kan inte rensas förrän alla nycklar är samlade.</li>' +
         '<li><b>Boosters</b> köps med mynt: 🔨 ta bort ett block, 💣 spräng 3&times;3, 🔄 byt pjäser, ↩️ ångra.</li>' +
         '<li>Mynt tjänar du på banor, dagliga utmaningar och utmärkelser.</li>' +
         '</ul>' +
