@@ -436,6 +436,13 @@
   var PARTICLE_MS = 700;
   var TOUCH_LIFT = 40;     // liten lyfthöjd vid pekskärm så fingret inte skymmer pjäsen
 
+  /* Kenney-partikelsprites (CC0) för gnistrande rensningar. */
+  var PARTICLE_SPRITES = ['star_06', 'star_09', 'spark_04'].map(function (n) {
+    var img = new Image();
+    img.src = 'assets/kenney/particles/' + n + '.png';
+    return img;
+  });
+
   /* ===== Skärmbyten ===== */
   function showScreen(name) {
     Object.keys(screens).forEach(function (k) {
@@ -624,10 +631,21 @@
       if (tt >= 1) return;
       var px = p.x + p.vx * tt * cell * 3;
       var py = p.y + p.vy * tt * cell * 3 + 2.2 * cell * tt * tt; // gravitation
-      ctx.globalAlpha = 1 - tt;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(px - p.size / 2, py - p.size / 2, p.size, p.size);
-      ctx.globalAlpha = 1;
+      if (p.sprite && p.sprite.complete && p.sprite.naturalWidth) {
+        var s = p.size * (1 + tt * 0.5);
+        ctx.save();
+        ctx.globalAlpha = 1 - tt;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.translate(px, py);
+        ctx.rotate(p.rot + p.spin * tt);
+        ctx.drawImage(p.sprite, -s / 2, -s / 2, s, s);
+        ctx.restore();
+      } else {
+        ctx.globalAlpha = 1 - tt;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(px - p.size / 2, py - p.size / 2, p.size, p.size);
+        ctx.globalAlpha = 1;
+      }
     });
   }
 
@@ -665,6 +683,21 @@
           vx: (Math.random() - 0.5) * 2,
           vy: -Math.random() * 1.6 - 0.2,
           size: cell * (0.08 + Math.random() * 0.1),
+          color: color,
+          born: now
+        });
+      }
+      // två gnistrande stjärnsprites ovanpå de färgade fyrkanterna
+      for (var j = 0; j < 2; j++) {
+        particles.push({
+          x: (cc.c + 0.5) * cell,
+          y: (cc.r + 0.5) * cell,
+          vx: (Math.random() - 0.5) * 1.6,
+          vy: -Math.random() * 1.4 - 0.3,
+          size: cell * (0.3 + Math.random() * 0.3),
+          sprite: PARTICLE_SPRITES[Math.floor(Math.random() * PARTICLE_SPRITES.length)],
+          rot: Math.random() * 6.28,
+          spin: (Math.random() - 0.5) * 5,
           color: color,
           born: now
         });
