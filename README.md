@@ -38,6 +38,13 @@ kolumn** blir full rensas den och ger poäng.
 - **⚙️ Inställningar**: ljudeffekter, bakgrundsmusik (genererad med WebAudio),
   vibration och **färgblindläge** (unika symboler på varje blockfärg).
 
+## Avatar och garderob
+
+Din avatar hoppar mellan noderna på bankartan. I 🎩 **Garderoben** (menyn,
+eller tryck på avataren på kartan) köper du utseenden för mynt:
+sex hattar (trollkarlshatt, guldkrona, blomsterkrans, riddarhjälm,
+tomteluva …) och fem kroppsfärger. Allt ritas i kod och sparas på enheten.
+
 ## Mynt och boosters
 
 Klarade banor ger mynt (10 × stjärnor), oändligt läge ger poäng/200. För mynt
