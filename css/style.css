@@ -231,16 +231,87 @@ html, body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(150deg, rgba(255, 224, 150, 0.16), rgba(125, 92, 255, 0.1));
+  border: 1px solid rgba(255, 206, 107, 0.35);
   border-radius: 999px;
-  padding: 7px 20px;
-  font-weight: 800;
-  font-size: 0.95rem;
+  padding: 8px 20px;
+  font-family: 'Grenze Gotisch', serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: 0.5px;
   white-space: nowrap;
   pointer-events: none;
   z-index: 2;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.world-banner .wb-stars {
+  font-family: 'Averia Serif Libre', serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.world-banner .wb-stars .twe { width: 0.85em; height: 0.85em; }
+
+/* Ambient väder på kartan */
+.snowflake, .ember, .glint, .fogband {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+}
+.snowflake {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(235, 245, 255, 0.8);
+  box-shadow: 0 0 4px rgba(235, 245, 255, 0.6);
+  animation: snow-fall var(--dur, 9s) linear var(--delay, 0s) infinite;
+}
+@keyframes snow-fall {
+  from { transform: translate(0, -30px); opacity: 0; }
+  12% { opacity: 0.9; }
+  85% { opacity: 0.8; }
+  to { transform: translate(22px, 130px); opacity: 0; }
+}
+.ember {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ff9f45;
+  box-shadow: 0 0 6px rgba(255, 120, 40, 0.8);
+  animation: ember-rise var(--dur, 5s) ease-out var(--delay, 0s) infinite;
+}
+@keyframes ember-rise {
+  from { transform: translate(0, 20px) scale(1); opacity: 0; }
+  15% { opacity: 0.95; }
+  to { transform: translate(-14px, -110px) scale(0.4); opacity: 0; }
+}
+.glint {
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(233, 140, 255, 0.4) 55%, transparent 70%);
+  animation: glint-blink var(--dur, 3s) ease-in-out var(--delay, 0s) infinite;
+}
+@keyframes glint-blink {
+  0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.25) rotate(45deg); }
+}
+.fogband {
+  width: 220px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(205, 205, 235, 0.13), transparent 70%);
+  animation: fog-drift var(--dur, 40s) linear var(--delay, 0s) infinite alternate;
+}
+@keyframes fog-drift {
+  from { transform: translateX(-60px); }
+  to { transform: translateX(60px); }
 }
 
 /* Dekorationer och moln */
@@ -322,7 +393,12 @@ html, body {
   background:
     radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%),
     linear-gradient(150deg, var(--accent), var(--accent2));
-  border-color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 214, 69, 0.6);
+  box-shadow: 0 0 12px rgba(125, 92, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.map-node.locked {
+  filter: saturate(0.35);
+  border-style: dashed;
 }
 .map-node.current {
   animation: node-pop 0.4s cubic-bezier(0.4, 1.6, 0.5, 1) var(--d, 0s) both,
