@@ -5,17 +5,24 @@
   var Shapes = global.BloxisShapes;
   var DEFAULT_SIZE = 8;
 
-  /* En cell är null eller { c: färgindex, gem: bool, ice: 0|1|2, sand: bool, egg: 0|n }
+  /* En cell är null eller { c: färgindex, gem: bool, ice: 0|1|2, sand: bool,
+     egg: 0|n, ghost: bool, key: bool, lock: bool }.
      ice=2: hel is (kräver två rensningar), ice=1: sprucken is.
      sand: sprider sig till en tom granne var level.sandEvery:e drag.
      egg=n: drakägg som kläcks (förlust) om det inte rensas inom n drag.
+     ghost: ande som svävar till en tom granne var ghostEvery:e drag.
+     key/lock: lås kan inte rensas förrän alla nycklar samlats – då
+     krossas alla lås på en gång.
      Stjärndimma ligger i ett eget rutnät (this.mist): tomma rutor som inte
      går att bygga på förrän en rensning intill lyfter dimman. */
 
   function cloneBoard(board) {
     return board.map(function (row) {
       return row.map(function (cell) {
-        return cell ? { c: cell.c, gem: !!cell.gem, ice: cell.ice || 0, sand: !!cell.sand, egg: cell.egg || 0 } : null;
+        return cell ? {
+          c: cell.c, gem: !!cell.gem, ice: cell.ice || 0, sand: !!cell.sand,
+          egg: cell.egg || 0, ghost: !!cell.ghost, key: !!cell.key, lock: !!cell.lock
+        } : null;
       });
     });
   }
@@ -47,6 +54,8 @@
     this.iceLeft = this._count(function (c) { return c.ice > 0; });
     this.sandLeft = this._count(function (c) { return c.sand; });
     this.eggsLeft = this._count(function (c) { return c.egg > 0; });
+    this.ghostsLeft = this._count(function (c) { return c.ghost; });
+    this.keysLeft = this._count(function (c) { return c.key; });
     this.mistLeft = 0;
     for (var mr = 0; mr < this.size; mr++) for (var mc = 0; mc < this.size; mc++) {
       if (this.mist[mr][mc]) this.mistLeft++;
@@ -66,6 +75,9 @@
         else if (ch === 'I') this.board[r][c] = { c: 4, gem: false, ice: 2 };
         else if (ch === 'S') this.board[r][c] = { c: 1, gem: false, ice: 0, sand: true };
         else if (ch === 'E') this.board[r][c] = { c: 6, gem: false, ice: 0, egg: (this.level && this.level.eggTimer) || 12 };
+        else if (ch === 'A') this.board[r][c] = { c: 4, gem: false, ice: 0, ghost: true };
+        else if (ch === 'K') this.board[r][c] = { c: 2, gem: false, ice: 0, key: true };
+        else if (ch === 'L') this.board[r][c] = { c: 5, gem: false, ice: 0, lock: true };
         else if (ch === 'M') this.mist[r][c] = true;
       }
     }
@@ -189,6 +201,7 @@
       score: this.score, combo: this.combo, movesUsed: this.movesUsed,
       gemsLeft: this.gemsLeft, iceLeft: this.iceLeft, collected: this.collected,
       sandLeft: this.sandLeft, mistLeft: this.mistLeft, eggsLeft: this.eggsLeft,
+      ghostsLeft: this.ghostsLeft, keysLeft: this.keysLeft,
       status: this.status, lossReason: this.lossReason
     };
   };
@@ -203,9 +216,21 @@
     this.score = s.score; this.combo = s.combo; this.movesUsed = s.movesUsed;
     this.gemsLeft = s.gemsLeft; this.iceLeft = s.iceLeft; this.collected = s.collected;
     this.sandLeft = s.sandLeft; this.mistLeft = s.mistLeft; this.eggsLeft = s.eggsLeft;
+    this.ghostsLeft = s.ghostsLeft; this.keysLeft = s.keysLeft;
     this.status = s.status; this.lossReason = s.lossReason;
     this._undo = null;
     return true;
+  };
+
+  /* Alla nycklar samlade: krossa samtliga lås på brädet. */
+  Game.prototype._shatterLocks = function (out) {
+    for (var r = 0; r < this.size; r++) for (var c = 0; c < this.size; c++) {
+      var cell = this.board[r][c];
+      if (cell && cell.lock) {
+        out.push({ r: r, c: c, cell: cell, shattered: true });
+        this.board[r][c] = null;
+      }
+    }
   };
 
   /* Lyfter stjärndimma i rutorna rakt intill (r, c). */
@@ -232,15 +257,19 @@
       var r = coords[i][0], c = coords[i][1];
       var cell = this.board[r] && this.board[r][c];
       if (!cell) continue;
+      if (cell.lock && this.keysLeft > 0) continue; // lås tål allt tills nycklarna är samlade
       if (cell.gem) this.gemsLeft--;
       if (cell.ice > 0) this.iceLeft--;
       if (cell.sand) this.sandLeft--;
       if (cell.egg > 0) this.eggsLeft--;
-      if (!cell.gem && !cell.ice && !cell.sand && !cell.egg && cell.c === collectColor) this.collected++;
+      if (cell.ghost) this.ghostsLeft--;
+      if (cell.key) this.keysLeft--;
+      if (!cell.gem && !cell.ice && !cell.sand && !cell.egg && !cell.ghost && !cell.key && !cell.lock && cell.c === collectColor) this.collected++;
       removed.push({ r: r, c: c, cell: cell });
       this.board[r][c] = null;
       this._liftMistAround(r, c, lifted);
     }
+    if (this.keysLeft <= 0) this._shatterLocks(removed);
     removed.mistLifted = lifted;
     return removed;
   };
@@ -256,6 +285,8 @@
       else if (lv.type === 'sand') won = this.sandLeft <= 0;
       else if (lv.type === 'mist') won = this.mistLeft <= 0;
       else if (lv.type === 'eggs') won = this.eggsLeft <= 0;
+      else if (lv.type === 'ghosts') won = this.ghostsLeft <= 0;
+      else if (lv.type === 'keys') won = this.keysLeft <= 0;
       if (won) { this.status = 'won'; return; }
       if (consumedMove && this.movesLeft() <= 0) {
         this.status = 'lost'; this.lossReason = 'moves'; return;
@@ -328,6 +359,8 @@
     lines.cols.forEach(function (cc) {
       for (var rr = 0; rr < size; rr++) seen[rr + ',' + cc] = true;
     });
+    var lockHits = [];      // lås som höll emot (nycklar kvar)
+    var hadLocks = false;
     for (var key in seen) {
       var parts = key.split(',');
       r = +parts[0]; c = +parts[1];
@@ -338,14 +371,29 @@
         iceHits.push({ r: r, c: c });
         continue;
       }
+      if (cell.lock) {
+        // lås rensas aldrig av linjer – de krossas när alla nycklar samlats
+        lockHits.push({ r: r, c: c });
+        continue;
+      }
       if (cell.gem) gemsCleared++;
       if (cell.ice > 0) this.iceLeft--;
       if (cell.sand) this.sandLeft--;
       if (cell.egg > 0) this.eggsLeft--;
-      if (!cell.gem && !cell.ice && !cell.sand && !cell.egg && cell.c === collectColor) this.collected++;
+      if (cell.ghost) this.ghostsLeft--;
+      if (cell.key) this.keysLeft--;
+      if (!cell.gem && !cell.ice && !cell.sand && !cell.egg && !cell.ghost && !cell.key && cell.c === collectColor) this.collected++;
       cleared.push({ r: r, c: c, cell: cell });
       this.board[r][c] = null;
       this._liftMistAround(r, c, mistLifted);
+    }
+    for (r = 0; r < size && !hadLocks; r++) for (c = 0; c < size; c++) {
+      if (this.board[r][c] && this.board[r][c].lock) { hadLocks = true; break; }
+    }
+    var locksShattered = [];
+    if (hadLocks && this.keysLeft <= 0) {
+      this._shatterLocks(locksShattered);
+      locksShattered.forEach(function (l) { cleared.push(l); });
     }
 
     var nLines = lines.rows.length + lines.cols.length;
@@ -384,6 +432,32 @@
       }
     }
 
+    // Andarna svävar: var ghostEvery:e drag flyttar varje ande till en slumpad tom granne.
+    var ghostMoves = [];
+    var ghostEvery = (this.level && this.level.ghostEvery) || 2;
+    if (this.ghostsLeft > 0 && this.movesUsed % ghostEvery === 0) {
+      var gdirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      var ghosts = [];
+      for (r = 0; r < size; r++) for (c = 0; c < size; c++) {
+        if (this.board[r][c] && this.board[r][c].ghost) ghosts.push([r, c]);
+      }
+      for (var gi = 0; gi < ghosts.length; gi++) {
+        var gr = ghosts[gi][0], gc = ghosts[gi][1];
+        var opts2 = [];
+        for (var gd = 0; gd < gdirs.length; gd++) {
+          var nr = gr + gdirs[gd][0], nc = gc + gdirs[gd][1];
+          if (nr < 0 || nc < 0 || nr >= size || nc >= size) continue;
+          if (!this.board[nr][nc] && !this.mist[nr][nc]) opts2.push([nr, nc]);
+        }
+        if (!opts2.length) continue;
+        var grand = this.rng ? this.rng() : Math.random();
+        var dest = opts2[Math.floor(grand * opts2.length)];
+        this.board[dest[0]][dest[1]] = this.board[gr][gc];
+        this.board[gr][gc] = null;
+        ghostMoves.push({ from: { r: gr, c: gc }, to: { r: dest[0], c: dest[1] } });
+      }
+    }
+
     // Drakäggen räknar ner; når ett ägg noll kläcks det och banan är förlorad.
     var hatched = null;
     if (this.eggsLeft > 0) {
@@ -407,6 +481,9 @@
       placed: shape.cells.map(function (p) { return { r: row + p[0], c: col + p[1] }; }),
       cleared: cleared,
       iceHits: iceHits,
+      lockHits: lockHits,
+      locksShattered: locksShattered,
+      ghostMoves: ghostMoves,
       mistLifted: mistLifted,
       sandGrown: sandGrown,
       hatched: hatched,

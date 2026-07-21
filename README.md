@@ -14,7 +14,7 @@ kolumn** blir full rensas den och ger poäng.
   - 🔥 **Svår** – alla former från första draget
 
   Rekord sparas per kombination av storlek och svårighet.
-- **🧩 Banor** – 50 banor på en scrollbar bankarta med fem världar, där
+- **🧩 Banor** – 84 banor på en scrollbar bankarta med sju världar, där
   varje värld har sin egen signaturmekanik:
   - 🌿 **Gröna ängarna** – grunderna: poängbanor, 💎 ädelstenar och 🎨
     färgjakt.
@@ -26,6 +26,14 @@ kolumn** blir full rensas den och ger poäng.
   - 🌋 **Drakberget** – 🥚 **drakägg**: varje ägg har en nedräkning som
     tickar per drag – rensa äggets rad eller kolumn i tid, annars kläcks
     det och banan är förlorad.
+  - 👻 **Viskande skogen** – **andar**: svävar till en ny ruta med jämna
+    mellanrum – fånga dem med en rensning innan de smiter.
+  - 🔮 **Kristallgrottan** – 🗝️ **nycklar & lås**: låsen kan inte rensas
+    och står i vägen tills alla nycklar samlats – då krossas de på en
+    gång.
+
+  Alla banor är spelbarhetsvaliderade med en heuristisk bot som spelar
+  varje bana tiotals gånger.
 
   Varje klarad bana ger 1–3 stjärnor (fler drag kvar = fler stjärnor) och låser
   upp nästa bana. Framstegen sparas på enheten.
