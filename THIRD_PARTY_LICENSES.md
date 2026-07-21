@@ -4,10 +4,15 @@ Alla resurser nedan tillåter kommersiell användning.
 
 ## Typsnitt
 
-**Baloo 2** – `assets/fonts/Baloo2.ttf`, `levelmap/public/fonts/Baloo2.ttf`
-- Copyright 2019 The Baloo 2 Project Authors (https://github.com/EkType/Baloo2)
-- Licens: SIL Open Font License 1.1 – se `assets/fonts/OFL.txt`
-- Hämtad från: https://github.com/google/fonts/tree/main/ofl/baloo2
+**Grenze Gotisch** – `assets/fonts/GrenzeGotisch.ttf` (+ kopia i `levelmap/public/fonts/`)
+- Copyright 2019 The Grenze Project Authors (https://www.github.com/Omnibus-Type/grenze)
+- Licens: SIL Open Font License 1.1 – se `assets/fonts/OFL-GrenzeGotisch.txt`
+- Hämtad från: https://github.com/google/fonts/tree/main/ofl/grenzegotisch
+
+**Averia Serif Libre** – `assets/fonts/AveriaSerifLibre-*.ttf` (+ kopior i `levelmap/public/fonts/`)
+- Copyright 2011 The Averia Serif Libre Project Authors (https://github.com/iotic/averia-libre)
+- Licens: SIL Open Font License 1.1 – se `assets/fonts/OFL-AveriaSerifLibre.txt`
+- Hämtad från: https://github.com/google/fonts/tree/main/ofl/averiaseriflibre
 
 ## Ikoner
 
