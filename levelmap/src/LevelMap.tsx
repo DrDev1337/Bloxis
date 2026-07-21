@@ -138,16 +138,20 @@ function Padlock() {
 function Avatar({ theme }: { theme: WorldTheme }) {
   const a = theme.avatar;
   return (
-    <svg viewBox="0 0 46 46" width="46" height="46" aria-hidden>
-      <ellipse cx="23" cy="26" rx="17" ry="18" fill={a.body} />
-      <ellipse cx="23" cy="31" rx="10" ry="9" fill={a.belly} />
-      <circle cx="17" cy="20" r="3.1" fill="#fff" />
-      <circle cx="29" cy="20" r="3.1" fill="#fff" />
-      <circle cx="17.8" cy="20.7" r="1.6" fill={a.eye} />
-      <circle cx="29.8" cy="20.7" r="1.6" fill={a.eye} />
-      <path d="M19 27 Q23 30.5 27 27" stroke={a.eye} strokeWidth="1.8" fill="none" strokeLinecap="round" />
-      <path d="M14 9 Q17 3 21 8" stroke={a.body} strokeWidth="4" fill="none" strokeLinecap="round" />
-      <path d="M32 9 Q29 3 25 8" stroke={a.body} strokeWidth="4" fill="none" strokeLinecap="round" />
+    <svg viewBox="0 0 46 50" width="46" height="50" aria-hidden>
+      <ellipse cx="23" cy="30" rx="17" ry="18" fill={a.body} />
+      <ellipse cx="23" cy="35" rx="10" ry="9" fill={a.belly} />
+      <circle cx="17" cy="24" r="3.1" fill="#fff" />
+      <circle cx="29" cy="24" r="3.1" fill="#fff" />
+      <circle cx="17.8" cy="24.7" r="1.6" fill={a.eye} />
+      <circle cx="29.8" cy="24.7" r="1.6" fill={a.eye} />
+      <path d="M19 31 Q23 34.5 27 31" stroke={a.eye} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      {/* trollkarlshatt */}
+      <path d="M23 1 L33.5 15.5 Q23 19.5 12.5 15.5 Z" fill="#4b3a8f" />
+      <path d="M23 1 L28 8.5 Q23 10.5 18.5 8.3 Z" fill="#5d49a8" />
+      <ellipse cx="23" cy="16" rx="14" ry="3.6" fill="#3b2d73" />
+      <circle cx="23" cy="2.2" r="2" fill="#ffce6b" />
+      <path d="M20 12 l1 -2.2 1 2.2 2.2 0.3 -1.6 1.5 0.4 2.2 -2 -1.1 -2 1.1 0.4 -2.2 -1.6 -1.5 Z" fill="#ffce6b" />
     </svg>
   );
 }
@@ -347,8 +351,35 @@ function BackgroundLayer({ theme, height }: { theme: WorldTheme; height: number 
       delay: seeded(i * 11) * 2.4
     })), [height]);
 
+  // stjärnhimmel över hela landskapet
+  const stars = useMemo(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      x: 2 + seeded(i * 9 + 4) * 96,
+      y: 30 + seeded(i * 5 + 6) * (height - 160),
+      r: 0.25 + seeded(i * 3 + 8) * 0.4,
+      delay: seeded(i * 7 + 1) * 2.4
+    })), [height]);
+
   return (
     <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ height }}>
+      {stars.map((s, i) => (
+        <ellipse
+          key={`st-${i}`}
+          className="lm-sparkle"
+          style={{ ['--delay' as string]: `${s.delay}s` }}
+          cx={s.x} cy={s.y} rx={s.r} ry={s.r * 4}
+          fill="rgba(255, 246, 220, 0.8)"
+        />
+      ))}
+      {theme.terrain === 'peaks' && (
+        <>
+          <ellipse cx="74" cy="170" rx="15" ry="62" fill="rgba(244, 236, 208, 0.1)" />
+          <ellipse cx="74" cy="170" rx="10.5" ry="44" fill="rgba(244, 236, 208, 0.18)" />
+          <ellipse cx="74" cy="170" rx="7" ry="29" fill="#f2ead0" />
+          <ellipse cx="71.5" cy="162" rx="1.3" ry="5" fill="rgba(180, 175, 150, 0.4)" />
+          <ellipse cx="76" cy="176" rx="1" ry="4" fill="rgba(180, 175, 150, 0.35)" />
+        </>
+      )}
       {bands}
       <rect x="0" y={height - 74} width="100" height="74" fill={theme.water.deep} />
       <rect x="0" y={height - 74} width="100" height="26" fill={theme.water.surface} />
@@ -649,6 +680,17 @@ export default function LevelMap({ levels, currentId, onLevelSelect, theme = the
   const doneD = currentIdx > 0 ? smoothPath(points.slice(0, currentIdx + 1)) : '';
   const props = useMemo(() => scatterProps(points, theme), [points, theme]);
   const ground = useMemo(() => scatterGround(points), [points]);
+  const flies = useMemo(() => {
+    if (!theme.fireflies) return [];
+    return points.flatMap((p, i) => [0, 1].map(k => ({
+      x: 8 + seeded(i * 23 + k * 9 + 2) * 84,
+      y: p.y - NODE_GAP / 2 + seeded(i * 31 + k * 5 + 4) * NODE_GAP,
+      dx: (seeded(i * 7 + k * 3 + 6) - 0.5) * 70,
+      dy: (seeded(i * 11 + k * 7 + 8) - 0.5) * 80,
+      dur: 6 + seeded(i * 13 + k) * 6,
+      delay: -seeded(i * 17 + k) * 8
+    })));
+  }, [points, theme]);
 
   return (
     <div ref={rootRef} className="lm-root" style={cssVars}>
@@ -744,6 +786,21 @@ export default function LevelMap({ levels, currentId, onLevelSelect, theme = the
               </React.Fragment>
             );
           })}
+
+          {flies.map((f, i) => (
+            <span
+              key={`ff-${i}`}
+              className="lm-firefly"
+              style={{
+                left: `${f.x}%`,
+                top: f.y,
+                ['--fdx' as string]: `${f.dx}px`,
+                ['--fdy' as string]: `${f.dy}px`,
+                ['--fdur' as string]: `${f.dur}s`,
+                ['--fdelay' as string]: `${f.delay}s`
+              }}
+            />
+          ))}
 
           <div ref={avatarRef} className="lm-avatar">
             <div className="lm-avatar-inner">

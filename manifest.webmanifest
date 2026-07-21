@@ -1,13 +1,13 @@
 {
   "name": "Bloxis",
   "short_name": "Bloxis",
-  "description": "Placera block och rensa rader! Oändligt läge och banor med nivåer.",
+  "description": "Ett magiskt sagoäventyr med block! Oändligt läge, banor och dagliga utmaningar.",
   "lang": "sv",
   "start_url": ".",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#14162b",
-  "theme_color": "#14162b",
+  "background_color": "#120f26",
+  "theme_color": "#120f26",
   "icons": [
     {
       "src": "icons/icon.svg",

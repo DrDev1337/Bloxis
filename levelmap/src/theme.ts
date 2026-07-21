@@ -42,6 +42,8 @@ export interface WorldTheme {
   avatar: { body: string; belly: string; eye: string };
   /** Landskapsform i parallaxlagren: mjuka kullar eller taggiga bergstoppar */
   terrain: 'hills' | 'peaks';
+  /** Eldflugor som svävar över landskapet */
+  fireflies?: boolean;
   /** Biotopens rekvisita längs vägen + färger den ritas med */
   props: {
     kinds: PropKind[];
@@ -57,90 +59,92 @@ export interface WorldTheme {
   };
 }
 
-/** Tema A: Gröna ängarna – mjukt, soligt godislandskap. */
+/** Tema A: Förtrollade skogen – skymning, mossa och eldflugor. */
 export const themeA: WorldTheme = {
-  name: 'Gröna ängarna',
-  sky: ['#8ed6ff', '#d8f3e8'],
-  hillsFar: '#9fd9a3',
-  hillsMid: '#6fc478',
-  hillsNear: '#4CAF5F',
+  name: 'Förtrollade skogen',
+  sky: ['#241c4d', '#173230'],
+  hillsFar: '#3a5d54',
+  hillsMid: '#2c4a44',
+  hillsNear: '#1f3833',
   path: {
-    edge: 'rgba(90, 61, 33, 0.55)',
-    surface: '#e8cf9f',
-    dash: 'rgba(255, 255, 255, 0.85)',
-    done: 'rgba(255, 200, 60, 0.75)'
+    edge: 'rgba(15, 12, 8, 0.65)',
+    surface: '#7d7264',
+    dash: 'rgba(255, 222, 140, 0.95)',
+    done: 'rgba(255, 206, 107, 0.75)'
   },
   node: {
-    base1: '#7ee08a',
-    base2: '#2f9e4f',
-    done1: '#ffd76e',
-    done2: '#ff9f3d',
-    lockedBase: '#8fa0a8',
-    ring: '#ffd645',
-    text: '#ffffff'
+    base1: '#63a888',
+    base2: '#28564a',
+    done1: '#ffd98c',
+    done2: '#d9913a',
+    lockedBase: '#565b66',
+    ring: '#ffce6b',
+    text: '#f6efdd'
   },
-  star: '#ffd645',
-  starEmpty: 'rgba(255, 255, 255, 0.35)',
-  cloud: 'rgba(255, 255, 255, 0.92)',
-  water: { surface: '#5fc9e8', deep: '#3a9fd0', sparkle: 'rgba(255, 255, 255, 0.9)' },
-  foliage1: '#3d8f4d',
-  foliage2: '#2e7340',
+  star: '#ffce6b',
+  starEmpty: 'rgba(255, 245, 220, 0.3)',
+  cloud: 'rgba(214, 205, 240, 0.35)',
+  water: { surface: '#39707f', deep: '#234852', sparkle: 'rgba(170, 255, 226, 0.9)' },
+  foliage1: '#2c5a45',
+  foliage2: '#1d4233',
   avatar: { body: '#ff6dc8', belly: '#ffd2ec', eye: '#2b2144' },
   terrain: 'hills',
   props: {
-    kinds: ['pine', 'tree', 'flower', 'mushroom', 'rock', 'tree', 'pine', 'bush', 'stump', 'tree'],
+    kinds: ['pine', 'tree', 'flower', 'mushroom', 'rock', 'tree', 'pine', 'bush', 'stump', 'mushroom'],
     ground: 'grass',
-    trunk: '#8a5a33',
-    leaf1: '#67c46f',
-    leaf2: '#3d9e50',
-    stone1: '#b9c0bb',
-    stone2: '#8e968f',
-    snow: '#ffffff',
-    accent: '#ff5d6c'
-  }
+    trunk: '#5d4230',
+    leaf1: '#4a8a68',
+    leaf2: '#2a5745',
+    stone1: '#8f9aa3',
+    stone2: '#626c76',
+    snow: '#f2e8d0',
+    accent: '#c86bff'
+  },
+  fireflies: true
 };
 
-/** Tema B: Frostbergen – kyligt blått, redo för nivå 21-40. */
+/** Tema B: Månbergen – frostiga toppar under fullmånen. */
 export const themeB: WorldTheme = {
-  name: 'Frostbergen',
-  sky: ['#3d5a96', '#a8c8e8'],
-  hillsFar: '#8fb4d9',
-  hillsMid: '#6d95c4',
-  hillsNear: '#4d76aa',
+  name: 'Månbergen',
+  sky: ['#131a3d', '#31427a'],
+  hillsFar: '#5b74ab',
+  hillsMid: '#44598f',
+  hillsNear: '#324473',
   path: {
-    edge: 'rgba(30, 45, 80, 0.6)',
-    surface: '#dbe8f5',
-    dash: 'rgba(255, 255, 255, 0.9)',
-    done: 'rgba(255, 200, 60, 0.75)'
+    edge: 'rgba(15, 20, 45, 0.65)',
+    surface: '#a8b8d6',
+    dash: 'rgba(255, 235, 170, 0.95)',
+    done: 'rgba(255, 206, 107, 0.75)'
   },
   node: {
-    base1: '#8fd8f5',
-    base2: '#3a7fc4',
-    done1: '#ffd76e',
-    done2: '#ff9f3d',
-    lockedBase: '#7c8ba0',
-    ring: '#ffd645',
-    text: '#ffffff'
+    base1: '#8fb8e8',
+    base2: '#3a5a9e',
+    done1: '#ffd98c',
+    done2: '#d9913a',
+    lockedBase: '#59617a',
+    ring: '#ffce6b',
+    text: '#f6efdd'
   },
-  star: '#ffd645',
-  starEmpty: 'rgba(255, 255, 255, 0.35)',
-  cloud: 'rgba(255, 255, 255, 0.85)',
-  water: { surface: '#9fd9f0', deep: '#5aa8d8', sparkle: 'rgba(255, 255, 255, 0.95)' },
-  foliage1: '#5d86b8',
-  foliage2: '#456a99',
+  star: '#ffce6b',
+  starEmpty: 'rgba(255, 245, 220, 0.3)',
+  cloud: 'rgba(226, 232, 255, 0.5)',
+  water: { surface: '#5a7fb8', deep: '#33507e', sparkle: 'rgba(230, 240, 255, 0.95)' },
+  foliage1: '#3d557e',
+  foliage2: '#2b3f63',
   avatar: { body: '#ff6dc8', belly: '#ffd2ec', eye: '#2b2144' },
   terrain: 'peaks',
   props: {
     kinds: ['snowPine', 'snowman', 'crystal', 'snowRock', 'snowPine', 'crystal', 'deadTree', 'snowPine'],
     ground: 'snow',
-    trunk: '#5d4a3a',
-    leaf1: '#4d8a6a',
-    leaf2: '#336650',
-    stone1: '#c9d8e5',
-    stone2: '#93a8bc',
-    snow: '#ffffff',
-    accent: '#8fd8f5'
-  }
+    trunk: '#4d3f33',
+    leaf1: '#41707e',
+    leaf2: '#2b4c57',
+    stone1: '#bccbe0',
+    stone2: '#8394b3',
+    snow: '#f4f0ff',
+    accent: '#9fd0ff'
+  },
+  fireflies: false
 };
 
 export const themes: WorldTheme[] = [themeA, themeB];

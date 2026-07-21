@@ -1650,7 +1650,7 @@
         '<li><b>Boosters</b> köps med mynt: 🔨 ta bort ett block, 💣 spräng 3&times;3, 🔄 byt pjäser, ↩️ ångra.</li>' +
         '<li>Mynt tjänar du på banor, dagliga utmaningar och utmärkelser.</li>' +
         '</ul>' +
-        '<p style="font-size:0.72rem;opacity:0.7;margin-top:10px">Ikoner: Twemoji (CC-BY 4.0) &bull; Ljud: Kenney.nl (CC0) &bull; Typsnitt: Baloo 2 (OFL)</p>',
+        '<p style="font-size:0.72rem;opacity:0.7;margin-top:10px">Ikoner: Twemoji (CC-BY 4.0) &bull; Ljud: Kenney.nl (CC0) &bull; Typsnitt: Grenze Gotisch &amp; Averia Serif Libre (OFL)</p>',
       buttons: [
         { label: 'Spela guiden', fn: function () { startTutorial(function () { showScreen('menu'); }); } },
         { label: 'Stäng', primary: true, fn: function () {} }
@@ -1699,6 +1699,25 @@
       navigator.serviceWorker.register('sw.js').catch(function () { /* offline-stöd är valfritt */ });
     });
   }
+
+  /* ===== Eldflugor som svävar över skärmarna ===== */
+  (function () {
+    var wrap = document.createElement('div');
+    wrap.className = 'fireflies';
+    for (var i = 0; i < 12; i++) {
+      var f = document.createElement('span');
+      f.className = 'firefly';
+      f.style.left = (5 + seeded(i * 3 + 1) * 90) + '%';
+      f.style.top = (8 + seeded(i * 7 + 2) * 84) + '%';
+      f.style.setProperty('--fdx', ((seeded(i * 11 + 3) - 0.5) * 90) + 'px');
+      f.style.setProperty('--fdy', ((seeded(i * 5 + 4) - 0.5) * 110) + 'px');
+      f.style.setProperty('--fdur', (7 + seeded(i * 13 + 5) * 8) + 's');
+      f.style.setProperty('--fdelay', (-seeded(i * 17 + 6) * 10) + 's');
+      wrap.appendChild(f);
+    }
+    var app = document.getElementById('app');
+    app.insertBefore(wrap, app.firstChild);
+  })();
 
   showScreen('menu');
 })();
