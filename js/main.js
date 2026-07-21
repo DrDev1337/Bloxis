@@ -430,27 +430,47 @@
     { id: 'gron', name: 'Älvgrön', body: '#4ddb9a', belly: '#c9f5e2', price: 60 },
     { id: 'bla', name: 'Himmelsblå', body: '#5aa8f0', belly: '#cfe6fb', price: 60 },
     { id: 'gul', name: 'Solgul', body: '#ffc84d', belly: '#ffedc2', price: 60 },
-    { id: 'lila', name: 'Skymningslila', body: '#a06df0', belly: '#e2d2fb', price: 60 }
+    { id: 'lila', name: 'Skymningslila', body: '#a06df0', belly: '#e2d2fb', price: 60 },
+    { id: 'eld', name: 'Eldröd', body: '#ff6b5d', belly: '#ffd9d2', price: 60 },
+    { id: 'frost', name: 'Frostvit', body: '#dde5f2', belly: '#ffffff', price: 80 },
+    { id: 'natt', name: 'Nattsvart', body: '#4a4460', belly: '#b9b2d0', price: 80 },
+    { id: 'guld', name: 'Gyllene', body: '#ffd27a', belly: '#fff3d6', price: 150 }
   ];
   var AVATAR_HATS = [
     { id: 'ingen', name: 'Bara öron', price: 0 },
     { id: 'wizard', name: 'Trollkarlshatt', price: 0 },
     { id: 'blomster', name: 'Blomsterkrans', price: 80 },
     { id: 'tomte', name: 'Tomteluva', price: 100 },
+    { id: 'viking', name: 'Vikingahjälm', price: 110 },
     { id: 'riddare', name: 'Riddarhjälm', price: 120 },
+    { id: 'gloria', name: 'Gloria', price: 140 },
     { id: 'krona', name: 'Guldkrona', price: 150 }
   ];
+  var AVATAR_ITEMS = [
+    { id: 'ingen', name: 'Inget', price: 0 },
+    { id: 'stav', name: 'Trollstav', price: 90 },
+    { id: 'skold', name: 'Sköld', price: 100 },
+    { id: 'lykta', name: 'Lykta', price: 110 },
+    { id: 'svard', name: 'Svärd', price: 120 },
+    { id: 'bok', name: 'Trollbok', price: 130 }
+  ];
+  var AVATAR_LISTS = { hat: AVATAR_HATS, color: AVATAR_COLORS, item: AVATAR_ITEMS };
 
   function getAvatar() {
-    return store.getJson('bloxis.avatar', {
-      hat: 'wizard', color: 'rosa',
-      owned: { hat: ['ingen', 'wizard'], color: ['rosa'] }
-    });
+    var a = store.getJson('bloxis.avatar', {}) || {};
+    if (!a.hat) a.hat = 'wizard';
+    if (!a.color) a.color = 'rosa';
+    if (!a.item) a.item = 'ingen';
+    if (!a.owned) a.owned = {};
+    if (!a.owned.hat) a.owned.hat = ['ingen', 'wizard'];
+    if (!a.owned.color) a.owned.color = ['rosa'];
+    if (!a.owned.item) a.owned.item = ['ingen'];
+    return a;
   }
   function saveAvatar(a) { store.setJson('bloxis.avatar', a); }
 
-  /* Ritar avataren som SVG-sträng med vald hatt och färg. */
-  function avatarSvg(hatId, colorId, size) {
+  /* Ritar avataren som SVG-sträng med vald hatt, färg och föremål. */
+  function avatarSvg(hatId, colorId, itemId, size) {
     var col = AVATAR_COLORS.filter(function (c) { return c.id === colorId; })[0] || AVATAR_COLORS[0];
     var eye = '#2b2144';
     var hat = '';
@@ -485,10 +505,55 @@
         '<path d="M13 15 Q13.5 4 23 3 Q30.5 3.5 31.5 10 Q32 13 30 14.5 Z" fill="#d84a5f"/>' +
         '<circle cx="31.8" cy="12" r="2.7" fill="#fff"/>' +
         '<path d="M11.5 16.5 Q23 12.5 34.5 16.5 L34.5 19 Q23 15 11.5 19 Z" fill="#fff"/>';
+    } else if (hatId === 'viking') {
+      hat =
+        '<path d="M12.5 14 Q7 12 6.5 5 Q11.5 7 14 12 Z" fill="#f2e8d0" stroke="#c9b89a" stroke-width="1"/>' +
+        '<path d="M33.5 14 Q39 12 39.5 5 Q34.5 7 32 12 Z" fill="#f2e8d0" stroke="#c9b89a" stroke-width="1"/>' +
+        '<path d="M12 16.5 Q12 7 23 7 Q34 7 34 16.5 Z" fill="#9aa8bc" stroke="#6e7c92" stroke-width="1.2"/>' +
+        '<rect x="12" y="13.8" width="22" height="2.7" fill="#c67c2e"/>';
+    } else if (hatId === 'gloria') {
+      hat =
+        '<path d="M14 11 Q17 4 21 9" stroke="' + col.body + '" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+        '<path d="M32 11 Q29 4 25 9" stroke="' + col.body + '" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+        '<ellipse cx="23" cy="4.5" rx="9" ry="2.8" fill="none" stroke="rgba(255,233,168,0.45)" stroke-width="5.5"/>' +
+        '<ellipse cx="23" cy="4.5" rx="9" ry="2.8" fill="none" stroke="#ffce6b" stroke-width="2.4"/>';
     } else {
       hat =
         '<path d="M14 11 Q17 4 21 9" stroke="' + col.body + '" stroke-width="4" fill="none" stroke-linecap="round"/>' +
         '<path d="M32 11 Q29 4 25 9" stroke="' + col.body + '" stroke-width="4" fill="none" stroke-linecap="round"/>';
+    }
+    var item = '';
+    if (itemId === 'stav') {
+      item =
+        '<line x1="37.5" y1="45" x2="43" y2="29" stroke="#8a5a33" stroke-width="2.8" stroke-linecap="round"/>' +
+        '<path d="M43 22.5 l1.3 2.7 3 0.45 -2.2 2.1 0.55 3 -2.65 -1.45 -2.65 1.45 0.55 -3 -2.2 -2.1 3 -0.45 Z" fill="#ffce6b"/>' +
+        '<circle cx="38.6" cy="33.5" r="0.9" fill="#ffe9a8"/>' +
+        '<circle cx="44.6" cy="31" r="0.7" fill="#ffe9a8"/>';
+    } else if (itemId === 'svard') {
+      item =
+        '<path d="M42.3 19.5 L44.2 23 L43.3 36.5 L41.3 36.5 L40.4 23 Z" fill="#d6dde8" stroke="#8fa0b8" stroke-width="0.8"/>' +
+        '<rect x="38.6" y="36.3" width="7.4" height="2.3" rx="1.1" fill="#c67c2e"/>' +
+        '<rect x="41.2" y="38.4" width="2.3" height="5" rx="1.1" fill="#8a5a33"/>' +
+        '<circle cx="42.35" cy="44.4" r="1.5" fill="#ffce6b"/>';
+    } else if (itemId === 'skold') {
+      item =
+        '<path d="M2.5 26 Q9 23.5 15.5 26 Q15.5 36.5 9 41.5 Q2.5 36.5 2.5 26 Z" fill="#7d5cff" stroke="#c9b8ff" stroke-width="1.4"/>' +
+        '<path d="M9 28 l1.15 2.35 2.6 0.4 -1.9 1.85 0.45 2.6 -2.3 -1.25 -2.3 1.25 0.45 -2.6 -1.9 -1.85 2.6 -0.4 Z" fill="#ffce6b"/>';
+    } else if (itemId === 'lykta') {
+      item =
+        '<circle cx="41" cy="31.5" r="5.5" fill="rgba(255,220,130,0.22)"/>' +
+        '<line x1="41" y1="23.5" x2="41" y2="26.6" stroke="#8a5a33" stroke-width="1.6"/>' +
+        '<path d="M37.8 27 h6.4 l-0.9 -2.3 h-4.6 Z" fill="#4a4460"/>' +
+        '<rect x="37.5" y="27" width="7" height="9.2" rx="2" fill="rgba(255,206,107,0.35)" stroke="#4a4460" stroke-width="1.4"/>' +
+        '<circle cx="41" cy="31.6" r="2.1" fill="#ffe9a8"/>' +
+        '<rect x="39.1" y="36" width="3.8" height="1.7" rx="0.8" fill="#4a4460"/>';
+    } else if (itemId === 'bok') {
+      item =
+        '<g transform="rotate(8 40 36)">' +
+        '<rect x="35.2" y="29.8" width="9.8" height="12.4" rx="1.6" fill="#5d3a8f" stroke="#3b2d73" stroke-width="1"/>' +
+        '<rect x="36.6" y="31.2" width="7" height="9.6" rx="1" fill="#7d5cff"/>' +
+        '<path d="M40.1 33.4 l0.9 1.85 2.05 0.3 -1.5 1.45 0.35 2.05 -1.8 -0.95 -1.8 0.95 0.35 -2.05 -1.5 -1.45 2.05 -0.3 Z" fill="#ffce6b"/>' +
+        '</g>';
     }
     return '<svg viewBox="0 0 46 50" width="' + size + '" height="' + Math.round(size * 50 / 46) + '" aria-hidden="true">' +
       '<ellipse cx="23" cy="30" rx="17" ry="18" fill="' + col.body + '"/>' +
@@ -496,7 +561,7 @@
       '<circle cx="17" cy="24" r="3.1" fill="#fff"/><circle cx="29" cy="24" r="3.1" fill="#fff"/>' +
       '<circle cx="17.8" cy="24.7" r="1.6" fill="' + eye + '"/><circle cx="29.8" cy="24.7" r="1.6" fill="' + eye + '"/>' +
       '<path d="M19 31 Q23 34.5 27 31" stroke="' + eye + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
-      hat + '</svg>';
+      hat + item + '</svg>';
   }
 
   function showWardrobe() {
@@ -504,7 +569,10 @@
     function itemHtml(type, it) {
       var owned = av.owned[type].indexOf(it.id) >= 0;
       var equipped = av[type] === it.id;
-      var preview = type === 'hat' ? avatarSvg(it.id, av.color, 38) : avatarSvg(av.hat, it.id, 38);
+      var preview =
+        type === 'hat' ? avatarSvg(it.id, av.color, av.item, 38) :
+        type === 'color' ? avatarSvg(av.hat, it.id, av.item, 38) :
+        avatarSvg(av.hat, av.color, it.id, 38);
       return '<button class="ward-item' + (equipped ? ' equipped' : '') + '" data-type="' + type + '" data-id="' + it.id + '">' +
         preview +
         '<span class="ward-name">' + it.name + '</span>' +
@@ -514,10 +582,12 @@
     showOverlay({
       title: '🎩 Garderob',
       html:
-        '<div class="ward-preview">' + avatarSvg(av.hat, av.color, 92) + '</div>' +
+        '<div class="ward-preview">' + avatarSvg(av.hat, av.color, av.item, 92) + '</div>' +
         '<p class="ward-coins">Dina mynt: <b>' + store.getCoins() + '</b> 💰</p>' +
         '<p class="ward-head">Hattar</p>' +
         '<div class="ward-row">' + AVATAR_HATS.map(function (h) { return itemHtml('hat', h); }).join('') + '</div>' +
+        '<p class="ward-head">Föremål</p>' +
+        '<div class="ward-row">' + AVATAR_ITEMS.map(function (i) { return itemHtml('item', i); }).join('') + '</div>' +
         '<p class="ward-head">Färger</p>' +
         '<div class="ward-row">' + AVATAR_COLORS.map(function (c) { return itemHtml('color', c); }).join('') + '</div>',
       buttons: [{ label: 'Klart', primary: true, fn: function () {} }]
@@ -526,7 +596,7 @@
       btn.addEventListener('click', function () {
         var type = btn.getAttribute('data-type');
         var id = btn.getAttribute('data-id');
-        var list = type === 'hat' ? AVATAR_HATS : AVATAR_COLORS;
+        var list = AVATAR_LISTS[type];
         var it = list.filter(function (x) { return x.id === id; })[0];
         var a = getAvatar();
         var owned = a.owned[type].indexOf(id) >= 0;
@@ -1829,7 +1899,7 @@
       var av = getAvatar();
       pin = document.createElement('div');
       pin.className = 'map-pin map-avatar';
-      pin.innerHTML = avatarSvg(av.hat, av.color, 46);
+      pin.innerHTML = avatarSvg(av.hat, av.color, av.item, 46);
       pin.style.pointerEvents = 'auto';
       pin.style.cursor = 'pointer';
       pin.setAttribute('aria-label', 'Din avatar – öppna garderoben');

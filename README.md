@@ -42,8 +42,9 @@ kolumn** blir full rensas den och ger poäng.
 
 Din avatar hoppar mellan noderna på bankartan. I 🎩 **Garderoben** (menyn,
 eller tryck på avataren på kartan) köper du utseenden för mynt:
-sex hattar (trollkarlshatt, guldkrona, blomsterkrans, riddarhjälm,
-tomteluva …) och fem kroppsfärger. Allt ritas i kod och sparas på enheten.
+åtta hattar (trollkarlshatt, guldkrona, vikingahjälm, gloria …), sex
+föremål som avataren håller (trollstav, svärd, sköld, lykta, trollbok)
+och nio kroppsfärger. Allt ritas i kod och sparas på enheten.
 
 ## Mynt och boosters
 
