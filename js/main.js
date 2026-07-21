@@ -2216,16 +2216,22 @@
   var NODE_GAP = 108;
   var MAP_PAD = 70;
   var WORLD_GAP = 80;   // extra luft mellan världarna, där banderollen bor
+  /* Egen rekvisita (assets/props) per värld – ritad i samma stil som noderna. */
   var WORLD_DECOR = [
-    ['🌲', '🌳', '🌷', '🍄', '🦋'],
-    ['🏔️', '❄️', '⛄', '🧊'],
-    ['🌵', '☀️', '🪨', '🦂'],
-    ['⭐', '🌙', '☄️', '🪐'],
-    ['🌋', '🪨', '🔥', '☄️'],
-    ['🌲', '👻', '🍄', '🦇', '🕯️'],
-    ['💎', '🔮', '🪨', '🕯️']
+    ['tree', 'pine', 'flower', 'mushroom', 'butterfly'],
+    ['peak', 'snowman', 'snowflake', 'pine'],
+    ['cactus', 'rock', 'tumbleweed'],
+    ['star-prop', 'moon', 'comet', 'planet'],
+    ['volcano', 'lavarock', 'flameprop', 'rock'],
+    ['deadtree', 'ghostprop', 'mushroom', 'bat', 'candle'],
+    ['crystals', 'orb', 'rock', 'candle']
   ];
-  var WORLD_EMOJI = ['🌿', '❄️', '🌵', '🌟', '🌋', '👻', '🔮'];
+  var WORLD_BADGE = ['tree', 'snowflake', 'cactus', 'star-prop', 'volcano', 'ghostprop', 'crystals'];
+  var DECOR_TWINKLE = { snowflake: 1, 'star-prop': 1, comet: 1, flameprop: 1, candle: 1 };
+
+  function propImg(name) {
+    return '<img class="propimg" draggable="false" alt="" src="assets/props/' + name + '.svg">';
+  }
 
   /* Deterministiskt "slump"-värde 0..1 per index, så kartan ser likadan ut varje gång. */
   function seeded(i) {
@@ -2502,7 +2508,7 @@
       for (var li = w.from; li <= w.to; li++) wStars += stars[li] || 0;
       var banner = document.createElement('div');
       banner.className = 'world-banner';
-      banner.innerHTML = twe(WORLD_EMOJI[wi] + ' ' + w.name) +
+      banner.innerHTML = '<span class="wb-icon">' + propImg(WORLD_BADGE[wi]) + '</span>' + w.name +
         '<span class="wb-stars">' + twe('⭐') + ' ' + wStars + '/' + wMax + '</span>';
       banner.style.top = (bottomY - 58) + 'px';
       inner.appendChild(banner);
@@ -2512,10 +2518,10 @@
         for (var ci = 0; ci < 2; ci++) {
           var cloud = document.createElement('div');
           cloud.className = 'cloud';
-          cloud.innerHTML = twe('☁️');
+          cloud.innerHTML = propImg('cloud');
           var cr = seeded(wi * 31 + ci * 7);
           cloud.style.top = (topY + 80 + cr * Math.max(120, bottomY - topY - 240)) + 'px';
-          cloud.style.fontSize = (26 + cr * 16) + 'px';
+          cloud.style.width = (44 + cr * 26) + 'px';
           cloud.style.setProperty('--dur', (48 + cr * 40) + 's');
           cloud.style.setProperty('--delay', (-cr * 60) + 's');
           inner.appendChild(cloud);
@@ -2563,13 +2569,13 @@
         var r1 = seeded(i * 13 + di * 5 + 1);
         var r2 = seeded(i * 17 + di * 3 + 2);
         var deco = document.createElement('div');
-        var emoji = decors[Math.floor(r1 * decors.length)];
-        deco.className = 'deco' + ((emoji === '❄️' || emoji === '☀️' || emoji === '🦋') ? ' twinkle' : '');
-        deco.innerHTML = twe(emoji);
+        var prop = decors[Math.floor(r1 * decors.length)];
+        deco.className = 'deco' + (DECOR_TWINKLE[prop] ? ' twinkle' : '');
+        deco.innerHTML = propImg(prop);
         var side = di === 0 ? (x < 50 ? 1 : 0) : Math.round(r1);
         deco.style.left = (side ? 72 + r2 * 22 : 6 + r2 * 22) + '%';
         deco.style.top = (y - NODE_GAP / 2 + r1 * NODE_GAP) + 'px';
-        deco.style.fontSize = (17 + r2 * 14) + 'px';
+        deco.style.width = (26 + r2 * 20) + 'px';
         deco.style.setProperty('--dur', (3.5 + r1 * 3) + 's');
         deco.style.setProperty('--delay', (-r2 * 4) + 's');
         inner.appendChild(deco);

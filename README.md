@@ -89,8 +89,11 @@ köper du boosters direkt i spelet:
 ## Grafisk identitet
 
 - **Eget ikonset** i sagostil (`assets/icons/`) för all UI-krom: mynt,
-  stjärnor, boosters, medaljer, kalender m.m. Twemoji används numera bara
-  som naturdekor på bankartan.
+  stjärnor, boosters, medaljer, kalender m.m.
+- **Egen kartrekvisita** (`assets/props/`): träd, blommor, svampar,
+  snögubbar, kaktusar, månar, spöken, kristaller, moln m.m. – all dekor
+  på bankartan är ritad i spelets egen stil (Twemoji används numera bara
+  för enstaka listikoner).
 - **Block med djup**: färggradienter, kantlinjer, glansband och
   fasetterade ädelstenar – ritas i Canvas utan bildfiler.
 - **Världstonad spelskärm**: bakgrundsglöden skiftar med världens färg
