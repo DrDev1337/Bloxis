@@ -14,13 +14,18 @@ kolumn** blir full rensas den och ger poäng.
   - 🔥 **Svår** – alla former från första draget
 
   Rekord sparas per kombination av storlek och svårighet.
-- **🧩 Banor** – 40 banor på en scrollbar bankarta med fyra världar
-  (Gröna ängarna, Frostbergen, Solnedgångsöknen, Stjärnhimlen) och fyra
-  måltyper:
-  - 🎯 **Poängbanor**: nå poängmålet innan dragen tar slut.
-  - 💎 **Ädelstensbanor**: rensa alla ädelstenar.
-  - 🧊 **Isbanor**: rensa all is – is kräver två rensningar (spricker först).
-  - 🎨 **Färgjakt**: samla ett antal block av en viss färg.
+- **🧩 Banor** – 50 banor på en scrollbar bankarta med fem världar, där
+  varje värld har sin egen signaturmekanik:
+  - 🌿 **Gröna ängarna** – grunderna: poängbanor, 💎 ädelstenar och 🎨
+    färgjakt.
+  - ❄️ **Frostbergen** – 🧊 **is**: kräver två rensningar (spricker först).
+  - 🌵 **Solnedgångsöknen** – 🏜️ **sand**: rensas med sin rad, men
+    sprider sig till en tom granne med jämna mellanrum.
+  - 🌟 **Stjärnhimlen** – 🌫️ **stjärndimma**: dimrutor går inte att bygga
+    på; en rensning i rutan intill blåser bort dimman.
+  - 🌋 **Drakberget** – 🥚 **drakägg**: varje ägg har en nedräkning som
+    tickar per drag – rensa äggets rad eller kolumn i tid, annars kläcks
+    det och banan är förlorad.
 
   Varje klarad bana ger 1–3 stjärnor (fler drag kvar = fler stjärnor) och låser
   upp nästa bana. Framstegen sparas på enheten.
