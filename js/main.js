@@ -2491,7 +2491,10 @@
       bg.className = 'map-world';
       bg.style.top = topY + 'px';
       bg.style.height = (bottomY - topY) + 'px';
-      bg.style.background = 'linear-gradient(180deg, hsla(' + w.hue + ',60%,50%,0.16), hsla(' + w.hue + ',60%,40%,0.04))';
+      // rik, opak mark med schackrutigt gräsmönster à la godissagor
+      bg.style.background =
+        'repeating-conic-gradient(hsla(' + w.hue + ', 55%, 72%, 0.055) 0% 25%, transparent 0% 50%) 0 0/76px 76px, ' +
+        'linear-gradient(180deg, hsl(' + w.hue + ', 38%, 30%), hsl(' + w.hue + ', 44%, 19%))';
       bg.appendChild(terrainSVG(w, wi, bottomY - topY));
       inner.appendChild(bg);
 
@@ -2541,6 +2544,10 @@
       if (wi === 6) ambient('glint', 8, { dur: function (r2) { return 2.2 + r2 * 2; } });
     });
 
+    // platshållare: vägen ritas ovanpå marken men under dekor och noder
+    var roadSlot = document.createElement('div');
+    inner.appendChild(roadSlot);
+
     LEVELS.forEach(function (lv, i) {
       var unlocked = i === 0 || (stars[i - 1] || 0) > 0;
       var done = (stars[i] || 0) > 0;
@@ -2572,21 +2579,28 @@
       el.className = 'map-node' + (done ? ' done' : '') + (unlocked ? '' : ' locked');
       el.style.setProperty('--hue', WORLDS[world].hue);
       el.style.setProperty('--d', ((i - WORLDS[world].from) * 0.045) + 's');
-      var starStr = '';
-      for (var s = 1; s <= 3; s++) starStr += s <= (stars[i] || 0) ? '★' : '☆';
-      el.innerHTML = twe(
-        '<span class="num">' + (unlocked ? (i + 1) : '🔒') + '</span>' +
-        (done ? '<span class="stars">' + starStr + '</span>'
-          : '<span class="stars">' + (
-            lv.type === 'gems' ? '💎'
-            : lv.type === 'ice' ? '🧊'
-            : lv.type === 'collect' ? '🎨'
-            : lv.type === 'sand' ? ic('sand')
-            : lv.type === 'mist' ? ic('mist')
-            : lv.type === 'eggs' ? ic('egg')
-            : lv.type === 'ghosts' ? ic('ghost')
-            : lv.type === 'keys' ? ic('key')
-            : '🎯') + '</span>'));
+      var fan = '';
+      if (done) {
+        fan = '<span class="starfan">';
+        for (var s = 1; s <= 3; s++) {
+          fan += '<span class="sf sf' + s + (s <= (stars[i] || 0) ? ' on' : '') + '">★</span>';
+        }
+        fan += '</span>';
+      }
+      var typeIcon = lv.type === 'gems' ? '💎'
+        : lv.type === 'ice' ? '🧊'
+        : lv.type === 'collect' ? '🎨'
+        : lv.type === 'sand' ? ic('sand')
+        : lv.type === 'mist' ? ic('mist')
+        : lv.type === 'eggs' ? ic('egg')
+        : lv.type === 'ghosts' ? ic('ghost')
+        : lv.type === 'keys' ? ic('key')
+        : '🎯';
+      el.innerHTML = twe(fan +
+        (unlocked
+          ? '<span class="num">' + (i + 1) + '</span>' +
+            (done ? '' : '<span class="ntype">' + typeIcon + '</span>')
+          : '<span class="nlock">🔒</span>'));
       el.style.left = x + '%';
       el.style.top = y + 'px';
       if (unlocked) el.addEventListener('click', function () { Sound.click(); startLevel(i); });
@@ -2627,21 +2641,21 @@
     svg.setAttribute('viewBox', '0 0 100 ' + h);
     svg.setAttribute('preserveAspectRatio', 'none');
     var roadD = smoothPathD(points);
-    svg.appendChild(svgPath(roadD, 'rgba(20,14,8,0.4)', '15', null, null));
-    svg.appendChild(svgPath(roadD, 'rgba(225,203,160,0.32)', '10', null, null));
+    svg.appendChild(svgPath(roadD, 'rgba(58,40,22,0.55)', '24', null, null));   // mörk kant
+    svg.appendChild(svgPath(roadD, 'rgba(214,186,138,0.85)', '17', null, null)); // ljus grusväg
     var goldTo = animateUnlock ? pu.idx : currentIdx;
     if (goldTo > 0) {
       var goldD = smoothPathD(points.slice(0, goldTo + 1));
-      svg.appendChild(svgPath(goldD, 'rgba(255,214,69,0.14)', '20', null, null)); // mjuk glöd
-      svg.appendChild(svgPath(goldD, 'rgba(255,214,69,0.45)', '10', null, null));
+      svg.appendChild(svgPath(goldD, 'rgba(255,214,69,0.2)', '26', null, null)); // mjuk glöd
+      svg.appendChild(svgPath(goldD, 'rgba(255,206,107,0.75)', '17', null, null));
     }
     var segEl = null;
     if (animateUnlock) {
-      segEl = svgPath(segmentD(points, pu.idx), 'rgba(255,214,69,0.45)', '10', null, null);
+      segEl = svgPath(segmentD(points, pu.idx), 'rgba(255,206,107,0.75)', '17', null, null);
       svg.appendChild(segEl);
     }
-    svg.appendChild(svgPath(roadD, 'rgba(255,255,255,0.55)', '2', '5 9', 'trail'));
-    inner.insertBefore(svg, inner.firstChild);
+    svg.appendChild(svgPath(roadD, 'rgba(255,255,255,0.6)', '2.5', '6 10', 'trail'));
+    inner.replaceChild(svg, roadSlot);
 
     wrap.appendChild(inner);
 
