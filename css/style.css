@@ -795,6 +795,15 @@ html, body {
 .ward-item.ach-locked svg { filter: grayscale(1) brightness(0.65); }
 .ward-item.ach-locked .ward-price { font-size: 0.64rem; }
 
+/* Köpdialog med förhandsvisning */
+.buy-preview {
+  padding: 10px 0 6px;
+  background: radial-gradient(closest-side, rgba(125, 92, 255, 0.22), transparent);
+  border-radius: 16px;
+}
+.buy-line { color: var(--text-dim); font-size: 0.9rem; margin: 2px 0 6px; }
+.buy-warn { color: #ff9d8f; font-size: 0.88rem; margin-top: 6px; }
+
 /* ===== Vinstfirande ===== */
 #celebrate {
   position: absolute;

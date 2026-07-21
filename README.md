@@ -41,17 +41,25 @@ kolumn** blir full rensas den och ger poäng.
 ## Avatar och garderob
 
 Din avatar hoppar mellan noderna på bankartan. I 🎩 **Garderoben** (menyn,
-eller tryck på avataren på kartan) köper du utseenden för mynt:
-hattar (trollkarlshatt, guldkrona, vikingahjälm, gloria …), föremål som
-avataren håller (trollstav, svärd, sköld, lykta, trollbok) och
-kroppsfärger. Allt ritas i kod och sparas på enheten.
+eller tryck på avataren på kartan) finns 62 utseenden i sex kategorier:
+**hattar** (trollkarlshatt, häxhatt, svamphatt, piratbandana, guldkrona …),
+**föremål** (trollstav, svärd, kristallkula, äventyrsvimpel, yxa …),
+**rygg** (röd mantel, älvvingar, fjärilsvingar, stjärnmantel …),
+**ansikte** (glasögon, monokel, fräknar, ögonlapp …), **kroppsfärger**
+och **ögonfärger**. Allt ritas i kod och sparas på enheten.
 
-Fem utseenden är **exklusiva belöningar** som inte kan köpas – de låses
+De fyra första kroppsfärgerna och ögonfärgerna är **gratis basutbud** –
+resten köps för mynt. Innan ett köp visas en **förhandsvisning** av hur
+avataren skulle se ut, och köpet genomförs först när du bekräftar.
+
+Åtta utseenden är **exklusiva belöningar** som inte kan köpas – de låses
 bara upp via utmärkelser: 🌿 Lagerkrans (klara värld 1), 🌙 Månkrona
 (3 dagar i streak), ✨ Månstav (kombo ×5), 👑 Stjärnspira (5000 p i
-oändligt läge) och 🐉 Drakfjäll-färgen (10 klarade banor). Låsta
-belöningar visas gråtonade i garderoben med sitt krav, och
-utmärkelselistan visar vilken garderobsbelöning varje utmärkelse ger.
+oändligt läge), 🐉 Drakfjäll-färgen (10 klarade banor), 🌟 Stjärnögon
+(1000 p i oändligt läge), 🐲 Drakvingar (rensa 3+ linjer i ett drag)
+och ⭐ Stjärnkind (kombo ×3). Låsta belöningar visas gråtonade i
+garderoben med sitt krav, och utmärkelselistan visar vilken
+garderobsbelöning varje utmärkelse ger.
 
 ## Mynt och boosters
 
