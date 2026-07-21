@@ -356,7 +356,10 @@
     streak3: 'Månkrona',
     combo5: 'Månstav',
     score5k: 'Stjärnspira',
-    levels10: 'Drakfjäll-färgen'
+    levels10: 'Drakfjäll-färgen',
+    score1k: 'Stjärnögon',
+    triple: 'Drakvingar',
+    combo3: 'Stjärnkind'
   };
 
   function checkAchievements() {
@@ -438,25 +441,47 @@
     });
   }
 
-  /* ===== Avatar och garderob ===== */
+  /* ===== Avatar och garderob =====
+     price 0 = gratis (de fyra första färgerna/ögonfärgerna är basutbudet),
+     ach = exklusiv utmärkelsebelöning som inte kan köpas. */
   var AVATAR_COLORS = [
     { id: 'rosa', name: 'Rosa', body: '#ff6dc8', belly: '#ffd2ec', price: 0 },
-    { id: 'gron', name: 'Älvgrön', body: '#4ddb9a', belly: '#c9f5e2', price: 60 },
-    { id: 'bla', name: 'Himmelsblå', body: '#5aa8f0', belly: '#cfe6fb', price: 60 },
-    { id: 'gul', name: 'Solgul', body: '#ffc84d', belly: '#ffedc2', price: 60 },
+    { id: 'gron', name: 'Älvgrön', body: '#4ddb9a', belly: '#c9f5e2', price: 0 },
+    { id: 'bla', name: 'Himmelsblå', body: '#5aa8f0', belly: '#cfe6fb', price: 0 },
+    { id: 'gul', name: 'Solgul', body: '#ffc84d', belly: '#ffedc2', price: 0 },
     { id: 'lila', name: 'Skymningslila', body: '#a06df0', belly: '#e2d2fb', price: 60 },
     { id: 'eld', name: 'Eldröd', body: '#ff6b5d', belly: '#ffd9d2', price: 60 },
+    { id: 'hav', name: 'Havsblå', body: '#38b6d9', belly: '#c9edf8', price: 70 },
+    { id: 'smaragd', name: 'Smaragd', body: '#2fae6b', belly: '#c3ecd4', price: 90 },
+    { id: 'korall', name: 'Korall', body: '#ff8f66', belly: '#ffdccc', price: 90 },
+    { id: 'korsbar', name: 'Körsbär', body: '#d9506e', belly: '#f7ccd8', price: 100 },
     { id: 'frost', name: 'Frostvit', body: '#dde5f2', belly: '#ffffff', price: 80 },
     { id: 'natt', name: 'Nattsvart', body: '#4a4460', belly: '#b9b2d0', price: 80 },
     { id: 'guld', name: 'Gyllene', body: '#ffd27a', belly: '#fff3d6', price: 150 },
     { id: 'drake', name: 'Drakfjäll', body: '#3aa88f', belly: '#c2ead9', ach: 'levels10' }
   ];
+  var AVATAR_EYES = [
+    { id: 'brun', name: 'Brun', iris: '#5b3a24', price: 0 },
+    { id: 'blaogon', name: 'Blå', iris: '#3d6fd9', price: 0 },
+    { id: 'gronogon', name: 'Grön', iris: '#2e8f5b', price: 0 },
+    { id: 'gra', name: 'Grå', iris: '#6e7787', price: 0 },
+    { id: 'barnsten', name: 'Bärnsten', iris: '#c9862e', price: 50 },
+    { id: 'violett', name: 'Violett', iris: '#8a5cd9', price: 60 },
+    { id: 'turkos', name: 'Turkos', iris: '#2fb6b0', price: 60 },
+    { id: 'rubin', name: 'Rubin', iris: '#c93a4e', price: 80 },
+    { id: 'is', name: 'Isblå', iris: '#8fd2e8', price: 80 },
+    { id: 'guldogon', name: 'Guldögon', iris: '#d9a72e', price: 120 },
+    { id: 'stjarnogon', name: 'Stjärnögon', iris: '#e8b93a', star: true, ach: 'score1k' }
+  ];
   var AVATAR_HATS = [
     { id: 'ingen', name: 'Bara öron', price: 0 },
     { id: 'wizard', name: 'Trollkarlshatt', price: 0 },
     { id: 'blomster', name: 'Blomsterkrans', price: 80 },
+    { id: 'svamp', name: 'Svamphatt', price: 90 },
     { id: 'tomte', name: 'Tomteluva', price: 100 },
+    { id: 'pirat', name: 'Piratbandana', price: 100 },
     { id: 'viking', name: 'Vikingahjälm', price: 110 },
+    { id: 'haxa', name: 'Häxhatt', price: 120 },
     { id: 'riddare', name: 'Riddarhjälm', price: 120 },
     { id: 'gloria', name: 'Gloria', price: 140 },
     { id: 'krona', name: 'Guldkrona', price: 150 },
@@ -465,32 +490,64 @@
   ];
   var AVATAR_ITEMS = [
     { id: 'ingen', name: 'Inget', price: 0 },
+    { id: 'fana', name: 'Äventyrsvimpel', price: 80 },
     { id: 'stav', name: 'Trollstav', price: 90 },
     { id: 'skold', name: 'Sköld', price: 100 },
     { id: 'lykta', name: 'Lykta', price: 110 },
+    { id: 'yxa', name: 'Yxa', price: 110 },
+    { id: 'kristall', name: 'Kristallkula', price: 120 },
     { id: 'svard', name: 'Svärd', price: 120 },
     { id: 'bok', name: 'Trollbok', price: 130 },
     { id: 'manstav', name: 'Månstav', ach: 'combo5' },
     { id: 'spira', name: 'Stjärnspira', ach: 'score5k' }
   ];
-  var AVATAR_LISTS = { hat: AVATAR_HATS, color: AVATAR_COLORS, item: AVATAR_ITEMS };
+  var AVATAR_BACKS = [
+    { id: 'ingen', name: 'Inget', price: 0 },
+    { id: 'cape', name: 'Röd mantel', price: 110 },
+    { id: 'alvvingar', name: 'Älvvingar', price: 130 },
+    { id: 'fjaril', name: 'Fjärilsvingar', price: 150 },
+    { id: 'stjarnmantel', name: 'Stjärnmantel', price: 170 },
+    { id: 'drakvingar', name: 'Drakvingar', ach: 'triple' }
+  ];
+  var AVATAR_FACES = [
+    { id: 'ingen', name: 'Inget', price: 0 },
+    { id: 'kinder', name: 'Rosiga kinder', price: 40 },
+    { id: 'fraknar', name: 'Fräknar', price: 50 },
+    { id: 'glasogon', name: 'Glasögon', price: 90 },
+    { id: 'ogonlapp', name: 'Ögonlapp', price: 100 },
+    { id: 'monokel', name: 'Monokel', price: 110 },
+    { id: 'stjarnkind', name: 'Stjärnkind', ach: 'combo3' }
+  ];
+  var AVATAR_LISTS = {
+    hat: AVATAR_HATS, color: AVATAR_COLORS, item: AVATAR_ITEMS,
+    eyes: AVATAR_EYES, back: AVATAR_BACKS, face: AVATAR_FACES
+  };
+  var AVATAR_SECTIONS = [
+    ['hat', 'Hattar'], ['item', 'Föremål'], ['back', 'Rygg'],
+    ['face', 'Ansikte'], ['color', 'Färger'], ['eyes', 'Ögonfärg']
+  ];
 
   function getAvatar() {
     var a = store.getJson('bloxis.avatar', {}) || {};
     if (!a.hat) a.hat = 'wizard';
     if (!a.color) a.color = 'rosa';
     if (!a.item) a.item = 'ingen';
+    if (!a.eyes) a.eyes = 'brun';
+    if (!a.back) a.back = 'ingen';
+    if (!a.face) a.face = 'ingen';
     if (!a.owned) a.owned = {};
-    if (!a.owned.hat) a.owned.hat = ['ingen', 'wizard'];
-    if (!a.owned.color) a.owned.color = ['rosa'];
-    if (!a.owned.item) a.owned.item = ['ingen'];
+    Object.keys(AVATAR_LISTS).forEach(function (k) {
+      if (!a.owned[k]) a.owned[k] = [];
+    });
     return a;
   }
   function saveAvatar(a) { store.setJson('bloxis.avatar', a); }
 
-  /* Ritar avataren som SVG-sträng med vald hatt, färg och föremål. */
-  function avatarSvg(hatId, colorId, itemId, size) {
+  /* Ritar avataren som SVG-sträng. cfg = { hat, color, item, eyes, back, face }. */
+  function avatarSvg(cfg, size) {
+    var hatId = cfg.hat, colorId = cfg.color, itemId = cfg.item;
     var col = AVATAR_COLORS.filter(function (c) { return c.id === colorId; })[0] || AVATAR_COLORS[0];
+    var eyec = AVATAR_EYES.filter(function (e) { return e.id === cfg.eyes; })[0] || AVATAR_EYES[0];
     var eye = '#2b2144';
     var hat = '';
     if (hatId === 'wizard') {
@@ -530,6 +587,28 @@
         '<path d="M33.5 14 Q39 12 39.5 5 Q34.5 7 32 12 Z" fill="#f2e8d0" stroke="#c9b89a" stroke-width="1"/>' +
         '<path d="M12 16.5 Q12 7 23 7 Q34 7 34 16.5 Z" fill="#9aa8bc" stroke="#6e7c92" stroke-width="1.2"/>' +
         '<rect x="12" y="13.8" width="22" height="2.7" fill="#c67c2e"/>';
+    } else if (hatId === 'haxa') {
+      hat =
+        '<path d="M23 0.5 Q33 2 29.5 7 L33.5 15.5 Q23 19.5 12.5 15.5 L18 6 Q20 2 23 0.5 Z" fill="#2e4a3a"/>' +
+        '<path d="M23 0.5 Q28.5 1.5 27.5 4.5 Q24.5 3 22 4.5 Q22 2 23 0.5 Z" fill="#3d5f4b"/>' +
+        '<ellipse cx="23" cy="16" rx="14.5" ry="3.6" fill="#233a2d"/>' +
+        '<rect x="18.5" y="12.3" width="9" height="3" fill="#8a5a33"/>' +
+        '<rect x="21" y="12" width="4" height="3.6" fill="none" stroke="#ffce6b" stroke-width="1.1"/>';
+    } else if (hatId === 'svamp') {
+      hat =
+        '<path d="M10.5 15.5 Q10.5 3.5 23 3.5 Q35.5 3.5 35.5 15.5 Q23 18.5 10.5 15.5 Z" fill="#d84a4a"/>' +
+        '<circle cx="16" cy="9.5" r="2.3" fill="#fff"/>' +
+        '<circle cx="24.5" cy="6.8" r="1.8" fill="#fff"/>' +
+        '<circle cx="30.5" cy="11" r="2" fill="#fff"/>' +
+        '<path d="M11 15.2 Q23 18.2 35 15.2 L35 17 Q23 20 11 17 Z" fill="#f2e3d0"/>';
+    } else if (hatId === 'pirat') {
+      hat =
+        '<path d="M12 16.5 Q12.5 6.5 23 6 Q33.5 6.5 34 16.5 Q23 13.5 12 16.5 Z" fill="#b93a4e"/>' +
+        '<path d="M33 12 Q39 12.5 40.5 17.5 Q36 17 33.5 15 Z" fill="#b93a4e"/>' +
+        '<circle cx="18" cy="10.5" r="1" fill="#fff"/>' +
+        '<circle cx="24" cy="8.8" r="1" fill="#fff"/>' +
+        '<circle cx="29" cy="11" r="1" fill="#fff"/>' +
+        '<path d="M12 16.5 Q23 13.5 34 16.5 L34 18 Q23 15.2 12 18 Z" fill="#8f2536"/>';
     } else if (hatId === 'lagerkrans') {
       hat =
         '<ellipse cx="13.5" cy="14" rx="3.1" ry="1.7" fill="#c9b23d" transform="rotate(-42 13.5 14)"/>' +
@@ -582,6 +661,23 @@
         '<rect x="37.5" y="27" width="7" height="9.2" rx="2" fill="rgba(255,206,107,0.35)" stroke="#4a4460" stroke-width="1.4"/>' +
         '<circle cx="41" cy="31.6" r="2.1" fill="#ffe9a8"/>' +
         '<rect x="39.1" y="36" width="3.8" height="1.7" rx="0.8" fill="#4a4460"/>';
+    } else if (itemId === 'fana') {
+      item =
+        '<line x1="39" y1="45" x2="42" y2="19" stroke="#8a5a33" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<path d="M42.2 19.5 L33.5 21.8 L41.7 24.8 Z" fill="#2fc2a5"/>' +
+        '<path d="M42.2 19.5 L37.5 20.8 L41.9 22.4 Z" fill="#5fd8bf"/>' +
+        '<circle cx="42.1" cy="18.4" r="1.4" fill="#ffce6b"/>';
+    } else if (itemId === 'yxa') {
+      item =
+        '<line x1="38" y1="45" x2="42.5" y2="26" stroke="#8a5a33" stroke-width="2.6" stroke-linecap="round"/>' +
+        '<path d="M42.7 25.5 Q36.5 24 35 18.5 Q41 17.5 44.8 21 Q45.5 24 42.7 25.5 Z" fill="#c3cede" stroke="#7e8ba3" stroke-width="1"/>' +
+        '<rect x="41" y="24.4" width="3.4" height="3" rx="1.2" fill="#6b7a91"/>';
+    } else if (itemId === 'kristall') {
+      item =
+        '<circle cx="41" cy="31" r="6.5" fill="rgba(160,220,255,0.25)"/>' +
+        '<circle cx="41" cy="31" r="4.6" fill="rgba(140,200,255,0.55)" stroke="#8fd2e8" stroke-width="1.2"/>' +
+        '<path d="M38.8 29 Q40 27.4 42 28" stroke="#eaf7ff" stroke-width="1.3" fill="none" stroke-linecap="round"/>' +
+        '<path d="M37.6 36 h6.8 l-1.1 2.6 h-4.6 Z" fill="#8a5a33"/>';
     } else if (itemId === 'manstav') {
       item =
         '<line x1="37.5" y1="45" x2="42.5" y2="28" stroke="#6b5a8f" stroke-width="2.8" stroke-linecap="round"/>' +
@@ -601,19 +697,141 @@
         '<path d="M40.1 33.4 l0.9 1.85 2.05 0.3 -1.5 1.45 0.35 2.05 -1.8 -0.95 -1.8 0.95 0.35 -2.05 -1.5 -1.45 2.05 -0.3 Z" fill="#ffce6b"/>' +
         '</g>';
     }
+    /* Rygg ritas bakom kroppen. */
+    var back = '';
+    if (cfg.back === 'cape') {
+      back =
+        '<path d="M10 22 Q4 38 11 47 L35 47 Q42 38 36 22 Q23 15 10 22 Z" fill="#b93a4e"/>' +
+        '<path d="M13 24 Q9 37 13.5 45 L18 45 Q13.5 35 15.5 24.5 Z" fill="#9c2c3f"/>' +
+        '<path d="M33 24 Q37 37 32.5 45 L28 45 Q32.5 35 30.5 24.5 Z" fill="#9c2c3f"/>';
+    } else if (cfg.back === 'stjarnmantel') {
+      back =
+        '<path d="M10 22 Q4 38 11 47 L35 47 Q42 38 36 22 Q23 15 10 22 Z" fill="#3b2d73"/>' +
+        '<path d="M13 24 Q9 37 13.5 45 L18 45 Q13.5 35 15.5 24.5 Z" fill="#2d2159"/>' +
+        '<path d="M33 24 Q37 37 32.5 45 L28 45 Q32.5 35 30.5 24.5 Z" fill="#2d2159"/>' +
+        '<circle cx="12.5" cy="30" r="1" fill="#ffe9a8"/>' +
+        '<circle cx="14" cy="40" r="0.8" fill="#ffe9a8"/>' +
+        '<circle cx="32" cy="33" r="1" fill="#ffe9a8"/>' +
+        '<circle cx="34" cy="42" r="0.8" fill="#ffe9a8"/>';
+    } else if (cfg.back === 'alvvingar') {
+      back =
+        '<path d="M8 26 Q-1 15 3.5 6.5 Q13 11 12 24 Z" fill="rgba(175,240,255,0.5)" stroke="rgba(130,205,235,0.9)" stroke-width="1.1"/>' +
+        '<path d="M8.5 30 Q1 28 0.5 20 Q8 21.5 10.5 28 Z" fill="rgba(175,240,255,0.4)" stroke="rgba(130,205,235,0.8)" stroke-width="1"/>' +
+        '<path d="M38 26 Q47 15 42.5 6.5 Q33 11 34 24 Z" fill="rgba(175,240,255,0.5)" stroke="rgba(130,205,235,0.9)" stroke-width="1.1"/>' +
+        '<path d="M37.5 30 Q45 28 45.5 20 Q38 21.5 35.5 28 Z" fill="rgba(175,240,255,0.4)" stroke="rgba(130,205,235,0.8)" stroke-width="1"/>';
+    } else if (cfg.back === 'fjaril') {
+      back =
+        '<path d="M9 25 Q-1 13 4 5.5 Q14 9.5 12.5 23 Z" fill="#c46df0" stroke="#8a4ab8" stroke-width="1.1"/>' +
+        '<path d="M9 29 Q1.5 28.5 0.5 20.5 Q9 21 11 27.5 Z" fill="#ff9d5c" stroke="#c9702e" stroke-width="1"/>' +
+        '<circle cx="6.5" cy="13" r="1.7" fill="#ffe9a8"/>' +
+        '<path d="M37 25 Q47 13 42 5.5 Q32 9.5 33.5 23 Z" fill="#c46df0" stroke="#8a4ab8" stroke-width="1.1"/>' +
+        '<path d="M37 29 Q44.5 28.5 45.5 20.5 Q37 21 35 27.5 Z" fill="#ff9d5c" stroke="#c9702e" stroke-width="1"/>' +
+        '<circle cx="39.5" cy="13" r="1.7" fill="#ffe9a8"/>';
+    } else if (cfg.back === 'drakvingar') {
+      back =
+        '<path d="M11 27 L1 9 L7 14.5 L8 6 L12 13.5 L16.5 8 L14.5 24 Z" fill="#3aa88f" stroke="#237a64" stroke-width="1.2"/>' +
+        '<path d="M35 27 L45 9 L39 14.5 L38 6 L34 13.5 L29.5 8 L31.5 24 Z" fill="#3aa88f" stroke="#237a64" stroke-width="1.2"/>';
+    }
+    /* Ögon med vald irisfärg. */
+    var eyes =
+      '<circle cx="17" cy="24" r="3.1" fill="#fff"/><circle cx="29" cy="24" r="3.1" fill="#fff"/>' +
+      '<circle cx="17.6" cy="24.5" r="1.9" fill="' + eyec.iris + '"/><circle cx="29.6" cy="24.5" r="1.9" fill="' + eyec.iris + '"/>' +
+      '<circle cx="17.8" cy="24.7" r="0.95" fill="' + eye + '"/><circle cx="29.8" cy="24.7" r="0.95" fill="' + eye + '"/>';
+    if (eyec.star) {
+      eyes +=
+        '<path d="M16.4 22.3 l0.5 1 1 0.5 -1 0.5 -0.5 1 -0.5 -1 -1 -0.5 1 -0.5 Z" fill="#fff"/>' +
+        '<path d="M28.4 22.3 l0.5 1 1 0.5 -1 0.5 -0.5 1 -0.5 -1 -1 -0.5 1 -0.5 Z" fill="#fff"/>';
+    } else {
+      eyes += '<circle cx="16.4" cy="23.4" r="0.55" fill="#fff"/><circle cx="28.4" cy="23.4" r="0.55" fill="#fff"/>';
+    }
+    /* Ansikte ritas ovanpå ögonen. */
+    var face = '';
+    if (cfg.face === 'kinder') {
+      face = '<ellipse cx="13" cy="28.8" rx="2.4" ry="1.5" fill="rgba(255,100,140,0.4)"/>' +
+        '<ellipse cx="33" cy="28.8" rx="2.4" ry="1.5" fill="rgba(255,100,140,0.4)"/>';
+    } else if (cfg.face === 'fraknar') {
+      face = '<circle cx="12.5" cy="28.4" r="0.6" fill="rgba(90,50,30,0.55)"/>' +
+        '<circle cx="14.5" cy="29.6" r="0.6" fill="rgba(90,50,30,0.55)"/>' +
+        '<circle cx="12" cy="30.6" r="0.55" fill="rgba(90,50,30,0.55)"/>' +
+        '<circle cx="33.5" cy="28.4" r="0.6" fill="rgba(90,50,30,0.55)"/>' +
+        '<circle cx="31.5" cy="29.6" r="0.6" fill="rgba(90,50,30,0.55)"/>' +
+        '<circle cx="34" cy="30.6" r="0.55" fill="rgba(90,50,30,0.55)"/>';
+    } else if (cfg.face === 'glasogon') {
+      face = '<circle cx="17" cy="24" r="4.5" fill="none" stroke="#3b2d73" stroke-width="1.5"/>' +
+        '<circle cx="29" cy="24" r="4.5" fill="none" stroke="#3b2d73" stroke-width="1.5"/>' +
+        '<path d="M21.5 23.5 Q23 22.5 24.5 23.5" stroke="#3b2d73" stroke-width="1.5" fill="none"/>' +
+        '<line x1="12.5" y1="23.5" x2="9" y2="22.5" stroke="#3b2d73" stroke-width="1.4"/>' +
+        '<line x1="33.5" y1="23.5" x2="37" y2="22.5" stroke="#3b2d73" stroke-width="1.4"/>';
+    } else if (cfg.face === 'monokel') {
+      face = '<circle cx="29" cy="24" r="4.4" fill="rgba(200,230,255,0.18)" stroke="#c9a24b" stroke-width="1.5"/>' +
+        '<path d="M31 28 Q33 33 30.5 36.5" stroke="#c9a24b" stroke-width="1.1" fill="none"/>';
+    } else if (cfg.face === 'ogonlapp') {
+      face = '<path d="M8 20.5 Q23 15.5 38.5 24" stroke="#2b2144" stroke-width="1.7" fill="none"/>' +
+        '<circle cx="29" cy="24" r="4" fill="#2b2144"/>' +
+        '<path d="M27 23.2 Q29 22 31 23.2" stroke="#4a4460" stroke-width="0.9" fill="none"/>';
+    } else if (cfg.face === 'stjarnkind') {
+      face = '<path d="M13 27.2 l0.8 1.6 1.8 0.25 -1.3 1.25 0.3 1.8 -1.6 -0.85 -1.6 0.85 0.3 -1.8 -1.3 -1.25 1.8 -0.25 Z" fill="#ffce6b"/>' +
+        '<circle cx="33" cy="29" r="0.7" fill="#ffe9a8"/>';
+    }
     return '<svg viewBox="0 0 46 50" width="' + size + '" height="' + Math.round(size * 50 / 46) + '" aria-hidden="true">' +
+      back +
       '<ellipse cx="23" cy="30" rx="17" ry="18" fill="' + col.body + '"/>' +
       '<ellipse cx="23" cy="35" rx="10" ry="9" fill="' + col.belly + '"/>' +
-      '<circle cx="17" cy="24" r="3.1" fill="#fff"/><circle cx="29" cy="24" r="3.1" fill="#fff"/>' +
-      '<circle cx="17.8" cy="24.7" r="1.6" fill="' + eye + '"/><circle cx="29.8" cy="24.7" r="1.6" fill="' + eye + '"/>' +
+      eyes +
       '<path d="M19 31 Q23 34.5 27 31" stroke="' + eye + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
-      hat + item + '</svg>';
+      face + hat + item + '</svg>';
   }
 
-  /* Ägs föremålet? Utmärkelseföremål ägs via sin upplåsta achievement. */
+  /* Ägs föremålet? Gratisföremål (pris 0) ägs alltid,
+     utmärkelseföremål ägs via sin upplåsta achievement. */
   function avatarOwns(av, type, it) {
     if (it.ach) return !!store.getJson('bloxis.ach', {})[it.ach];
+    if (!it.price) return true;
     return av.owned[type].indexOf(it.id) >= 0;
+  }
+
+  /* Avatarens utseende med ett föremål utbytt – för förhandsvisningar. */
+  function avatarWith(av, type, id) {
+    var cfg = { hat: av.hat, color: av.color, item: av.item, eyes: av.eyes, back: av.back, face: av.face };
+    cfg[type] = id;
+    return cfg;
+  }
+
+  function equipAvatar(type, id) {
+    var a = getAvatar();
+    a[type] = id;
+    saveAvatar(a);
+    if (screens.levels.classList.contains('active')) renderLevelMap();
+  }
+
+  /* Köpdialog med förhandsvisning – köpet sker först när man bekräftar. */
+  function showBuyDialog(type, it) {
+    var av = getAvatar();
+    var coins = store.getCoins();
+    var afford = coins >= it.price;
+    showOverlay({
+      title: 'Köpa ' + it.name + '?',
+      html:
+        '<div class="ward-preview buy-preview">' + avatarSvg(avatarWith(av, type, it.id), 120) + '</div>' +
+        '<p class="buy-line">Så här skulle det se ut!</p>' +
+        '<p class="ward-coins">Pris: <b>' + it.price + '</b> 💰 &ensp;•&ensp; Du har: <b>' + coins + '</b> 💰</p>' +
+        (afford ? '' : '<p class="buy-warn">Du behöver ' + (it.price - coins) + ' 💰 till – spela banor och utmaningar!</p>'),
+      buttons: afford ? [
+        { label: 'Köp – ' + it.price + ' mynt', primary: true, fn: function () {
+          var a = getAvatar();
+          if (!store.spendCoins(it.price)) { showWardrobe(); return; }
+          a.owned[type].push(it.id);
+          saveAvatar(a);
+          equipAvatar(type, it.id);
+          Sound.coin();
+          showToast('🎉 ' + it.name + ' köpt!');
+          showWardrobe();
+        } },
+        { label: 'Avbryt', fn: showWardrobe }
+      ] : [
+        { label: 'Tillbaka', primary: true, fn: showWardrobe }
+      ]
+    });
   }
 
   function showWardrobe() {
@@ -621,17 +839,13 @@
     function itemHtml(type, it) {
       var owned = avatarOwns(av, type, it);
       var equipped = av[type] === it.id;
-      var preview =
-        type === 'hat' ? avatarSvg(it.id, av.color, av.item, 38) :
-        type === 'color' ? avatarSvg(av.hat, it.id, av.item, 38) :
-        avatarSvg(av.hat, av.color, it.id, 38);
       var label = equipped ? '✓ Vald'
-        : owned ? 'Byt'
+        : owned ? (it.price || it.ach ? 'Byt' : 'Gratis')
         : it.ach ? '🏅 Utmärkelse'
         : it.price + ' 💰';
       return '<button class="ward-item' + (equipped ? ' equipped' : '') + (it.ach && !owned ? ' ach-locked' : '') + '"' +
         ' data-type="' + type + '" data-id="' + it.id + '">' +
-        preview +
+        avatarSvg(avatarWith(av, type, it.id), 38) +
         '<span class="ward-name">' + it.name + '</span>' +
         '<span class="ward-price">' + label + '</span>' +
         '</button>';
@@ -639,44 +853,35 @@
     showOverlay({
       title: '🎩 Garderob',
       html:
-        '<div class="ward-preview">' + avatarSvg(av.hat, av.color, av.item, 92) + '</div>' +
+        '<div class="ward-preview">' + avatarSvg(av, 92) + '</div>' +
         '<p class="ward-coins">Dina mynt: <b>' + store.getCoins() + '</b> 💰</p>' +
-        '<p class="ward-head">Hattar</p>' +
-        '<div class="ward-row">' + AVATAR_HATS.map(function (h) { return itemHtml('hat', h); }).join('') + '</div>' +
-        '<p class="ward-head">Föremål</p>' +
-        '<div class="ward-row">' + AVATAR_ITEMS.map(function (i) { return itemHtml('item', i); }).join('') + '</div>' +
-        '<p class="ward-head">Färger</p>' +
-        '<div class="ward-row">' + AVATAR_COLORS.map(function (c) { return itemHtml('color', c); }).join('') + '</div>',
+        AVATAR_SECTIONS.map(function (sec) {
+          return '<p class="ward-head">' + sec[1] + '</p>' +
+            '<div class="ward-row">' +
+            AVATAR_LISTS[sec[0]].map(function (it) { return itemHtml(sec[0], it); }).join('') +
+            '</div>';
+        }).join(''),
       buttons: [{ label: 'Klart', primary: true, fn: function () {} }]
     });
     document.querySelectorAll('#ov-text .ward-item').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var type = btn.getAttribute('data-type');
         var id = btn.getAttribute('data-id');
-        var list = AVATAR_LISTS[type];
-        var it = list.filter(function (x) { return x.id === id; })[0];
+        var it = AVATAR_LISTS[type].filter(function (x) { return x.id === id; })[0];
         var a = getAvatar();
-        var owned = avatarOwns(a, type, it);
-        if (!owned) {
+        if (!avatarOwns(a, type, it)) {
           if (it.ach) {
             var req = ACH_BY_ID[it.ach];
             showToast('🏅 Lås upp "' + req.name + '": ' + req.desc);
             return;
           }
-          if (!store.spendCoins(it.price)) {
-            showToast('Du behöver ' + it.price + ' 💰 – spela banor och utmaningar!');
-            return;
-          }
-          a.owned[type].push(id);
-          Sound.coin();
-          showToast('🎉 ' + it.name + ' köpt!');
-        } else {
-          Sound.click();
+          hideOverlay();
+          showBuyDialog(type, it);
+          return;
         }
-        a[type] = id;
-        saveAvatar(a);
+        Sound.click();
+        equipAvatar(type, id);
         showWardrobe();
-        if (screens.levels.classList.contains('active')) renderLevelMap();
       });
     });
   }
@@ -1961,7 +2166,7 @@
       var av = getAvatar();
       pin = document.createElement('div');
       pin.className = 'map-pin map-avatar';
-      pin.innerHTML = avatarSvg(av.hat, av.color, av.item, 46);
+      pin.innerHTML = avatarSvg(av, 46);
       pin.style.pointerEvents = 'auto';
       pin.style.cursor = 'pointer';
       pin.setAttribute('aria-label', 'Din avatar – öppna garderoben');
@@ -2149,7 +2354,8 @@
   window.__bloxisTest = {
     forceWin: function () {
       if (game && game.status === 'playing') { game.status = 'won'; finishGame(); }
-    }
+    },
+    avatarSvg: avatarSvg
   };
 
   showScreen('menu');
