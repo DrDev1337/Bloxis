@@ -139,6 +139,13 @@ html, body {
   left: 0;
   right: 0;
   pointer-events: none;
+  overflow: hidden;
+}
+.map-world svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 .map-path {
   position: absolute;
@@ -216,8 +223,22 @@ html, body {
   justify-content: center;
   cursor: pointer;
   z-index: 3;
-  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 10px 18px rgba(0, 0, 0, 0.45),
+    inset 0 -6px 10px rgba(0, 0, 0, 0.25),
+    inset 0 4px 6px rgba(255, 255, 255, 0.18);
   animation: node-pop 0.4s cubic-bezier(0.4, 1.6, 0.5, 1) var(--d, 0s) both;
+}
+.map-node::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -13px;
+  width: 54px;
+  height: 13px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.45), transparent 65%);
+  border-radius: 50%;
 }
 @keyframes node-pop {
   from { transform: translate(-50%, -50%) scale(0); }
@@ -268,7 +289,9 @@ html, body {
   padding: 6px 18px;
   font-size: 0.95rem;
   margin-bottom: 6px;
+  cursor: pointer;
 }
+#ov-text p { margin-bottom: 8px; }
 #hud-objective b { color: var(--gold); }
 
 #board-wrap {
@@ -382,7 +405,7 @@ html, body {
   height: 0.85em;
   border-radius: 4px;
   vertical-align: -0.08em;
-  margin-right: 2px;
+  margin-right: 6px;
 }
 .slot {
   flex: 1;

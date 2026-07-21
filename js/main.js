@@ -465,6 +465,39 @@
     renderBoard();
   }
 
+  var COLOR_NAMES = ['röda', 'orange', 'gula', 'gröna', 'ljusblå', 'blå', 'lila', 'rosa'];
+
+  function countChar(board, ch) {
+    return board.join('').split('').filter(function (c) { return c === ch; }).length;
+  }
+
+  function objectiveHtml(lv) {
+    if (lv.type === 'score') {
+      return '<p style="font-size:1.05rem">&#127919; Nå <b>' + lv.target + ' poäng</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
+        '<p>Rensa flera linjer samtidigt och kedja rensningar för kombobonus.</p>';
+    }
+    if (lv.type === 'gems') {
+      return '<p style="font-size:1.05rem">&#128142; Rensa alla <b>' + countChar(lv.board, 'G') + ' ädelstenar</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
+        '<p>En ädelsten försvinner när dess rad eller kolumn blir full.</p>';
+    }
+    if (lv.type === 'ice') {
+      return '<p style="font-size:1.05rem">&#129482; Rensa all is (<b>' + countChar(lv.board, 'I') + ' rutor</b>) på högst <b>' + lv.moves + ' drag</b>.</p>' +
+        '<p>Is kräver <b>två</b> rensningar: den första spräcker isen, den andra tar bort den.</p>';
+    }
+    var name = COLOR_NAMES[lv.color];
+    return '<p style="font-size:1.05rem"><span class="collect-chip" style="background:' + Shapes.PALETTE[lv.color] + '"></span>' +
+      'Samla <b>' + lv.count + ' ' + name + ' block</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
+      '<p>Ett block räknas när det <b>rensas</b> i en full rad eller kolumn. Minst en ' + name.replace(/a$/, '') + ' pjäs finns alltid bland dina tre.</p>';
+  }
+
+  function showObjectiveIntro(idx, isStart) {
+    showOverlay({
+      title: 'Bana ' + (idx + 1),
+      html: objectiveHtml(LEVELS[idx]),
+      buttons: [{ label: isStart ? 'Kör!' : 'Fortsätt', primary: true, fn: function () {} }]
+    });
+  }
+
   function startLevel(idx) {
     mode = 'level';
     levelIndex = idx;
@@ -474,6 +507,7 @@
     updateHud();
     renderTray(true);
     renderBoard();
+    showObjectiveIntro(idx, true);
   }
 
   function restartCurrent() {
@@ -743,8 +777,10 @@
     return d + ' L ' + last[0] + ' ' + last[1];
   }
 
+  var SVGNS = 'http://www.w3.org/2000/svg';
+
   function svgPath(d, stroke, width, dash, cls) {
-    var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    var p = document.createElementNS(SVGNS, 'path');
     p.setAttribute('d', d);
     p.setAttribute('fill', 'none');
     p.setAttribute('stroke', stroke);
@@ -754,6 +790,79 @@
     p.setAttribute('vector-effect', 'non-scaling-stroke');
     if (cls) p.setAttribute('class', cls);
     return p;
+  }
+
+  function svgFill(d, fill) {
+    var p = document.createElementNS(SVGNS, 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('fill', fill);
+    return p;
+  }
+
+  /* Mjuk böljande ås (kullar/dyner) som fylls ner till segmentets botten. */
+  function ridgeD(yBase, amp, freq, phase, segH) {
+    var d = 'M 0 ' + segH;
+    for (var x = 0; x <= 100; x += 4) {
+      var y = yBase + Math.sin((x / 100) * Math.PI * 2 * freq + phase) * amp;
+      d += ' L ' + x + ' ' + y.toFixed(1);
+    }
+    return d + ' L 100 ' + segH + ' Z';
+  }
+
+  /* Taggig bergsås. Returnerar även topparnas positioner för snötäcken. */
+  function peaksD(yBase, amp, n, segH) {
+    var d = 'M 0 ' + segH + ' L 0 ' + yBase;
+    var tops = [];
+    for (var i = 1; i <= n * 2; i++) {
+      var x = (i / (n * 2)) * 100;
+      var peak = i % 2 === 1;
+      var y = peak ? yBase - amp : yBase;
+      if (peak) tops.push([x, y]);
+      d += ' L ' + x.toFixed(1) + ' ' + y.toFixed(1);
+    }
+    return { d: d + ' L 100 ' + segH + ' Z', tops: tops };
+  }
+
+  /* Målad terräng för ett världssegment: kullar, berg med snö eller dyner med sol. */
+  function terrainSVG(w, wi, segH) {
+    var svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 ' + segH);
+    svg.setAttribute('preserveAspectRatio', 'none');
+
+    if (wi === 2) { // öken: sol med glöd
+      var sx = 20 + seeded(wi * 5 + 1) * 60;
+      [[16, 60, 0.12], [10, 38, 0.2], [6, 22, 0.45]].forEach(function (ring) {
+        var e = document.createElementNS(SVGNS, 'ellipse');
+        e.setAttribute('cx', sx); e.setAttribute('cy', 120);
+        e.setAttribute('rx', ring[0]); e.setAttribute('ry', ring[1]);
+        e.setAttribute('fill', 'hsla(45, 90%, 65%, ' + ring[2] + ')');
+        svg.appendChild(e);
+      });
+    }
+
+    var bands = Math.max(3, Math.round(segH / 300));
+    for (var b = 0; b < bands; b++) {
+      var r = seeded(wi * 97 + b * 13);
+      var yBase = segH - 50 - b * ((segH - 140) / bands) + (r - 0.5) * 50;
+      var light = 26 + b * 5 + r * 6;
+      var alpha = Math.max(0.08, 0.2 - b * 0.025);
+      var fill = 'hsla(' + w.hue + ', 45%, ' + light + '%, ' + alpha + ')';
+      if (wi === 1) { // berg med snötoppar
+        var pk = peaksD(yBase, 90 + r * 70, 3 + Math.round(r * 2), segH);
+        svg.appendChild(svgFill(pk.d, fill));
+        pk.tops.forEach(function (t) {
+          svg.appendChild(svgFill(
+            'M ' + (t[0] - 2.2) + ' ' + (t[1] + 26) + ' L ' + t[0] + ' ' + t[1] +
+            ' L ' + (t[0] + 2.2) + ' ' + (t[1] + 26) + ' Z',
+            'rgba(255,255,255,' + (0.25 + alpha) + ')'));
+        });
+      } else { // kullar respektive dyner
+        var amp = wi === 2 ? 34 + r * 26 : 22 + r * 18;
+        var freq = wi === 2 ? 0.9 + r * 0.6 : 1.3 + r * 0.9;
+        svg.appendChild(svgFill(ridgeD(yBase, amp, freq, r * 6.28, segH), fill));
+      }
+    }
+    return svg;
   }
 
   function renderLevelMap() {
@@ -783,6 +892,7 @@
       bg.style.top = topY + 'px';
       bg.style.height = (bottomY - topY) + 'px';
       bg.style.background = 'linear-gradient(180deg, hsla(' + w.hue + ',60%,50%,0.16), hsla(' + w.hue + ',60%,40%,0.04))';
+      bg.appendChild(terrainSVG(w, wi, bottomY - topY));
       inner.appendChild(bg);
 
       var banner = document.createElement('div');
@@ -860,16 +970,19 @@
       inner.appendChild(pin);
     }
 
-    // stig: hel kurva med vandrande prickar + guldspår för avklarad sträcka
-    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    // vägen: bred grusväg med kantlinje, guldbelagd avklarad sträcka
+    // och vandrande mittlinje
+    var svg = document.createElementNS(SVGNS, 'svg');
     svg.setAttribute('class', 'map-path');
     svg.setAttribute('viewBox', '0 0 100 ' + h);
     svg.setAttribute('preserveAspectRatio', 'none');
-    svg.appendChild(svgPath(smoothPathD(points), 'rgba(255,255,255,0.28)', '3', '1 7', 'trail'));
+    var roadD = smoothPathD(points);
+    svg.appendChild(svgPath(roadD, 'rgba(20,14,8,0.4)', '15', null, null));
+    svg.appendChild(svgPath(roadD, 'rgba(225,203,160,0.32)', '10', null, null));
     if (currentIdx > 0) {
-      var donePts = points.slice(0, currentIdx + 1);
-      svg.appendChild(svgPath(smoothPathD(donePts), 'rgba(255,214,69,0.45)', '5', null, null));
+      svg.appendChild(svgPath(smoothPathD(points.slice(0, currentIdx + 1)), 'rgba(255,214,69,0.45)', '10', null, null));
     }
+    svg.appendChild(svgPath(roadD, 'rgba(255,255,255,0.55)', '2', '5 9', 'trail'));
     inner.insertBefore(svg, inner.firstChild);
 
     wrap.appendChild(inner);
@@ -915,6 +1028,10 @@
       hideOverlay();
       showScreen(mode === 'level' && screens.game.classList.contains('active') ? 'levels' : 'menu');
     });
+  });
+
+  hudObjective.addEventListener('click', function () {
+    if (mode === 'level' && game) showObjectiveIntro(levelIndex, false);
   });
 
   window.addEventListener('resize', function () {

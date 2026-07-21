@@ -96,10 +96,22 @@
   };
 
   /* Fyller på tre nya pjäser. Försöker (upp till 25 ggr) hitta en uppsättning
-     där minst en pjäs går att lägga, som en mild barmhärtighetsregel. */
+     där minst en pjäs går att lägga, som en mild barmhärtighetsregel.
+     På samlabanor garanteras minst en pjäs i målfärgen, annars kan målet
+     bli omöjligt att nå. */
   Game.prototype.refill = function () {
     for (var attempt = 0; attempt < 25; attempt++) {
       var set = [Shapes.randomShape(), Shapes.randomShape(), Shapes.randomShape()];
+      if (this.level && this.level.type === 'collect') {
+        var color = this.level.color;
+        if (!set.some(function (sh) { return sh.color === color; })) {
+          var candidates = Shapes.SHAPES.filter(function (sh) { return sh.color === color; });
+          if (candidates.length) {
+            set[Math.floor(Math.random() * set.length)] =
+              candidates[Math.floor(Math.random() * candidates.length)];
+          }
+        }
+      }
       var ok = set.some(function (sh) { return this.canPlaceAnywhere(sh); }, this);
       if (ok || attempt === 24) {
         this.pieces = set;
