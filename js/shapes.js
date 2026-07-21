@@ -78,11 +78,12 @@
 
   var SHAPES = DEFS.map(function (d) { return makeShape(d[0], d[1], d[2], d[3]); });
 
-  /* Slumpar en form, valfritt begränsad till max svårighetsnivå (1-3). */
-  function randomShape(maxTier) {
+  /* Slumpar en form, valfritt begränsad till max svårighetsnivå (1-3).
+     rng kan anges för deterministisk slump (dagliga utmaningen). */
+  function randomShape(maxTier, rng) {
     var pool = maxTier ? SHAPES.filter(function (s) { return s.tier <= maxTier; }) : SHAPES;
     var total = pool.reduce(function (sum, sh) { return sum + sh.weight; }, 0);
-    var r = Math.random() * total;
+    var r = (rng || Math.random)() * total;
     for (var i = 0; i < pool.length; i++) {
       r -= pool[i].weight;
       if (r <= 0) return pool[i];

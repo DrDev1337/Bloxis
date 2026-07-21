@@ -22,6 +22,7 @@
     this.level = opts.level || null;           // bandefinition vid mode 'level'
     this.size = opts.size || DEFAULT_SIZE;     // brädets sida (banor är alltid 8)
     this.shapeRamp = opts.shapeRamp || null;   // { t2, t3 }: drag då nivå 2/3-former släpps in
+    this.rng = opts.rng || null;               // deterministisk slump (dagliga utmaningen)
     this.score = 0;
     this.combo = 0;                            // pågående kombokedja
     this.movesUsed = 0;
@@ -111,8 +112,9 @@
      bli omöjligt att nå. */
   Game.prototype.refill = function () {
     var tier = this.maxTier();
+    var rng = this.rng;
     for (var attempt = 0; attempt < 25; attempt++) {
-      var set = [Shapes.randomShape(tier), Shapes.randomShape(tier), Shapes.randomShape(tier)];
+      var set = [Shapes.randomShape(tier, rng), Shapes.randomShape(tier, rng), Shapes.randomShape(tier, rng)];
       if (this.level && this.level.type === 'collect') {
         var color = this.level.color;
         if (!set.some(function (sh) { return sh.color === color; })) {

@@ -17,15 +17,20 @@
 
     <!-- ===== Huvudmeny ===== -->
     <section id="screen-menu" class="screen active">
+      <div class="menu-top">
+        <button id="btn-achievements" class="btn icon" aria-label="Utm&auml;rkelser">&#127941;</button>
+        <button id="btn-settings" class="btn icon" aria-label="Inst&auml;llningar">&#9881;&#65039;</button>
+      </div>
       <div class="menu-inner">
         <h1 class="logo"><span>B</span><span>L</span><span>O</span><span>X</span><span>I</span><span>S</span></h1>
         <p class="tagline">Placera block &ndash; rensa rader!</p>
         <div class="menu-buttons">
           <button id="btn-endless" class="btn big primary">&infin;&ensp;O&auml;ndligt l&auml;ge</button>
           <button id="btn-levels" class="btn big">&#129513;&ensp;Banor</button>
+          <button id="btn-daily" class="btn big">&#128197;&ensp;Dagens utmaning<span id="daily-badge" class="badge hidden">!</span></button>
           <button id="btn-help" class="btn">S&aring; spelar du</button>
         </div>
-        <p class="best-line">Rekord: <span id="menu-best">0</span> &ensp;&bull;&ensp; &#128176; <span id="menu-coins">0</span></p>
+        <p class="best-line">Rekord: <span id="menu-best">0</span> &ensp;&bull;&ensp; &#128176; <span id="menu-coins">0</span> &ensp;&bull;&ensp; &#128293; <span id="menu-streak">0</span></p>
       </div>
     </section>
 
@@ -78,6 +83,13 @@
         <div id="ov-buttons"></div>
       </div>
     </div>
+
+    <!-- Tutorial -->
+    <div id="tutor-bubble" class="hidden"><p id="tutor-text"></p></div>
+    <div id="tutor-hand" class="hidden">&#128070;</div>
+
+    <!-- Achievement-toast -->
+    <div id="toast" class="hidden"></div>
 
     <!-- Flytande pjäs vid drag -->
     <canvas id="drag-piece" class="hidden"></canvas>

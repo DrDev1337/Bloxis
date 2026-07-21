@@ -183,6 +183,68 @@
         'G#.II.#G','#......#','.I....I.','.G.##.G.',
         '.G.##.G.','.I....I.','#......#','G#.II.#G'
       ]
+    },
+
+    /* ===== Värld 4: Stjärnhimlen ===== */
+    { // 31 – stjärnfall
+      type: 'score', target: 2800, moves: 34, board: [
+        '.#....#.','#......#','........','...##...',
+        '...##...','........','#......#','.#....#.'
+      ]
+    },
+    { // 32 – månskärvor
+      type: 'ice', moves: 34, board: [
+        '...II...','..I..I..','.I....I.','I......I',
+        'I......I','.I....I.','..I..I..','...II...'
+      ]
+    },
+    { // 33 – färgjakt: rosa stjärnstoft
+      type: 'collect', color: 7, count: 16, moves: 34, board: [
+        '#......#','........','..#..#..','........',
+        '........','..#..#..','........','#......#'
+      ]
+    },
+    { // 34 – stjärnbilder
+      type: 'gems', moves: 36, board: [
+        'G......G','.#....#.','..G..G..','...##...',
+        '...##...','..G..G..','.#....#.','G......G'
+      ]
+    },
+    { // 35 – kometsvans
+      type: 'score', target: 3200, moves: 36, board: [
+        '#.......','.#......','..#.....','...#....',
+        '....#I..','.....I#.','......I#','.......#'
+      ]
+    },
+    { // 36 – frusna månar
+      type: 'ice', moves: 36, board: [
+        '.II..II.','.II..II.','........','II....II',
+        'II....II','........','.II..II.','.II..II.'
+      ]
+    },
+    { // 37 – färgjakt: ljusblå nebulosa
+      type: 'collect', color: 4, count: 18, moves: 36, board: [
+        '........','.#.##.#.','........','#..II..#',
+        '#..II..#','........','.#.##.#.','........'
+      ]
+    },
+    { // 38 – galaxkärnan
+      type: 'gems', moves: 38, board: [
+        '........','..#GG#..','.#G##G#.','.G#II#G.',
+        '.G#II#G.','.#G##G#.','..#GG#..','........'
+      ]
+    },
+    { // 39 – supernovan
+      type: 'score', target: 3800, moves: 40, board: [
+        '#..##..#','..I..I..','#......#','.I.##.I.',
+        '.I.##.I.','#......#','..I..I..','#..##..#'
+      ]
+    },
+    { // 40 – universums mästare
+      type: 'gems', moves: 40, board: [
+        'GI.##.IG','I#....#I','........','.G#II#G.',
+        '.G#II#G.','........','I#....#I','GI.##.IG'
+      ]
     }
   ];
 
@@ -190,7 +252,8 @@
   var WORLDS = [
     { name: 'Gröna ängarna', from: 0, to: 9, hue: 145 },
     { name: 'Frostbergen', from: 10, to: 19, hue: 205 },
-    { name: 'Solnedgångsöknen', from: 20, to: 29, hue: 25 }
+    { name: 'Solnedgångsöknen', from: 20, to: 29, hue: 25 },
+    { name: 'Stjärnhimlen', from: 30, to: 39, hue: 265 }
   ];
 
   global.BloxisLevels = LEVELS;
