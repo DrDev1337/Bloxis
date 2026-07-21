@@ -972,6 +972,8 @@
     }
     var color = opts.gem ? Shapes.GEM_COLOR
       : opts.ice ? (opts.ice > 1 ? '#bfe6ff' : '#8fd0f5')
+      : opts.sand ? '#e0aa52'
+      : opts.egg ? '#5a4d80'
       : Shapes.PALETTE[colorIdx % Shapes.PALETTE.length];
     // bas med djup: ljus topp -> mörkare botten
     var base = ctx.createLinearGradient(0, y + pad, 0, y + pad + s);
@@ -1037,7 +1039,47 @@
       ctx.arc(cx2 - d * 0.3, cy2 - d * 0.35, s * 0.05, 0, Math.PI * 2);
       ctx.fill();
     }
-    if (settings.colorblind && !opts.gem && !opts.ice) {
+    if (opts.sand) {
+      // sandkorn
+      ctx.fillStyle = 'rgba(120,80,30,0.5)';
+      [[0.28, 0.55, 0.05], [0.55, 0.35, 0.045], [0.72, 0.62, 0.05], [0.42, 0.76, 0.04]].forEach(function (p) {
+        ctx.beginPath();
+        ctx.arc(x + size * p[0], y + size * p[1], size * p[2], 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.strokeStyle = 'rgba(120,80,30,0.35)';
+      ctx.lineWidth = Math.max(1, size * 0.03);
+      ctx.beginPath();
+      ctx.moveTo(x + size * 0.2, y + size * 0.45);
+      ctx.quadraticCurveTo(x + size * 0.5, y + size * 0.36, x + size * 0.8, y + size * 0.45);
+      ctx.stroke();
+    }
+    if (opts.egg > 0) {
+      // drakägg med nedräkning
+      var ecx = x + size / 2, ecy = y + size * 0.46;
+      ctx.beginPath();
+      ctx.ellipse(ecx, ecy, size * 0.24, size * 0.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#e8e2f5';
+      ctx.fill();
+      ctx.strokeStyle = '#3d3359';
+      ctx.lineWidth = Math.max(1, size * 0.03);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(125,92,255,0.55)';
+      ctx.beginPath();
+      ctx.arc(ecx - size * 0.08, ecy - size * 0.05, size * 0.06, 0, Math.PI * 2);
+      ctx.arc(ecx + size * 0.08, ecy + size * 0.08, size * 0.05, 0, Math.PI * 2);
+      ctx.fill();
+      var label = String(opts.egg);
+      ctx.font = 'bold ' + Math.round(size * 0.3) + 'px "Averia Serif Libre", serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = Math.max(2, size * 0.07);
+      ctx.strokeStyle = '#2b2144';
+      ctx.strokeText(label, x + size * 0.68, y + size * 0.78);
+      ctx.fillStyle = opts.egg <= 4 ? '#ffb3a8' : '#ffe9a8';
+      ctx.fillText(label, x + size * 0.68, y + size * 0.78);
+    }
+    if (settings.colorblind && !opts.gem && !opts.ice && !opts.sand && !opts.egg) {
       drawCbSymbol(ctx, x, y, size, colorIdx % 8);
     }
     if (opts.ice === 1) {
@@ -1064,6 +1106,32 @@
         ctx.fill();
       });
     }
+    ctx.restore();
+  }
+
+  /* Stjärndimma: mjuk dis-slöja på tomma rutor som inte går att bygga på. */
+  function drawMist(ctx, x, y, size, seed) {
+    var pad = size * 0.06;
+    var s = size - pad * 2;
+    ctx.save();
+    roundRectPath(ctx, x + pad, y + pad, s, s, size * 0.14);
+    ctx.fillStyle = 'rgba(170,160,215,0.3)';
+    ctx.fill();
+    ctx.clip();
+    ctx.fillStyle = 'rgba(210,200,245,0.4)';
+    var t = seeded(seed) * Math.PI * 2;
+    [[0.3 + 0.06 * Math.sin(t), 0.42, 0.26], [0.62, 0.36 + 0.05 * Math.cos(t), 0.22], [0.5, 0.68, 0.24]].forEach(function (p) {
+      ctx.beginPath();
+      ctx.arc(x + size * p[0], y + size * p[1], size * p[2], 0, Math.PI * 2);
+      ctx.fill();
+    });
+    // liten stjärna som blinkar i diset
+    ctx.fillStyle = 'rgba(255,233,168,0.8)';
+    var sx = x + size * (0.3 + 0.4 * seeded(seed + 7));
+    var sy = y + size * (0.3 + 0.4 * seeded(seed + 13));
+    ctx.beginPath();
+    ctx.arc(sx, sy, size * 0.045, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
 
@@ -1133,7 +1201,13 @@
         ctx.fillStyle = (hlRows[r] || hlCols[c]) ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.05)';
         ctx.fill();
         var cellData = game.board[r][c];
-        if (cellData) drawBlock(ctx, x, y, cell, cellData.c, { gem: cellData.gem, ice: cellData.ice });
+        if (cellData) {
+          drawBlock(ctx, x, y, cell, cellData.c, {
+            gem: cellData.gem, ice: cellData.ice, sand: cellData.sand, egg: cellData.egg
+          });
+        } else if (game.mist && game.mist[r][c]) {
+          drawMist(ctx, x, y, cell, r * S + c);
+        }
       }
     }
 
@@ -1153,6 +1227,8 @@
       drawBlock(ctx, a.c * cell, a.r * cell, cell, a.cell.c, {
         gem: a.cell.gem,
         ice: a.cell.ice,
+        sand: a.cell.sand,
+        egg: a.cell.egg,
         alpha: 1 - tt,
         scale: 1 - tt * 0.7
       });
@@ -1201,6 +1277,29 @@
     }
   }
 
+  /* Ljusa dis-puffar när stjärndimma lyfter. */
+  function spawnMistPoof(lifted) {
+    var cell = boardCanvas.width / bsize();
+    var now = performance.now();
+    lifted.forEach(function (m) {
+      for (var i = 0; i < 5; i++) {
+        particles.push({
+          x: (m.c + 0.5) * cell,
+          y: (m.r + 0.5) * cell,
+          vx: (Math.random() - 0.5) * 1.4,
+          vy: -Math.random() * 1.2 - 0.3,
+          size: cell * (0.1 + Math.random() * 0.12),
+          color: 'rgba(210,200,245,0.9)',
+          sprite: PARTICLE_SPRITES[i % PARTICLE_SPRITES.length],
+          rot: Math.random() * Math.PI,
+          spin: (Math.random() - 0.5) * 2,
+          born: now
+        });
+      }
+    });
+    ensureAnim();
+  }
+
   function spawnEffects(cleared) {
     var cell = boardCanvas.width / bsize();
     var now = performance.now();
@@ -1208,6 +1307,8 @@
       clearAnims.push({ r: cc.r, c: cc.c, cell: cc.cell, start: now });
       var color = cc.cell.gem ? Shapes.GEM_COLOR
         : cc.cell.ice ? '#bfe6ff'
+        : cc.cell.sand ? '#e0aa52'
+        : cc.cell.egg ? '#c9b8ff'
         : Shapes.PALETTE[cc.cell.c % Shapes.PALETTE.length];
       for (var i = 0; i < 6; i++) {
         particles.push({
@@ -1311,6 +1412,12 @@
       hudObjective.innerHTML = twe('💎 <b>' + game.gemsLeft + '</b> kvar • ' + left + ' drag kvar');
     } else if (lv.type === 'ice') {
       hudObjective.innerHTML = twe('🧊 <b>' + game.iceLeft + '</b> kvar • ' + left + ' drag kvar');
+    } else if (lv.type === 'sand') {
+      hudObjective.innerHTML = ic('sand') + ' <b>' + game.sandLeft + '</b> kvar • ' + left + ' drag kvar';
+    } else if (lv.type === 'mist') {
+      hudObjective.innerHTML = ic('mist') + ' <b>' + game.mistLeft + '</b> kvar • ' + left + ' drag kvar';
+    } else if (lv.type === 'eggs') {
+      hudObjective.innerHTML = ic('egg') + ' <b>' + game.eggsLeft + '</b> kvar • ' + left + ' drag kvar';
     } else {
       hudObjective.innerHTML = twe(
         '<span class="collect-chip" style="background:' + Shapes.PALETTE[lv.color] + '"></span>' +
@@ -1441,7 +1548,24 @@
     return board.join('').split('').filter(function (c) { return c === ch; }).length;
   }
 
+  /* Egen ikon (assets/icons) som inline-bild i HTML-strängar. */
+  function ic(name) {
+    return '<img class="twe" draggable="false" alt="" src="assets/icons/' + name + '.svg">';
+  }
+
   function objectiveHtml(lv) {
+    if (lv.type === 'sand') {
+      return '<p style="font-size:1.05rem">' + ic('sand') + ' Rensa all <b>sand</b> (' + countChar(lv.board, 'S') + ' rutor) på högst <b>' + lv.moves + ' drag</b>.</p>' +
+        '<p>Sanden <b>sprider sig</b> till en tom granne var ' + (lv.sandEvery || 3) + ':e drag – rensa den snabbare än den växer!</p>';
+    }
+    if (lv.type === 'mist') {
+      return '<p style="font-size:1.05rem">' + ic('mist') + ' Lyft all <b>stjärndimma</b> (' + countChar(lv.board, 'M') + ' rutor) på högst <b>' + lv.moves + ' drag</b>.</p>' +
+        '<p>Det går inte att bygga i dimman – men en <b>rensning i rutan intill</b> blåser bort den.</p>';
+    }
+    if (lv.type === 'eggs') {
+      return '<p style="font-size:1.05rem">' + ic('egg') + ' Rädda alla <b>' + countChar(lv.board, 'E') + ' drakägg</b> innan de kläcks!</p>' +
+        '<p>Varje ägg har en <b>nedräkning</b> (' + (lv.eggTimer || 12) + ' drag). Rensa äggets rad eller kolumn i tid – kläcks ett ägg är banan förlorad.</p>';
+    }
     if (lv.type === 'score') {
       return '<p style="font-size:1.05rem">🎯 Nå <b>' + lv.target + ' poäng</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
         '<p>Rensa flera linjer samtidigt och kedja rensningar för kombobonus.</p>';
@@ -1783,6 +1907,8 @@
           title: 'Det gick inte den här gången',
           html: g.lossReason === 'moves'
             ? 'Dragen tog slut innan målet nåddes.'
+            : g.lossReason === 'egg'
+            ? ic('egg') + ' Ett drakägg kläcktes! Rensa äggens rader eller kolumner innan nedräkningen når noll.'
             : 'Ingen pjäs fick plats på brädet.',
           buttons: [
             { label: 'Försök igen', primary: true, fn: function () { startLevel(levelIndex); } },
@@ -1810,6 +1936,7 @@
     renderTray(refilled);
     Sound.place();
     buzz(12);
+    if (res.mistLifted && res.mistLifted.length) spawnMistPoof(res.mistLifted);
     if (res.cleared.length || res.iceHits.length) {
       spawnEffects(res.cleared);
       flyScore(res.points, res.cleared.length ? res.cleared : res.iceHits);
@@ -1989,9 +2116,10 @@
     ['🌲', '🌳', '🌷', '🍄', '🦋'],
     ['🏔️', '❄️', '⛄', '🧊'],
     ['🌵', '☀️', '🪨', '🦂'],
-    ['⭐', '🌙', '☄️', '🪐']
+    ['⭐', '🌙', '☄️', '🪐'],
+    ['🌋', '🪨', '🔥', '☄️']
   ];
-  var WORLD_EMOJI = ['🌿', '❄️', '🌵', '🌟'];
+  var WORLD_EMOJI = ['🌿', '❄️', '🌵', '🌟', '🌋'];
 
   /* Deterministiskt "slump"-värde 0..1 per index, så kartan ser likadan ut varje gång. */
   function seeded(i) {
@@ -2213,7 +2341,14 @@
       el.innerHTML = twe(
         '<span class="num">' + (unlocked ? (i + 1) : '🔒') + '</span>' +
         (done ? '<span class="stars">' + starStr + '</span>'
-          : '<span class="stars">' + (lv.type === 'gems' ? '💎' : lv.type === 'ice' ? '🧊' : lv.type === 'collect' ? '🎨' : '🎯') + '</span>'));
+          : '<span class="stars">' + (
+            lv.type === 'gems' ? '💎'
+            : lv.type === 'ice' ? '🧊'
+            : lv.type === 'collect' ? '🎨'
+            : lv.type === 'sand' ? ic('sand')
+            : lv.type === 'mist' ? ic('mist')
+            : lv.type === 'eggs' ? ic('egg')
+            : '🎯') + '</span>'));
       el.style.left = x + '%';
       el.style.top = y + 'px';
       if (unlocked) el.addEventListener('click', function () { Sound.click(); startLevel(i); });
@@ -2347,6 +2482,7 @@
         '<li>Fyll en hel <b>rad eller kolumn</b> så rensas den och ger poäng.</li>' +
         '<li>Rensa flera linjer samtidigt och kedja ihop rensningar för <b>kombopoäng</b>.</li>' +
         '<li><b>🧊 Is</b> kräver två rensningar. <b>💎 Ädelstenar</b> rensas med sin rad.</li>' +
+        '<li>' + ic('sand') + ' <b>Sand</b> sprider sig om den får stå. ' + ic('mist') + ' <b>Stjärndimma</b> lyfts av en rensning intill. ' + ic('egg') + ' <b>Drakägg</b> måste rensas innan nedräkningen når noll.</li>' +
         '<li><b>Boosters</b> köps med mynt: 🔨 ta bort ett block, 💣 spräng 3&times;3, 🔄 byt pjäser, ↩️ ångra.</li>' +
         '<li>Mynt tjänar du på banor, dagliga utmaningar och utmärkelser.</li>' +
         '</ul>' +
