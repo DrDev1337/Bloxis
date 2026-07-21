@@ -14,8 +14,9 @@ kolumn** blir full rensas den och ger poäng.
   - 🔥 **Svår** – alla former från första draget
 
   Rekord sparas per kombination av storlek och svårighet.
-- **🧩 Banor** – 30 banor på en scrollbar bankarta med tre världar
-  (Gröna ängarna, Frostbergen, Solnedgångsöknen) och fyra måltyper:
+- **🧩 Banor** – 40 banor på en scrollbar bankarta med fyra världar
+  (Gröna ängarna, Frostbergen, Solnedgångsöknen, Stjärnhimlen) och fyra
+  måltyper:
   - 🎯 **Poängbanor**: nå poängmålet innan dragen tar slut.
   - 💎 **Ädelstensbanor**: rensa alla ädelstenar.
   - 🧊 **Isbanor**: rensa all is – is kräver två rensningar (spricker först).
@@ -23,6 +24,19 @@ kolumn** blir full rensas den och ger poäng.
 
   Varje klarad bana ger 1–3 stjärnor (fler drag kvar = fler stjärnor) och låser
   upp nästa bana. Framstegen sparas på enheten.
+
+- **📅 Dagens utmaning** – en ny bana varje dag, samma för alla (datum-seedad).
+  Vinster bygger en 🔥 streak och ger extra mynt; en kalender visar veckans
+  resultat.
+
+## Guide, utmärkelser och inställningar
+
+- Helt nya spelare möts av en **interaktiv guide** som lär ut placering och
+  rad-/kolumnrensning (kan spelas om via "Så spelar du").
+- **🏅 Utmärkelser**: 12 achievements (kombo, multirensningar, streaks m.m.)
+  som ger mynt när de låses upp.
+- **⚙️ Inställningar**: ljudeffekter, bakgrundsmusik (genererad med WebAudio),
+  vibration och **färgblindläge** (unika symboler på varje blockfärg).
 
 ## Mynt och boosters
 

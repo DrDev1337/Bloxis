@@ -39,8 +39,22 @@
       var all = this.getStars();
       all[levelIdx] = Math.max(all[levelIdx] || 0, stars);
       localStorage.setItem('bloxis.stars', JSON.stringify(all));
-    }
+    },
+    getJson: function (key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key)) || fallback; }
+      catch (e) { return fallback; }
+    },
+    setJson: function (key, v) { localStorage.setItem(key, JSON.stringify(v)); }
   };
+
+  /* ===== Inställningar ===== */
+  var settings = (function () {
+    var def = { sound: true, music: true, vibration: true, colorblind: false };
+    var saved = store.getJson('bloxis.settings', {});
+    for (var k in saved) def[k] = saved[k];
+    return def;
+  })();
+  function saveSettings() { store.setJson('bloxis.settings', settings); }
 
   /* ===== Ljud (syntetiserat med WebAudio – inga filer) ===== */
   var Sound = (function () {
@@ -54,6 +68,7 @@
       return ctx;
     }
     function tone(freq, dur, type, vol, delay) {
+      if (!settings.sound) return;
       var c = ac();
       if (!c) return;
       var o = c.createOscillator(), g = c.createGain();
@@ -69,6 +84,8 @@
     }
     return {
       unlock: function () { ac(); },
+      ctx: ac,
+      star: function (i) { tone(700 + i * 200, 0.22, 'triangle', 0.16); },
       click: function () { tone(600, 0.05, 'sine', 0.06); },
       place: function () { tone(300, 0.07, 'triangle', 0.1); tone(420, 0.06, 'triangle', 0.07, 0.03); },
       clear: function (n) {
@@ -85,8 +102,50 @@
   })();
 
   function buzz(ms) {
+    if (!settings.vibration) return;
     if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* ok */ } }
   }
+
+  /* ===== Bakgrundsmusik (genererad, lugn arpeggio-loop) ===== */
+  var Music = (function () {
+    var timer = null, nextTime = 0, step = 0;
+    var SCALE = [262, 294, 330, 392, 440, 523, 587, 659, 784];
+    var CHORDS = [0, 3, 4, 2];
+    var ARP = [0, 2, 4, 7, 4, 2, 5, 2];
+    function note(c, freq, t, dur, vol, type) {
+      var o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.value = freq;
+      o.connect(g); g.connect(c.destination);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.start(t); o.stop(t + dur + 0.05);
+    }
+    function schedule() {
+      var c = Sound.ctx();
+      if (!c) return;
+      while (nextTime < c.currentTime + 0.6) {
+        var chord = CHORDS[Math.floor(step / 8) % CHORDS.length];
+        var idx = (chord + ARP[step % 8]) % SCALE.length;
+        note(c, SCALE[idx], nextTime, 0.32, 0.03, 'triangle');
+        if (step % 8 === 0) note(c, SCALE[chord] / 2, nextTime, 1.8, 0.045, 'sine');
+        nextTime += 0.26;
+        step++;
+      }
+    }
+    return {
+      start: function () {
+        if (timer || !settings.music) return;
+        var c = Sound.ctx();
+        if (!c) return;
+        nextTime = c.currentTime + 0.1;
+        timer = setInterval(schedule, 200);
+      },
+      stop: function () { if (timer) { clearInterval(timer); timer = null; } },
+      sync: function () { if (settings.music && !document.hidden) this.start(); else this.stop(); }
+    };
+  })();
+  document.addEventListener('visibilitychange', function () { Music.sync(); });
 
   /* ===== Element ===== */
   function $(sel) { return document.querySelector(sel); }
@@ -125,11 +184,184 @@
     return { size: 8, diff: 'klassisk' };
   }
 
+  /* ===== Daglig utmaning: datum-seedad slump ===== */
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function dateStr(d) {
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  function todayStr() { return dateStr(new Date()); }
+  function daysAgoStr(n) { return dateStr(new Date(Date.now() - n * 86400000)); }
+  function dateSeed(s) {
+    var h = 0;
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return h;
+  }
+
+  /* Genererar dagens bana: spegelsymmetriskt bräde, rensa alla ädelstenar.
+     Ädelstensparen läggs på skilda rader så 2-3 radrensningar räcker. */
+  function dailyLevel(dstr) {
+    var rng = mulberry32(dateSeed(dstr));
+    var rows = [];
+    for (var r = 0; r < 8; r++) rows.push('........'.split(''));
+    var blocks = 3 + Math.floor(rng() * 3);
+    for (var i = 0; i < blocks; i++) {
+      var br = Math.floor(rng() * 8), bc = Math.floor(rng() * 4);
+      rows[br][bc] = '#'; rows[br][7 - bc] = '#';
+    }
+    var gems = 2 + Math.floor(rng() * 2), placed = 0, guard = 0;
+    var usedRows = {};
+    while (placed < gems && guard++ < 60) {
+      var gr = Math.floor(rng() * 8), gc = Math.floor(rng() * 4);
+      if (usedRows[gr] || rows[gr][gc] !== '.') continue;
+      rows[gr][gc] = 'G'; rows[gr][7 - gc] = 'G';
+      usedRows[gr] = true;
+      placed++;
+    }
+    return {
+      type: 'gems',
+      moves: 34 + Math.floor(rng() * 6),
+      board: rows.map(function (rw) { return rw.join(''); }),
+      daily: dstr,
+      pieceSeed: dateSeed(dstr + '#pjaser')
+    };
+  }
+
+  function getDaily() { return store.getJson('bloxis.daily', { streak: 0, lastWin: '', history: {} }); }
+  function effectiveStreak(d) {
+    return (d.lastWin === todayStr() || d.lastWin === daysAgoStr(1)) ? d.streak : 0;
+  }
+  function calendarHtml() {
+    var d = getDaily();
+    var html = '<div class="cal-row">';
+    for (var i = 6; i >= 0; i--) {
+      var ds = daysAgoStr(i);
+      var won = d.history[ds];
+      html += '<div class="cal-day' + (won ? ' won' : '') + (i === 0 ? ' today' : '') + '">' +
+        '<span class="mark">' + (won ? '✓' : i === 0 ? '?' : '·') + '</span>' +
+        '<span>' + ds.slice(8) + '/' + (+ds.slice(5, 7)) + '</span></div>';
+    }
+    return html + '</div>';
+  }
+
+  /* ===== Statistik och utmärkelser ===== */
+  function getStats() {
+    return store.getJson('bloxis.stats', {
+      linesTotal: 0, maxLines: 0, maxCombo: 0, bestEndless: 0,
+      levelsWon: 0, dailyWins: 0, maxStreak: 0, boosters: {}
+    });
+  }
+  var stats = getStats();
+  function saveStats() { store.setJson('bloxis.stats', stats); checkAchievements(); }
+
+  var ACH = [
+    { id: 'first_clear', icon: '🧹', name: 'Första rensningen', desc: 'Rensa din första linje', coins: 10, test: function (s) { return s.linesTotal >= 1; } },
+    { id: 'double', icon: '💥', name: 'Dubbelsmäll', desc: 'Rensa 2 linjer i ett drag', coins: 15, test: function (s) { return s.maxLines >= 2; } },
+    { id: 'triple', icon: '🌋', name: 'Trippelknall', desc: 'Rensa 3+ linjer i ett drag', coins: 30, test: function (s) { return s.maxLines >= 3; } },
+    { id: 'combo3', icon: '⚡', name: 'Kombokung', desc: 'Nå kombo x3', coins: 15, test: function (s) { return s.maxCombo >= 3; } },
+    { id: 'combo5', icon: '🌟', name: 'Kombomästare', desc: 'Nå kombo x5', coins: 40, test: function (s) { return s.maxCombo >= 5; } },
+    { id: 'score1k', icon: '🎯', name: 'Tusenklubban', desc: '1000 p i ett oändligt parti', coins: 20, test: function (s) { return s.bestEndless >= 1000; } },
+    { id: 'score5k', icon: '🏔️', name: 'Höjdaren', desc: '5000 p i ett oändligt parti', coins: 50, test: function (s) { return s.bestEndless >= 5000; } },
+    { id: 'levels10', icon: '🗺️', name: 'Vandraren', desc: 'Klara 10 banor', coins: 30, test: function (s) { return s.levelsWon >= 10; } },
+    { id: 'world1', icon: '🌿', name: 'Ängarnas mästare', desc: 'Tre stjärnor på alla banor i värld 1', coins: 60, test: function () {
+      var st = store.getStars();
+      for (var i = 0; i < 10; i++) if ((st[i] || 0) < 3) return false;
+      return true;
+    } },
+    { id: 'boosters', icon: '🧰', name: 'Verktygslådan', desc: 'Använd alla fyra boosters', coins: 20, test: function (s) { return Object.keys(s.boosters || {}).length >= 4; } },
+    { id: 'daily1', icon: '📅', name: 'Dagens hjälte', desc: 'Klara en daglig utmaning', coins: 20, test: function (s) { return s.dailyWins >= 1; } },
+    { id: 'streak3', icon: '🔥', name: 'På rad', desc: '3 dagars streak i dagliga utmaningen', coins: 40, test: function (s) { return s.maxStreak >= 3; } }
+  ];
+
+  function checkAchievements() {
+    var unlocked = store.getJson('bloxis.ach', {});
+    var newOnes = [];
+    ACH.forEach(function (a) {
+      if (!unlocked[a.id] && a.test(stats)) {
+        unlocked[a.id] = true;
+        store.addCoins(a.coins);
+        newOnes.push(a);
+      }
+    });
+    if (newOnes.length) {
+      store.setJson('bloxis.ach', unlocked);
+      newOnes.forEach(function (a, i) {
+        setTimeout(function () {
+          showToast('🏅 ' + a.name + '  +' + a.coins + ' 💰');
+          Sound.coin();
+        }, i * 3200);
+      });
+      if (game) updateHud();
+    }
+  }
+
+  var toastTimer = null;
+  function showToast(msg) {
+    var el = $('#toast');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    void el.offsetWidth;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.add('hidden'); }, 3100);
+  }
+
+  function showAchievements() {
+    var unlocked = store.getJson('bloxis.ach', {});
+    var html = ACH.map(function (a) {
+      var got = unlocked[a.id];
+      return '<div class="ach-row' + (got ? '' : ' locked') + '">' +
+        '<span class="ach-icon">' + a.icon + '</span>' +
+        '<span><div class="ach-name">' + a.name + '</div><div class="ach-desc">' + a.desc + '</div></span>' +
+        '<span class="ach-coins">' + (got ? '✓' : '+' + a.coins + ' 💰') + '</span></div>';
+    }).join('');
+    showOverlay({
+      title: '🏅 Utmärkelser',
+      html: html,
+      buttons: [{ label: 'Stäng', primary: true, fn: function () {} }]
+    });
+  }
+
+  function showSettings() {
+    var rows = [
+      ['sound', '🔊 Ljudeffekter'],
+      ['music', '🎵 Musik'],
+      ['vibration', '📳 Vibration'],
+      ['colorblind', '👁️ Färgblindläge']
+    ];
+    var html = rows.map(function (r) {
+      return '<div class="toggle-row"><span>' + r[1] + '</span>' +
+        '<button class="toggle' + (settings[r[0]] ? ' on' : '') + '" data-k="' + r[0] + '" aria-label="' + r[1] + '"></button></div>';
+    }).join('');
+    showOverlay({
+      title: '⚙️ Inställningar',
+      html: html,
+      buttons: [{ label: 'Klart', primary: true, fn: function () {} }]
+    });
+    document.querySelectorAll('#ov-text .toggle').forEach(function (t) {
+      t.addEventListener('click', function () {
+        var k = t.getAttribute('data-k');
+        settings[k] = !settings[k];
+        saveSettings();
+        t.classList.toggle('on', settings[k]);
+        Sound.click();
+        if (k === 'music') Music.sync();
+        if (k === 'colorblind' && game) { renderBoard(); renderTray(false); }
+      });
+    });
+  }
+
   /* ===== Tillstånd ===== */
   var game = null;
-  var mode = 'endless';
+  var mode = 'endless';      // 'endless' | 'level' | 'daily' | 'tutorial'
   var levelIndex = 0;
   var endlessCfg = getEndlessCfg();
+  var tutor = null;          // { step, after }
 
   function bsize() { return game ? game.size : 8; }
   var dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -152,6 +384,9 @@
     if (name === 'menu') {
       $('#menu-best').textContent = store.getBest();
       $('#menu-coins').textContent = store.getCoins();
+      var d = getDaily();
+      $('#menu-streak').textContent = effectiveStreak(d);
+      $('#daily-badge').classList.toggle('hidden', !!d.history[todayStr()]);
     }
     if (name === 'levels') renderLevelMap();
     if (name === 'game') requestAnimationFrame(layout);
@@ -208,6 +443,9 @@
       ctx.lineWidth = Math.max(1, size * 0.03);
       ctx.stroke();
     }
+    if (settings.colorblind && !opts.gem && !opts.ice) {
+      drawCbSymbol(ctx, x, y, size, colorIdx % 8);
+    }
     if (opts.ice === 1) {
       // sprickor i spruckn is
       ctx.strokeStyle = 'rgba(30,80,120,0.55)';
@@ -225,6 +463,27 @@
       ctx.beginPath();
       ctx.arc(x + size * 0.32, y + size * 0.32, size * 0.08, 0, Math.PI * 2);
       ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /* Färgblindläge: unik symbol per blockfärg. */
+  function drawCbSymbol(ctx, x, y, size, idx) {
+    var cx = x + size / 2, cy = y + size / 2, r = size * 0.17;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = Math.max(1.5, size * 0.06);
+    ctx.beginPath();
+    switch (idx) {
+      case 0: ctx.arc(cx, cy, r, 0, 6.283); ctx.stroke(); break;
+      case 1: ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r, cy + r); ctx.lineTo(cx - r, cy + r); ctx.closePath(); ctx.stroke(); break;
+      case 2: ctx.strokeRect(cx - r, cy - r, r * 2, r * 2); break;
+      case 3: ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r); ctx.stroke(); break;
+      case 4: ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r, cy); ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r, cy); ctx.closePath(); ctx.stroke(); break;
+      case 5: ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.stroke(); break;
+      case 6: ctx.moveTo(cx - r, cy - r); ctx.lineTo(cx + r, cy + r); ctx.moveTo(cx + r, cy - r); ctx.lineTo(cx - r, cy + r); ctx.stroke(); break;
+      default: ctx.arc(cx, cy, r * 0.65, 0, 6.283); ctx.fill(); break;
     }
     ctx.restore();
   }
@@ -405,13 +664,18 @@
     hudScore.textContent = game.score;
     $('#game-coins').textContent = store.getCoins();
     updateBoosterBar();
+    if (mode === 'tutorial') {
+      hudSub.textContent = 'Guide';
+      hudObjective.classList.add('hidden');
+      return;
+    }
     if (mode === 'endless') {
       hudSub.textContent = endlessCfg.size + '×' + endlessCfg.size + ' • Rekord: ' +
         Math.max(store.getBestFor(endlessCfg), game.score);
       hudObjective.classList.add('hidden');
       return;
     }
-    hudSub.textContent = 'Bana ' + (levelIndex + 1);
+    hudSub.textContent = mode === 'daily' ? 'Dagens utmaning' : 'Bana ' + (levelIndex + 1);
     hudObjective.classList.remove('hidden');
     var left = game.movesLeft();
     var lv = game.level;
@@ -584,9 +848,142 @@
     showObjectiveIntro(idx, true);
   }
 
+  function playStarSounds(n) {
+    for (var i = 0; i < n; i++) {
+      (function (idx) {
+        setTimeout(function () { Sound.star(idx); }, 250 + idx * 400);
+      })(i);
+    }
+  }
+
+  function startDaily() {
+    var dstr = todayStr();
+    var lv = dailyLevel(dstr);
+    mode = 'daily';
+    // nivå 1-2-former: de största klossarna (3x3, femradingar) skulle göra
+    // slumpade dagliga bräden för nyckfulla
+    game = new Game({ mode: 'level', level: lv, rng: mulberry32(lv.pieceSeed), shapeRamp: { t2: 0, t3: 9999 } });
+    armedBooster = null;
+    $('#boosters').classList.remove('hidden');
+    showScreen('game');
+    updateHud();
+    renderTray(true);
+    renderBoard();
+    var d = getDaily();
+    showOverlay({
+      title: '📅 Dagens utmaning',
+      html: '<p><b>' + dstr + '</b> &ndash; samma bana för alla, ny varje dag!</p>' +
+        objectiveHtml(lv) +
+        '<p>🔥 Streak: <b>' + effectiveStreak(d) + '</b> dagar</p>' + calendarHtml(),
+      buttons: [{ label: 'Kör!', primary: true, fn: function () {} }]
+    });
+  }
+
+  /* ===== Interaktiv guide ===== */
+  function findShape(w, h, cells) {
+    return Shapes.SHAPES.filter(function (s) {
+      return s.w === w && s.h === h && s.cells.length === cells;
+    })[0];
+  }
+
+  function pointHandAtSlot() {
+    var hand = $('#tutor-hand');
+    var rect = slotEls[0].getBoundingClientRect();
+    hand.style.left = (rect.x + rect.width / 2) + 'px';
+    hand.style.top = (rect.y + rect.height / 2 - 8) + 'px';
+    hand.classList.remove('hidden');
+  }
+
+  function tutorSay(text) {
+    $('#tutor-text').innerHTML = text;
+    $('#tutor-bubble').classList.remove('hidden');
+  }
+
+  function startTutorial(afterFn) {
+    mode = 'tutorial';
+    tutor = { step: 1, after: afterFn || function () { showScreen('menu'); } };
+    game = new Game({ mode: 'endless', size: 8 });
+    for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) game.board[r][c] = null;
+    for (var c2 = 0; c2 < 5; c2++) game.board[7][c2] = { c: 3, gem: false, ice: 0 };
+    game.pieces = [findShape(3, 1, 3), null, null];
+    armedBooster = null;
+    $('#boosters').classList.add('hidden');
+    showScreen('game');
+    updateHud();
+    renderTray(true);
+    renderBoard();
+    requestAnimationFrame(function () {
+      tutorSay('Dra pjäsen till <b>nedersta raden</b> så att den blir helt full &ndash; då rensas den! 💥');
+      pointHandAtSlot();
+    });
+  }
+
+  function endTutorial(completed) {
+    $('#tutor-bubble').classList.add('hidden');
+    $('#tutor-hand').classList.add('hidden');
+    $('#boosters').classList.remove('hidden');
+    var after = tutor && tutor.after;
+    tutor = null;
+    if (completed) {
+      localStorage.setItem('bloxis.tutorialDone', '1');
+      mode = 'endless';
+      showOverlay({
+        title: 'Klart! 🎉',
+        html: '<p>Du kan det viktigaste! Kom ihåg:</p><ul>' +
+          '<li>Flera linjer samtidigt och kedjade rensningar ger <b>kombopoäng</b>.</li>' +
+          '<li><b>Boosters</b> under pjäslådan hjälper när det kör ihop sig.</li>' +
+          '<li>Prova <b>banorna</b> och <b>dagens utmaning</b> för mynt och stjärnor!</li></ul>',
+        buttons: [{ label: 'Nu kör vi!', primary: true, fn: after || function () {} }]
+      });
+    } else {
+      mode = 'endless';
+    }
+  }
+
+  function tutorOnPlace(res) {
+    Sound.place();
+    updateHud();
+    if (res.nLines > 0) {
+      spawnEffects(res.cleared);
+      Sound.clear(res.nLines);
+      renderBoard();
+      if (tutor.step === 1) {
+        tutor.step = 2;
+        for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) game.board[r][c] = null;
+        for (var r2 = 2; r2 < 8; r2++) game.board[r2][3] = { c: 5, gem: false, ice: 0 };
+        game.pieces = [findShape(1, 2, 2), null, null];
+        setTimeout(function () {
+          renderBoard();
+          renderTray(true);
+          tutorSay('Snyggt! 🎉 Även <b>kolumner</b> rensas när de blir fulla. Fyll kolumnen!');
+          pointHandAtSlot();
+        }, 500);
+      } else {
+        setTimeout(function () { endTutorial(true); }, 500);
+      }
+    } else {
+      game.undo();
+      renderBoard();
+      renderTray(false);
+      tutorSay('Nästan! Lägg pjäsen så att den <b>markerade linjen blir helt full</b>.');
+      pointHandAtSlot();
+    }
+    return true;
+  }
+
+  function tutorialDone() { return !!localStorage.getItem('bloxis.tutorialDone'); }
+
+  /* Kör guiden först för helt nya spelare, sedan den valda handlingen. */
+  function withTutorial(fn) {
+    if (tutorialDone()) fn();
+    else startTutorial(fn);
+  }
+
   function restartCurrent() {
     Sound.click();
+    if (mode === 'tutorial') return;
     if (mode === 'endless') startEndless(endlessCfg);
+    else if (mode === 'daily') startDaily();
     else startLevel(levelIndex);
   }
 
@@ -598,6 +995,8 @@
       if (mode === 'endless') {
         var isRecord = g.score > store.getBestFor(endlessCfg);
         if (isRecord) store.setBestFor(endlessCfg, g.score);
+        stats.bestEndless = Math.max(stats.bestEndless, g.score);
+        saveStats();
         var coins = Math.floor(g.score / 200);
         if (coins > 0) { store.addCoins(coins); Sound.coin(); }
         Sound.lose();
@@ -614,11 +1013,54 @@
             { label: 'Till menyn', fn: function () { showScreen('menu'); } }
           ]
         });
+      } else if (mode === 'daily') {
+        if (g.status === 'won') {
+          var d = getDaily();
+          var today = todayStr();
+          var firstWinToday = !d.history[today];
+          if (firstWinToday) {
+            d.streak = d.lastWin === daysAgoStr(1) ? d.streak + 1 : 1;
+            d.lastWin = today;
+            d.history[today] = true;
+            store.setJson('bloxis.daily', d);
+            stats.dailyWins++;
+            stats.maxStreak = Math.max(stats.maxStreak, d.streak);
+            saveStats();
+          }
+          var dCoins = firstWinToday ? 30 + 5 * Math.min(d.streak, 10) : 0;
+          if (dCoins) store.addCoins(dCoins);
+          Sound.win();
+          buzz([30, 40, 30]);
+          showOverlay({
+            title: 'Dagens utmaning klarad!',
+            stars: g.stars(),
+            html: '<span class="score-big">' + g.score + ' p</span>' +
+              '🔥 Streak: <b>' + d.streak + '</b> dagar' +
+              (dCoins ? ' &bull; +' + dCoins + ' &#128176;' : '') +
+              calendarHtml(),
+            buttons: [{ label: 'Till menyn', primary: true, fn: function () { showScreen('menu'); } }]
+          });
+          playStarSounds(g.stars());
+        } else {
+          Sound.lose();
+          showOverlay({
+            title: 'Det gick inte den här gången',
+            html: g.lossReason === 'moves'
+              ? 'Dragen tog slut. Du kan försöka igen så många gånger du vill!'
+              : 'Ingen pjäs fick plats på brädet. Försök igen!',
+            buttons: [
+              { label: 'Försök igen', primary: true, fn: startDaily },
+              { label: 'Till menyn', fn: function () { showScreen('menu'); } }
+            ]
+          });
+        }
       } else if (g.status === 'won') {
         var stars = g.stars();
         store.setStars(levelIndex, stars);
         var coinsWon = 10 * stars;
         store.addCoins(coinsWon);
+        stats.levelsWon++;
+        saveStats();
         Sound.win();
         buzz([30, 40, 30]);
         var buttons = [];
@@ -633,6 +1075,7 @@
           html: '<span class="score-big">' + g.score + ' p</span>+' + coinsWon + ' &#128176;',
           buttons: buttons
         });
+        playStarSounds(stars);
       } else {
         Sound.lose();
         showOverlay({
@@ -660,6 +1103,7 @@
   function doPlace(slotIdx, row, col) {
     var res = game.place(slotIdx, row, col);
     if (!res) return false;
+    if (mode === 'tutorial') return tutorOnPlace(res);
     var refilled = game.pieces.every(function (p) { return p !== null; });
     updateHud();
     renderTray(refilled);
@@ -676,6 +1120,12 @@
       if (res.nLines >= 2) shakeBoard();
       var praise = praiseText(res);
       if (praise) showCombo(praise);
+    }
+    if (res.nLines > 0) {
+      stats.linesTotal += res.nLines;
+      stats.maxLines = Math.max(stats.maxLines, res.nLines);
+      stats.maxCombo = Math.max(stats.maxCombo, res.combo);
+      saveStats();
     }
     renderBoard();
     if (game.status !== 'playing') finishGame();
@@ -699,6 +1149,8 @@
       store.spendCoins(price);
       game.swapPieces();
       Sound.click();
+      stats.boosters.swap = true;
+      saveStats();
       renderTray(true);
       updateHud();
       renderBoard();
@@ -710,6 +1162,8 @@
       store.spendCoins(price);
       game.undo();
       Sound.click();
+      stats.boosters.undo = true;
+      saveStats();
       renderTray(false);
       updateHud();
       renderBoard();
@@ -728,6 +1182,8 @@
     var removed = kind === 'hammer' ? game.hammer(r, c) : game.bomb(r, c);
     if (!removed || !removed.length) return true; // träffade tomt – behåll beväpning
     store.spendCoins(BOOSTER_PRICES[kind]);
+    stats.boosters[kind] = true;
+    saveStats();
     armedBooster = null;
     spawnEffects(removed);
     if (kind === 'bomb') { Sound.boom(); shakeBoard(); buzz([50, 30, 60]); }
@@ -831,9 +1287,10 @@
   var WORLD_DECOR = [
     ['🌲', '🌳', '🌷', '🍄', '🦋'],
     ['🏔️', '❄️', '⛄', '🧊'],
-    ['🌵', '☀️', '🪨', '🦂']
+    ['🌵', '☀️', '🪨', '🦂'],
+    ['⭐', '🌙', '☄️', '🪐']
   ];
-  var WORLD_EMOJI = ['🌿', '❄️', '🌵'];
+  var WORLD_EMOJI = ['🌿', '❄️', '🌵', '🌟'];
 
   /* Deterministiskt "slump"-värde 0..1 per index, så kartan ser likadan ut varje gång. */
   function seeded(i) {
@@ -906,6 +1363,18 @@
     svg.setAttribute('viewBox', '0 0 100 ' + segH);
     svg.setAttribute('preserveAspectRatio', 'none');
 
+    if (wi === 3) { // rymden: gnistrande stjärnor
+      for (var si = 0; si < 26; si++) {
+        var sr = seeded(wi * 71 + si * 3);
+        var e2 = document.createElementNS(SVGNS, 'ellipse');
+        e2.setAttribute('cx', (sr * 97 + 1.5).toFixed(1));
+        e2.setAttribute('cy', Math.round(seeded(si * 7 + 2) * (segH - 60) + 30));
+        e2.setAttribute('rx', (0.3 + sr * 0.5).toFixed(2));
+        e2.setAttribute('ry', (1.2 + sr * 2).toFixed(1));
+        e2.setAttribute('fill', 'rgba(255,255,255,' + (0.2 + sr * 0.4).toFixed(2) + ')');
+        svg.appendChild(e2);
+      }
+    }
     if (wi === 2) { // öken: sol med glöd
       var sx = 20 + seeded(wi * 5 + 1) * 60;
       [[16, 60, 0.12], [10, 38, 0.2], [6, 22, 0.45]].forEach(function (ring) {
@@ -1086,16 +1555,23 @@
         '<li>Rensa flera linjer samtidigt och kedja ihop rensningar för <b>kombopoäng</b>.</li>' +
         '<li><b>&#129482; Is</b> kräver två rensningar. <b>&#128142; Ädelstenar</b> rensas med sin rad.</li>' +
         '<li><b>Boosters</b> köps med mynt: &#128296; ta bort ett block, &#128163; spräng 3&times;3, &#128260; byt pjäser, &#8617;&#65039; ångra.</li>' +
-        '<li>Mynt tjänar du på klarade banor och i oändligt läge.</li>' +
+        '<li>Mynt tjänar du på banor, dagliga utmaningar och utmärkelser.</li>' +
         '</ul>',
-      buttons: [{ label: 'Stäng', primary: true, fn: function () {} }]
+      buttons: [
+        { label: 'Spela guiden', fn: function () { startTutorial(function () { showScreen('menu'); }); } },
+        { label: 'Stäng', primary: true, fn: function () {} }
+      ]
     });
   }
 
   /* ===== Knappar ===== */
-  $('#btn-endless').addEventListener('click', function () { Sound.unlock(); Sound.click(); showEndlessChooser(); });
-  $('#btn-levels').addEventListener('click', function () { Sound.unlock(); Sound.click(); showScreen('levels'); });
-  $('#btn-help').addEventListener('click', function () { Sound.click(); showHelp(); });
+  function boot() { Sound.unlock(); Sound.click(); Music.sync(); }
+  $('#btn-endless').addEventListener('click', function () { boot(); withTutorial(showEndlessChooser); });
+  $('#btn-levels').addEventListener('click', function () { boot(); withTutorial(function () { showScreen('levels'); }); });
+  $('#btn-daily').addEventListener('click', function () { boot(); withTutorial(startDaily); });
+  $('#btn-help').addEventListener('click', function () { boot(); showHelp(); });
+  $('#btn-settings').addEventListener('click', function () { boot(); showSettings(); });
+  $('#btn-achievements').addEventListener('click', function () { boot(); showAchievements(); });
   $('#btn-restart').addEventListener('click', restartCurrent);
   document.querySelectorAll('.btn-back').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -1103,6 +1579,11 @@
       endDrag(false);
       armedBooster = null;
       hideOverlay();
+      if (mode === 'tutorial') {
+        endTutorial(false);
+        showScreen('menu');
+        return;
+      }
       showScreen(mode === 'level' && screens.game.classList.contains('active') ? 'levels' : 'menu');
     });
   });

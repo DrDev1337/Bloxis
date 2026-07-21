@@ -496,4 +496,178 @@ html, body {
 }
 .choice-hint { font-size: 0.85rem; margin-top: 12px; }
 
+/* ===== Skärmövergångar ===== */
+.screen.active { animation: screen-in 0.28s ease; }
+@keyframes screen-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+#screen-game.active #board-wrap { animation: board-in 0.32s cubic-bezier(0.4, 1.4, 0.6, 1); }
+@keyframes board-in {
+  from { transform: scale(0.92); opacity: 0.4; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ===== Menytopp och badge ===== */
+.menu-top {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  right: 14px;
+  display: flex;
+  gap: 10px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  border-radius: 999px;
+  background: #ff5d6c;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  animation: badge-pulse 1.4s ease-in-out infinite;
+}
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* ===== Inställningar och listor i overlay ===== */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  text-align: left;
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.08);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.2s ease;
+}
+.toggle.on { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+.toggle.on::after { left: 25px; }
+
+.ach-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  text-align: left;
+}
+.ach-row:last-child { border-bottom: none; }
+.ach-row .ach-icon { font-size: 1.4rem; flex: 0 0 auto; }
+.ach-row.locked { opacity: 0.45; }
+.ach-row .ach-name { font-weight: 700; font-size: 0.95rem; }
+.ach-row .ach-desc { font-size: 0.8rem; color: var(--text-dim); }
+.ach-row .ach-coins { margin-left: auto; color: var(--gold); font-weight: 700; font-size: 0.85rem; white-space: nowrap; }
+
+/* ===== Dagens utmaning: kalenderrad ===== */
+.cal-row { display: flex; gap: 6px; justify-content: center; margin-top: 8px; }
+.cal-day {
+  width: 34px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+}
+.cal-day .mark { font-size: 0.95rem; }
+.cal-day.won { background: rgba(93, 219, 111, 0.2); border-color: rgba(93, 219, 111, 0.5); }
+.cal-day.today { border-color: var(--gold); }
+
+/* ===== Stjärnsekvens vid vinst ===== */
+#ov-stars .on {
+  display: inline-block;
+  animation: star-in 0.5s cubic-bezier(0.4, 1.8, 0.5, 1) both;
+}
+#ov-stars .on:nth-child(1) { animation-delay: 0.15s; }
+#ov-stars .on:nth-child(2) { animation-delay: 0.55s; }
+#ov-stars .on:nth-child(3) { animation-delay: 0.95s; }
+@keyframes star-in {
+  from { transform: scale(3) rotate(-30deg); opacity: 0; }
+  to { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* ===== Tutorial ===== */
+#tutor-bubble {
+  position: fixed;
+  left: 50%;
+  bottom: calc(200px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(340px, 88vw);
+  background: linear-gradient(160deg, #2b2f55, #20233f);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  padding: 14px 18px;
+  z-index: 60;
+  text-align: center;
+  line-height: 1.45;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: panel-in 0.25s ease-out;
+}
+#tutor-hand {
+  position: fixed;
+  font-size: 2.2rem;
+  z-index: 61;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+  animation: hand-bounce 1s ease-in-out infinite;
+}
+@keyframes hand-bounce {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -14px); }
+}
+
+/* ===== Achievement-toast ===== */
+#toast {
+  position: fixed;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #2b2f55, #1d2038);
+  border: 1px solid var(--gold);
+  border-radius: 14px;
+  padding: 10px 20px;
+  z-index: 120;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  animation: toast-in 3s ease forwards;
+}
+@keyframes toast-in {
+  0% { opacity: 0; transform: translate(-50%, -30px); }
+  10%, 85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -30px); }
+}
+
 .hidden { display: none !important; }
