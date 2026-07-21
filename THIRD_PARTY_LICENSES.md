@@ -24,3 +24,9 @@ Alla resurser nedan tillåter kommersiell användning.
   och *Digital Audio*
 - Licens: CC0 1.0 Universal (public domain) – ingen attribution krävs,
   men Kenney uppskattar kredit och donationer
+
+## Grafik
+
+**Kenney Particle Pack** – `assets/kenney/particles/*.png`
+- Skapade av Kenney (https://kenney.nl/assets/particle-pack)
+- Licens: CC0 1.0 Universal (public domain)
