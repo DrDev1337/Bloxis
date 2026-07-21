@@ -38,6 +38,11 @@ jobs:
           npm run typecheck
           npm run build
 
+      # peaceiris respekterar .gitignore vid publicering – utan detta steg
+      # filtreras levelmap/dist bort från gh-pages
+      - name: Släpp igenom byggresultatet
+        run: rm levelmap/.gitignore
+
       - name: Publicera till gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
