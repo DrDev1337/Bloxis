@@ -422,6 +422,7 @@
   var levelIndex = 0;
   var endlessCfg = getEndlessCfg();
   var tutor = null;          // { step, after }
+  var pendingUnlock = null;  // { idx, first } – spelas upp på kartan efter banvinst
 
   function bsize() { return game ? game.size : 8; }
   var dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -941,12 +942,59 @@
     showObjectiveIntro(idx, true);
   }
 
-  function playStarSounds(n) {
+  function playStarSounds(n, base, step) {
+    base = base || 250; step = step || 400;
     for (var i = 0; i < n; i++) {
       (function (idx) {
-        setTimeout(function () { Sound.star(idx); }, 250 + idx * 400);
+        setTimeout(function () { Sound.star(idx); }, base + idx * step);
       })(i);
     }
+  }
+
+  /* Fullskärmsfirande: konfettiregn, titel och stjärnor som flyger in. */
+  function celebrate(starCount, title, after) {
+    var cel = document.getElementById('celebrate');
+    if (!cel) {
+      cel = document.createElement('div');
+      cel.id = 'celebrate';
+      document.getElementById('app').appendChild(cel);
+    }
+    cel.innerHTML = '';
+    cel.classList.remove('hidden');
+
+    var t = document.createElement('div');
+    t.className = 'cel-title';
+    t.textContent = title;
+    cel.appendChild(t);
+
+    var row = document.createElement('div');
+    row.className = 'cel-stars';
+    for (var i = 0; i < 3; i++) {
+      var s = document.createElement('span');
+      s.className = 'cel-star' + (i < starCount ? ' earned' : '');
+      s.textContent = '★';
+      if (i < starCount) s.style.animationDelay = (0.45 + i * 0.45) + 's';
+      row.appendChild(s);
+    }
+    cel.appendChild(row);
+
+    for (var c = 0; c < 40; c++) {
+      var p = document.createElement('span');
+      p.className = 'confetti';
+      p.style.left = (2 + seeded(c * 7 + 1) * 96) + '%';
+      p.style.background = ['#ffce6b', '#7d5cff', '#2fc2a5', '#ff6dc8'][c % 4];
+      p.style.animationDelay = (seeded(c * 3 + 2) * 0.7) + 's';
+      p.style.animationDuration = (1.8 + seeded(c * 5 + 3) * 1.2) + 's';
+      p.style.setProperty('--cdx', ((seeded(c * 11 + 4) - 0.5) * 180) + 'px');
+      cel.appendChild(p);
+    }
+
+    playStarSounds(starCount, 450, 450);
+    buzz([40, 60, 40]);
+    setTimeout(function () {
+      cel.classList.add('hidden');
+      if (after) after();
+    }, 1400 + starCount * 450);
   }
 
   function startDaily() {
@@ -1123,17 +1171,18 @@
           var dCoins = firstWinToday ? 30 + 5 * Math.min(d.streak, 10) : 0;
           if (dCoins) store.addCoins(dCoins);
           Sound.win();
-          buzz([30, 40, 30]);
-          showOverlay({
-            title: 'Dagens utmaning klarad!',
-            stars: g.stars(),
-            html: '<span class="score-big">' + g.score + ' p</span>' +
-              '🔥 Streak: <b>' + d.streak + '</b> dagar' +
-              (dCoins ? ' &bull; +' + dCoins + ' 💰' : '') +
-              calendarHtml(),
-            buttons: [{ label: 'Till menyn', primary: true, fn: function () { showScreen('menu'); } }]
+          celebrate(g.stars(), 'Utmaning klarad!', function () {
+            if (game !== g) return;
+            showOverlay({
+              title: 'Dagens utmaning klarad!',
+              stars: g.stars(),
+              html: '<span class="score-big">' + g.score + ' p</span>' +
+                '🔥 Streak: <b>' + d.streak + '</b> dagar' +
+                (dCoins ? ' &bull; +' + dCoins + ' 💰' : '') +
+                calendarHtml(),
+              buttons: [{ label: 'Till menyn', primary: true, fn: function () { showScreen('menu'); } }]
+            });
           });
-          playStarSounds(g.stars());
         } else {
           Sound.lose();
           showOverlay({
@@ -1149,26 +1198,31 @@
         }
       } else if (g.status === 'won') {
         var stars = g.stars();
+        var prevStars = store.getStars()[levelIndex] || 0;
         store.setStars(levelIndex, stars);
         var coinsWon = 10 * stars;
         store.addCoins(coinsWon);
         stats.levelsWon++;
         saveStats();
         Sound.win();
-        buzz([30, 40, 30]);
-        var buttons = [];
-        if (levelIndex + 1 < LEVELS.length) {
-          buttons.push({ label: 'Nästa bana', primary: true, fn: function () { startLevel(levelIndex + 1); } });
-        }
-        buttons.push({ label: 'Spela igen', fn: function () { startLevel(levelIndex); } });
-        buttons.push({ label: 'Till kartan', fn: function () { showScreen('levels'); } });
-        showOverlay({
-          title: 'Bana ' + (levelIndex + 1) + ' klarad!',
-          stars: stars,
-          html: '<span class="score-big">' + g.score + ' p</span>+' + coinsWon + ' 💰',
-          buttons: buttons
+        celebrate(stars, 'Bana ' + (levelIndex + 1) + ' klarad!', function () {
+          if (game !== g) return;
+          showOverlay({
+            title: 'Bana ' + (levelIndex + 1) + ' klarad!',
+            stars: stars,
+            html: '<span class="score-big">' + g.score + ' p</span>+' + coinsWon + ' 💰',
+            buttons: [
+              {
+                label: 'Fortsätt', primary: true,
+                fn: function () {
+                  pendingUnlock = { idx: levelIndex, first: prevStars === 0 };
+                  showScreen('levels');
+                }
+              },
+              { label: 'Spela igen', fn: function () { startLevel(levelIndex); } }
+            ]
+          });
         });
-        playStarSounds(stars);
       } else {
         Sound.lose();
         showOverlay({
@@ -1391,17 +1445,33 @@
     return x - Math.floor(x);
   }
 
-  /* Mjuk kurva genom nodpunkterna (kvadratiska Bézier-segment via mittpunkter). */
+  /* Mjuk kurva som går exakt genom varje nodpunkt (Catmull-Rom → Bézier). */
+  function crControls(pts, i) {
+    var at = function (k) { return pts[Math.max(0, Math.min(pts.length - 1, k))]; };
+    var p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+    return [
+      p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6,
+      p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6
+    ];
+  }
+
   function smoothPathD(pts) {
     if (pts.length < 2) return '';
-    var d = 'M ' + pts[0][0] + ' ' + pts[0][1];
-    for (var i = 1; i < pts.length - 1; i++) {
-      var mx = (pts[i][0] + pts[i + 1][0]) / 2;
-      var my = (pts[i][1] + pts[i + 1][1]) / 2;
-      d += ' Q ' + pts[i][0] + ' ' + pts[i][1] + ' ' + mx + ' ' + my;
+    var d = 'M ' + pts[0][0].toFixed(2) + ' ' + pts[0][1].toFixed(2);
+    for (var i = 0; i < pts.length - 1; i++) {
+      var c = crControls(pts, i);
+      d += ' C ' + c[0].toFixed(2) + ' ' + c[1].toFixed(2) + ' ' + c[2].toFixed(2) + ' ' + c[3].toFixed(2) +
+        ' ' + pts[i + 1][0].toFixed(2) + ' ' + pts[i + 1][1].toFixed(2);
     }
-    var last = pts[pts.length - 1];
-    return d + ' L ' + last[0] + ' ' + last[1];
+    return d;
+  }
+
+  /* Ett enskilt vägsegment i→i+1, för upplåsningsanimationen. */
+  function segmentD(pts, i) {
+    var c = crControls(pts, i);
+    return 'M ' + pts[i][0].toFixed(2) + ' ' + pts[i][1].toFixed(2) +
+      ' C ' + c[0].toFixed(2) + ' ' + c[1].toFixed(2) + ' ' + c[2].toFixed(2) + ' ' + c[3].toFixed(2) +
+      ' ' + pts[i + 1][0].toFixed(2) + ' ' + pts[i + 1][1].toFixed(2);
   }
 
   var SVGNS = 'http://www.w3.org/2000/svg';
@@ -1599,13 +1669,22 @@
     // markera aktuell bana med puls + studsande kartnål
     if (currentIdx === -1) currentIdx = n - 1;
     var nodes = inner.querySelectorAll('.map-node');
+
+    // upplåsningssekvens efter banvinst?
+    var pu = pendingUnlock;
+    pendingUnlock = null;
+    var animateUnlock = !!(pu && pu.first && currentIdx === pu.idx + 1 &&
+      nodes[currentIdx] && !nodes[currentIdx].classList.contains('locked'));
+
+    var pin = null;
     if (nodes[currentIdx] && !nodes[currentIdx].classList.contains('locked')) {
-      nodes[currentIdx].classList.add('current');
-      var pin = document.createElement('div');
+      if (!animateUnlock) nodes[currentIdx].classList.add('current');
+      pin = document.createElement('div');
       pin.className = 'map-pin';
       pin.innerHTML = twe('📍');
-      pin.style.left = points[currentIdx][0] + '%';
-      pin.style.top = points[currentIdx][1] + 'px';
+      var pinIdx = animateUnlock ? pu.idx : currentIdx;
+      pin.style.left = points[pinIdx][0] + '%';
+      pin.style.top = points[pinIdx][1] + 'px';
       inner.appendChild(pin);
     }
 
@@ -1618,17 +1697,79 @@
     var roadD = smoothPathD(points);
     svg.appendChild(svgPath(roadD, 'rgba(20,14,8,0.4)', '15', null, null));
     svg.appendChild(svgPath(roadD, 'rgba(225,203,160,0.32)', '10', null, null));
-    if (currentIdx > 0) {
-      svg.appendChild(svgPath(smoothPathD(points.slice(0, currentIdx + 1)), 'rgba(255,214,69,0.45)', '10', null, null));
+    var goldTo = animateUnlock ? pu.idx : currentIdx;
+    if (goldTo > 0) {
+      svg.appendChild(svgPath(smoothPathD(points.slice(0, goldTo + 1)), 'rgba(255,214,69,0.45)', '10', null, null));
+    }
+    var segEl = null;
+    if (animateUnlock) {
+      segEl = svgPath(segmentD(points, pu.idx), 'rgba(255,214,69,0.45)', '10', null, null);
+      svg.appendChild(segEl);
     }
     svg.appendChild(svgPath(roadD, 'rgba(255,255,255,0.55)', '2', '5 9', 'trail'));
     inner.insertBefore(svg, inner.firstChild);
 
     wrap.appendChild(inner);
 
-    // scrolla till aktuell bana
-    var targetY = yForLevel(currentIdx, h) - wrap.clientHeight / 2;
+    // scrolla till aktuell bana (vid sekvens: börja vid den klarade)
+    var focusIdx = animateUnlock ? pu.idx : currentIdx;
+    var targetY = yForLevel(focusIdx, h) - wrap.clientHeight / 2;
     wrap.scrollTop = Math.max(0, Math.min(targetY, h - wrap.clientHeight));
+
+    // liten guldblixt på den klarade noden även vid omspel
+    if (pu && !animateUnlock && nodes[pu.idx]) {
+      setTimeout(function () { nodes[pu.idx].classList.add('unlock-flash'); Sound.star(1); }, 300);
+    }
+
+    if (animateUnlock) {
+      var clearedNode = nodes[pu.idx];
+      var nextNode = nodes[currentIdx];
+      // 1. den klarade noden blixtrar guld
+      setTimeout(function () {
+        if (clearedNode) clearedNode.classList.add('unlock-flash');
+        Sound.star(0);
+      }, 350);
+      // 2. guldstigen ritar sig fram till nästa nod
+      var segLen = segEl.getTotalLength();
+      segEl.setAttribute('stroke-dasharray', segLen + ' ' + segLen);
+      segEl.setAttribute('stroke-dashoffset', segLen);
+      setTimeout(function () {
+        segEl.style.transition = 'stroke-dashoffset 0.7s ease';
+        segEl.setAttribute('stroke-dashoffset', '0');
+      }, 850);
+      // 3. kartnålen hoppar dit i en båge
+      setTimeout(function () {
+        if (!pin || !pin.animate) { finishUnlock(); return; }
+        var w = wrap.clientWidth;
+        var dx = (points[currentIdx][0] - points[pu.idx][0]) / 100 * w;
+        var dy = points[currentIdx][1] - points[pu.idx][1];
+        var anim = pin.animate([
+          { transform: 'translate(0, 0)' },
+          { transform: 'translate(' + dx / 2 + 'px, ' + (dy - 85) + 'px)' },
+          { transform: 'translate(' + dx + 'px, ' + dy + 'px)' }
+        ], { duration: 750, easing: 'ease-in-out' });
+        anim.onfinish = finishUnlock;
+      }, 950);
+      // scrolla med
+      setTimeout(function () {
+        var ty = yForLevel(currentIdx, h) - wrap.clientHeight / 2;
+        wrap.scrollTo({ top: Math.max(0, Math.min(ty, h - wrap.clientHeight)), behavior: 'smooth' });
+      }, 950);
+      // 4. nästa nod poppar upplåst
+      var finishUnlock = function () {
+        if (pin) {
+          pin.style.left = points[currentIdx][0] + '%';
+          pin.style.top = points[currentIdx][1] + 'px';
+          pin.style.transform = '';
+        }
+        if (nextNode) {
+          nextNode.style.setProperty('--d', '0s');
+          nextNode.classList.add('current', 'repop');
+        }
+        Sound.coin();
+        buzz(30);
+      };
+    }
   }
 
   /* Banorna löper nedifrån och upp, som i Candy Crush. */
@@ -1718,6 +1859,13 @@
     var app = document.getElementById('app');
     app.insertBefore(wrap, app.firstChild);
   })();
+
+  /* Testkrok för automatiserade UI-tester (används inte av spelet). */
+  window.__bloxisTest = {
+    forceWin: function () {
+      if (game && game.status === 'playing') { game.status = 'won'; finishGame(); }
+    }
+  };
 
   showScreen('menu');
 })();

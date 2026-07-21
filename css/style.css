@@ -752,4 +752,79 @@ html, body {
 #tutor-hand img { width: 2.3rem; height: 2.3rem; display: block; }
 .ach-row .ach-icon .twe { width: 1.35em; height: 1.35em; }
 
+/* ===== Vinstfirande ===== */
+#celebrate {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  background: rgba(10, 8, 24, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+.cel-title {
+  font-family: 'Grenze Gotisch', serif;
+  font-size: clamp(2.2rem, 10vw, 3.2rem);
+  font-weight: 600;
+  background: linear-gradient(180deg, #ffedb8 15%, #f2b45c 55%, #c67c2e 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 20px rgba(255, 206, 107, 0.5));
+  animation: cel-title-in 0.55s cubic-bezier(0.3, 1.7, 0.5, 1) both;
+  text-align: center;
+  padding: 0 20px;
+}
+@keyframes cel-title-in {
+  from { transform: scale(0.2) rotate(-6deg); opacity: 0; }
+  to { transform: scale(1) rotate(0); opacity: 1; }
+}
+.cel-stars { display: flex; gap: 14px; margin-top: 18px; }
+.cel-star {
+  font-size: 4.2rem;
+  line-height: 1;
+  color: rgba(255, 245, 220, 0.14);
+}
+.cel-star.earned {
+  color: var(--gold);
+  text-shadow: 0 0 26px rgba(255, 206, 107, 0.85);
+  opacity: 0;
+  animation: cel-star-in 0.6s cubic-bezier(0.3, 1.8, 0.5, 1) both;
+}
+@keyframes cel-star-in {
+  0% { opacity: 0; transform: translateY(-150px) scale(3) rotate(-45deg); }
+  60% { opacity: 1; transform: translateY(6px) scale(0.85) rotate(6deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+.confetti {
+  position: absolute;
+  top: -24px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0.95;
+  animation: conf-fall 2.2s ease-in both;
+}
+@keyframes conf-fall {
+  0% { transform: translate(0, -24px) rotate(0); }
+  100% { transform: translate(var(--cdx, 40px), 108vh) rotate(680deg); }
+}
+
+/* ===== Kartprogression: upplåsningssekvens ===== */
+.map-node.unlock-flash {
+  animation: node-pop 0.5s cubic-bezier(0.4, 1.6, 0.5, 1), unlock-glow 1s ease;
+}
+@keyframes unlock-glow {
+  0% { box-shadow: 0 0 0 0 rgba(255, 206, 107, 0.85); }
+  100% { box-shadow: 0 0 0 30px rgba(255, 206, 107, 0); }
+}
+.map-node.repop {
+  animation:
+    node-pop 0.45s cubic-bezier(0.4, 1.6, 0.5, 1) both,
+    node-pulse 1.6s ease-in-out 0.5s infinite;
+}
+
 .hidden { display: none !important; }
