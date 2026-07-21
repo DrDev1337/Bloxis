@@ -7,7 +7,13 @@ kolumn** blir full rensas den och ger poäng.
 ## Spellägen
 
 - **∞ Oändligt läge** – spela så länge du kan. Spelet tar slut när ingen av
-  dina pjäser får plats. Rekordet sparas på enheten.
+  dina pjäser får plats. Innan start väljer du **brädstorlek** (8×8, 10×10
+  eller 12×12 – större är lättare) och **svårighet**:
+  - 🌱 **Lätt** – bara enkla former länge, svårare fasas in långsamt
+  - 🎯 **Klassisk** – mjuk stegring från enkla till alla former
+  - 🔥 **Svår** – alla former från första draget
+
+  Rekord sparas per kombination av storlek och svårighet.
 - **🧩 Banor** – 30 banor på en scrollbar bankarta med tre världar
   (Gröna ängarna, Frostbergen, Solnedgångsöknen) och fyra måltyper:
   - 🎯 **Poängbanor**: nå poängmålet innan dragen tar slut.
