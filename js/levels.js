@@ -3,8 +3,16 @@
    type: 'gems'    -> rensa alla ädelstenar (G)
    type: 'ice'     -> rensa all is (I) – is kräver två rensningar
    type: 'collect' -> samla count block av färgen color (palettindex)
-   board: 8 rader à 8 tecken. '.' tom, '#' block, 'G' ädelsten, 'I' is.
-   Var tionde bana börjar en ny värld (tema i kartan). */
+   type: 'sand'    -> rensa all sand (S) – sanden sprider sig till en tom
+                      granne var sandEvery:e drag (standard 3)
+   type: 'mist'    -> lyft all stjärndimma (M) – dimrutor går inte att
+                      bygga på; en rensning i rutan intill lyfter dimman
+   type: 'eggs'    -> rensa alla drakägg (E) innan de kläcks – varje ägg
+                      har eggTimer drag på sig, annars är banan förlorad
+   board: 8 rader à 8 tecken. '.' tom, '#' block, 'G' ädelsten, 'I' is,
+   'S' sand, 'M' dimma, 'E' drakägg.
+   Var tionde bana börjar en ny värld med sin egen signaturmekanik:
+   V1 grunderna, V2 is, V3 sand, V4 stjärndimma, V5 drakägg. */
 (function (global) {
   'use strict';
 
@@ -126,20 +134,20 @@
       ]
     },
 
-    /* ===== Värld 3: Solnedgångsöknen ===== */
-    { // 21 – istäcke
-      type: 'ice', moves: 32, board: [
-        'II....II','I......I','........','...II...',
-        '...II...','........','I......I','II....II'
+    /* ===== Värld 3: Solnedgångsöknen – sanden sprider sig ===== */
+    { // 21 – första sanddynen
+      type: 'sand', sandEvery: 3, moves: 30, board: [
+        '........','........','........','........',
+        '........','........','...SS...','...SS...'
       ]
     },
     { // 22 – färgjakt: gröna block
       type: 'collect', color: 3, count: 16, moves: 34, board: E
     },
-    { // 23 – hörnstenar
-      type: 'gems', moves: 30, board: [
-        'GG....GG','G#....#G','........','........',
-        '........','........','G#....#G','GG....GG'
+    { // 23 – två dyner
+      type: 'sand', sandEvery: 3, moves: 32, board: [
+        'SS......','........','........','........',
+        '........','........','........','......SS'
       ]
     },
     { // 24 – pyramid
@@ -148,10 +156,10 @@
         '.######.','########','........','........'
       ]
     },
-    { // 25 – isgångar
-      type: 'ice', moves: 34, board: [
-        '..I..I..','..I..I..','........','II....II',
-        'II....II','........','..I..I..','..I..I..'
+    { // 25 – sandbankar
+      type: 'sand', sandEvery: 3, moves: 34, board: [
+        '........','........','........','SS....SS',
+        'SS....SS','........','........','........'
       ]
     },
     { // 26 – färgjakt: lila block bland bråte
@@ -166,10 +174,10 @@
         '..#GG#..','........','#G....G#','##....##'
       ]
     },
-    { // 28 – stora slaget
-      type: 'score', target: 3000, moves: 36, board: [
-        '#.#..#.#','........','#..##..#','........',
-        '........','#..##..#','........','#.#..#.#'
+    { // 28 – sandstorm
+      type: 'sand', sandEvery: 2, moves: 34, board: [
+        '##....##','........','...SS...','...SS...',
+        '........','........','........','........'
       ]
     },
     { // 29 – isfästningen
@@ -178,18 +186,18 @@
         '....IIII','....I..I','....I..I','....IIII'
       ]
     },
-    { // 30 – mästarprovet
-      type: 'gems', moves: 38, board: [
-        'G#.II.#G','#......#','.I....I.','.G.##.G.',
-        '.G.##.G.','.I....I.','#......#','G#.II.#G'
+    { // 30 – öknens hjärta
+      type: 'sand', sandEvery: 2, moves: 36, board: [
+        'SS......','........','........','........',
+        '......SS','........','........','........'
       ]
     },
 
-    /* ===== Värld 4: Stjärnhimlen ===== */
-    { // 31 – stjärnfall
-      type: 'score', target: 2800, moves: 34, board: [
-        '.#....#.','#......#','........','...##...',
-        '...##...','........','#......#','.#....#.'
+    /* ===== Värld 4: Stjärnhimlen – stjärndimman ===== */
+    { // 31 – första dimslöjan
+      type: 'mist', moves: 28, board: [
+        'M......M','........','........','........',
+        '........','........','........','........'
       ]
     },
     { // 32 – månskärvor
@@ -198,10 +206,10 @@
         'I......I','.I....I.','..I..I..','...II...'
       ]
     },
-    { // 33 – färgjakt: rosa stjärnstoft
-      type: 'collect', color: 7, count: 16, moves: 34, board: [
-        '#......#','........','..#..#..','........',
-        '........','..#..#..','........','#......#'
+    { // 33 – dimbankar
+      type: 'mist', moves: 32, board: [
+        '........','........','........','M......M',
+        'M......M','........','........','........'
       ]
     },
     { // 34 – stjärnbilder
@@ -210,10 +218,10 @@
         '...##...','..G..G..','.#....#.','G......G'
       ]
     },
-    { // 35 – kometsvans
-      type: 'score', target: 3200, moves: 36, board: [
-        '#.......','.#......','..#.....','...#....',
-        '....#I..','.....I#.','......I#','.......#'
+    { // 35 – dimhörnen
+      type: 'mist', moves: 34, board: [
+        'MM......','........','........','........',
+        '........','........','........','......MM'
       ]
     },
     { // 36 – frusna månar
@@ -228,10 +236,10 @@
         '#..II..#','........','.#.##.#.','........'
       ]
     },
-    { // 38 – galaxkärnan
-      type: 'gems', moves: 38, board: [
-        '........','..#GG#..','.#G##G#.','.G#II#G.',
-        '.G#II#G.','.#G##G#.','..#GG#..','........'
+    { // 38 – dimmans öga
+      type: 'mist', moves: 36, board: [
+        '...MM...','...MM...','........','........',
+        '........','........','........','........'
       ]
     },
     { // 39 – supernovan
@@ -240,10 +248,72 @@
         '.I.##.I.','#......#','..I..I..','#..##..#'
       ]
     },
-    { // 40 – universums mästare
-      type: 'gems', moves: 40, board: [
-        'GI.##.IG','I#....#I','........','.G#II#G.',
-        '.G#II#G.','........','I#....#I','GI.##.IG'
+    { // 40 – dimhöljet
+      type: 'mist', moves: 38, board: [
+        'MM....MM','........','........','........',
+        '........','........','........','MM....MM'
+      ]
+    },
+
+    /* ===== Värld 5: Drakberget – drakäggen kläcks ===== */
+    { // 41 – det första ägget
+      type: 'eggs', eggTimer: 14, moves: 30, board: [
+        '........','........','........','........',
+        '........','........','...E....','........'
+      ]
+    },
+    { // 42 – två ägg
+      type: 'eggs', eggTimer: 14, moves: 32, board: [
+        '........','........','..E.....','........',
+        '........','........','.....E..','........'
+      ]
+    },
+    { // 43 – lavaklipporna
+      type: 'score', target: 3000, moves: 36, board: [
+        '##....##','#......#','........','...##...',
+        '...##...','........','#......#','##....##'
+      ]
+    },
+    { // 44 – bergsboet
+      type: 'eggs', eggTimer: 13, moves: 34, board: [
+        '##....##','........','..E..E..','........',
+        '........','........','........','........'
+      ]
+    },
+    { // 45 – askmoln
+      type: 'sand', sandEvery: 2, moves: 34, board: [
+        '........','...SS...','........','........',
+        '........','........','...SS...','........'
+      ]
+    },
+    { // 46 – tre ägg i klippan
+      type: 'eggs', eggTimer: 17, moves: 36, board: [
+        '........','..E.....','........','.....E..',
+        '........','........','..E.....','........'
+      ]
+    },
+    { // 47 – drakens skatter
+      type: 'gems', moves: 36, board: [
+        '........','.#G..G#.','..#..#..','..G..G..',
+        '..#..#..','.#G..G#.','........','........'
+      ]
+    },
+    { // 48 – brådskan
+      type: 'eggs', eggTimer: 10, moves: 34, board: [
+        '........','........','...E....','........',
+        '....E...','........','........','........'
+      ]
+    },
+    { // 49 – färgjakt: eldröda block
+      type: 'collect', color: 0, count: 18, moves: 38, board: [
+        '#......#','........','........','........',
+        '........','........','........','#......#'
+      ]
+    },
+    { // 50 – drakmoderns prov
+      type: 'eggs', eggTimer: 12, moves: 40, board: [
+        '##....##','........','..E..E..','........',
+        '........','...E....','........','##....##'
       ]
     }
   ];
@@ -253,7 +323,8 @@
     { name: 'Gröna ängarna', from: 0, to: 9, hue: 145 },
     { name: 'Frostbergen', from: 10, to: 19, hue: 205 },
     { name: 'Solnedgångsöknen', from: 20, to: 29, hue: 25 },
-    { name: 'Stjärnhimlen', from: 30, to: 39, hue: 265 }
+    { name: 'Stjärnhimlen', from: 30, to: 39, hue: 265 },
+    { name: 'Drakberget', from: 40, to: 49, hue: 355 }
   ];
 
   global.BloxisLevels = LEVELS;
