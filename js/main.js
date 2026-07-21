@@ -1099,6 +1099,8 @@
   var endlessCfg = getEndlessCfg();
   var tutor = null;          // { step, after }
   var pendingUnlock = null;  // { idx, first } – spelas upp på kartan efter banvinst
+  var hudGameRef = null;     // vilket parti mål-HUD:ens struktur byggdes för
+  var objMax = 0;            // målets totalsumma (växer om sanden sprider sig)
 
   function bsize() { return game ? game.size : 8; }
   var dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -1670,32 +1672,55 @@
     }
     hudSub.textContent = mode === 'daily' ? t('menuDaily') : t('levelN', { n: levelIndex + 1 });
     hudObjective.classList.remove('hidden');
-    var left = t('movesLeft', { n: game.movesLeft() });
     var lv = game.level;
-    var count = function (icon, n) {
-      return icon + ' <b>' + n + '</b> ' + t('nLeft', { n: '' }).trim() + ' • ' + left;
-    };
-    if (lv.type === 'score') {
-      hudObjective.innerHTML = twe(t('hudGoal', { n: lv.target }) + ' • ' + left);
-    } else if (lv.type === 'gems') {
-      hudObjective.innerHTML = twe(count('💎', game.gemsLeft));
-    } else if (lv.type === 'ice') {
-      hudObjective.innerHTML = twe(count('🧊', game.iceLeft));
-    } else if (lv.type === 'sand') {
-      hudObjective.innerHTML = count(ic('sand'), game.sandLeft);
-    } else if (lv.type === 'mist') {
-      hudObjective.innerHTML = count(ic('mist'), game.mistLeft);
-    } else if (lv.type === 'eggs') {
-      hudObjective.innerHTML = count(ic('egg'), game.eggsLeft);
-    } else if (lv.type === 'ghosts') {
-      hudObjective.innerHTML = count(ic('ghost'), game.ghostsLeft);
-    } else if (lv.type === 'keys') {
-      hudObjective.innerHTML = count(ic('key'), game.keysLeft);
-    } else {
-      hudObjective.innerHTML = twe(count(
-        '<span class="collect-chip" style="background:' + Shapes.PALETTE[lv.color] + '"></span>',
-        game.collectLeft()));
+    var left = objectiveLeft(lv);
+    // sanden kan växa – låt maxvärdet följa med så baren aldrig ljuger
+    if (lv.type !== 'score' && lv.type !== 'collect') objMax = Math.max(objMax, left);
+    var total = lv.type === 'score' ? lv.target
+      : lv.type === 'collect' ? lv.count
+      : objMax;
+    var done = lv.type === 'score' ? Math.min(game.score, lv.target)
+      : lv.type === 'collect' ? lv.count - left
+      : total - left;
+    var pct = total > 0 ? Math.round(100 * Math.max(0, Math.min(1, done / total))) : 0;
+    if (hudGameRef !== game) {
+      hudGameRef = game;
+      hudObjective.innerHTML =
+        '<span class="hud-icon">' + twe(objectiveIcon(lv)) + '</span>' +
+        '<span class="hud-bar"><span class="hud-fill" id="hud-fill"></span></span>' +
+        '<b id="hud-count"></b>' +
+        '<span class="hud-moves" id="hud-moves"></span>';
     }
+    $('#hud-fill').style.width = pct + '%';
+    $('#hud-count').textContent = done + '/' + total;
+    var movesEl = $('#hud-moves');
+    movesEl.textContent = '• ' + t('movesLeft', { n: game.movesLeft() });
+    movesEl.classList.toggle('low', game.movesLeft() <= 5);
+  }
+
+  function objectiveLeft(lv) {
+    if (lv.type === 'score') return Math.max(0, lv.target - game.score);
+    if (lv.type === 'gems') return game.gemsLeft;
+    if (lv.type === 'ice') return game.iceLeft;
+    if (lv.type === 'sand') return game.sandLeft;
+    if (lv.type === 'mist') return game.mistLeft;
+    if (lv.type === 'eggs') return game.eggsLeft;
+    if (lv.type === 'ghosts') return game.ghostsLeft;
+    if (lv.type === 'keys') return game.keysLeft;
+    return game.collectLeft();
+  }
+
+  function objectiveIcon(lv) {
+    return lv.type === 'gems' ? '💎'
+      : lv.type === 'ice' ? '🧊'
+      : lv.type === 'sand' ? ic('sand')
+      : lv.type === 'mist' ? ic('mist')
+      : lv.type === 'eggs' ? ic('egg')
+      : lv.type === 'ghosts' ? ic('ghost')
+      : lv.type === 'keys' ? ic('key')
+      : lv.type === 'collect'
+      ? '<span class="collect-chip" style="background:' + Shapes.PALETTE[lv.color] + '"></span>'
+      : '🎯';
   }
 
   function updateBoosterBar() {
@@ -1871,6 +1896,8 @@
     levelIndex = idx;
     game = new Game({ mode: 'level', level: LEVELS[idx] });
     armedBooster = null;
+    hudGameRef = null;
+    objMax = 0;
     setGameGlow(WORLDS[worldOf(idx)].hue);
     showScreen('game');
     updateHud();
@@ -1966,6 +1993,8 @@
     // slumpade dagliga bräden för nyckfulla
     game = new Game({ mode: 'level', level: lv, rng: mulberry32(lv.pieceSeed), shapeRamp: { t2: 0, t3: 9999 } });
     armedBooster = null;
+    hudGameRef = null;
+    objMax = 0;
     setGameGlow(45);
     $('#boosters').classList.remove('hidden');
     showScreen('game');

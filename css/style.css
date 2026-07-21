@@ -548,14 +548,36 @@ html, body {
       hsla(var(--world-hue, 258), 70%, 62%, 0.16), transparent 72%);
 }
 #hud-objective {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   background: var(--panel);
   border: 1px solid var(--panel-border);
   border-radius: 999px;
-  padding: 6px 18px;
-  font-size: 0.95rem;
+  padding: 6px 16px;
+  font-size: 0.92rem;
   margin-bottom: 6px;
   cursor: pointer;
 }
+#hud-objective.hidden { display: none; }
+#hud-objective .hud-icon { display: flex; align-items: center; }
+#hud-objective .hud-bar {
+  width: 74px;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  flex: none;
+}
+#hud-objective .hud-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent2), var(--gold));
+  transition: width 0.35s ease;
+}
+#hud-objective .hud-moves { color: var(--text-dim); white-space: nowrap; }
+#hud-objective .hud-moves.low { color: #ff9d8f; font-weight: 700; }
 #ov-text p { margin-bottom: 8px; }
 #hud-objective b { color: var(--gold); }
 
