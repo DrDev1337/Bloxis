@@ -752,6 +752,47 @@ html, body {
 #tutor-hand img { width: 2.3rem; height: 2.3rem; display: block; }
 .ach-row .ach-icon .twe { width: 1.35em; height: 1.35em; }
 
+/* ===== Avatar på kartan ===== */
+.map-avatar svg { display: block; filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.45)); }
+
+/* ===== Garderob ===== */
+.ward-preview { display: flex; justify-content: center; margin-bottom: 4px; }
+.ward-coins { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 4px; }
+.ward-coins b { color: var(--gold); }
+.ward-head {
+  font-family: 'Grenze Gotisch', serif;
+  font-size: 1.15rem;
+  margin-top: 10px;
+  text-align: left;
+}
+.ward-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+.ward-item {
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 235, 200, 0.04);
+  border-radius: 14px;
+  padding: 8px 4px 6px;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: transform 0.08s ease;
+}
+.ward-item:active { transform: scale(0.94); }
+.ward-item.equipped {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(255, 206, 107, 0.35), inset 0 0 10px rgba(255, 206, 107, 0.12);
+}
+.ward-name { font-size: 0.72rem; line-height: 1.15; }
+.ward-price { font-size: 0.72rem; color: var(--gold); font-weight: 700; }
+
 /* ===== Vinstfirande ===== */
 #celebrate {
   position: absolute;

@@ -68,7 +68,7 @@
     '🌙': '1f319', '☄': '2604', '🪐': '1fa90', '🌿': '1f33f', '🌟': '1f31f',
     '🎉': '1f389', '🏆': '1f3c6', '👆': '1f446', '🔊': '1f50a', '🎵': '1f3b5',
     '📳': '1f4f3', '👁': '1f441', '🌱': '1f331', '🧹': '1f9f9', '💥': '1f4a5',
-    '🌋': '1f30b', '⚡': '26a1', '🗺': '1f5fa', '🧰': '1f9f0'
+    '🌋': '1f30b', '⚡': '26a1', '🗺': '1f5fa', '🧰': '1f9f0', '🎩': '1f3a9'
   };
   var TW_RE = new RegExp('(' + Object.keys(TWEMOJI).join('|') + ')\\uFE0F?', 'g');
   function twe(html) {
@@ -420,6 +420,131 @@
         Sound.click();
         if (k === 'music') Music.sync();
         if (k === 'colorblind' && game) { renderBoard(); renderTray(false); }
+      });
+    });
+  }
+
+  /* ===== Avatar och garderob ===== */
+  var AVATAR_COLORS = [
+    { id: 'rosa', name: 'Rosa', body: '#ff6dc8', belly: '#ffd2ec', price: 0 },
+    { id: 'gron', name: 'Älvgrön', body: '#4ddb9a', belly: '#c9f5e2', price: 60 },
+    { id: 'bla', name: 'Himmelsblå', body: '#5aa8f0', belly: '#cfe6fb', price: 60 },
+    { id: 'gul', name: 'Solgul', body: '#ffc84d', belly: '#ffedc2', price: 60 },
+    { id: 'lila', name: 'Skymningslila', body: '#a06df0', belly: '#e2d2fb', price: 60 }
+  ];
+  var AVATAR_HATS = [
+    { id: 'ingen', name: 'Bara öron', price: 0 },
+    { id: 'wizard', name: 'Trollkarlshatt', price: 0 },
+    { id: 'blomster', name: 'Blomsterkrans', price: 80 },
+    { id: 'tomte', name: 'Tomteluva', price: 100 },
+    { id: 'riddare', name: 'Riddarhjälm', price: 120 },
+    { id: 'krona', name: 'Guldkrona', price: 150 }
+  ];
+
+  function getAvatar() {
+    return store.getJson('bloxis.avatar', {
+      hat: 'wizard', color: 'rosa',
+      owned: { hat: ['ingen', 'wizard'], color: ['rosa'] }
+    });
+  }
+  function saveAvatar(a) { store.setJson('bloxis.avatar', a); }
+
+  /* Ritar avataren som SVG-sträng med vald hatt och färg. */
+  function avatarSvg(hatId, colorId, size) {
+    var col = AVATAR_COLORS.filter(function (c) { return c.id === colorId; })[0] || AVATAR_COLORS[0];
+    var eye = '#2b2144';
+    var hat = '';
+    if (hatId === 'wizard') {
+      hat =
+        '<path d="M23 1 L33.5 15.5 Q23 19.5 12.5 15.5 Z" fill="#4b3a8f"/>' +
+        '<path d="M23 1 L28 8.5 Q23 10.5 18.5 8.3 Z" fill="#5d49a8"/>' +
+        '<ellipse cx="23" cy="16" rx="14" ry="3.6" fill="#3b2d73"/>' +
+        '<circle cx="23" cy="2.2" r="2" fill="#ffce6b"/>' +
+        '<path d="M20 12 l1 -2.2 1 2.2 2.2 0.3 -1.6 1.5 0.4 2.2 -2 -1.1 -2 1.1 0.4 -2.2 -1.6 -1.5 Z" fill="#ffce6b"/>';
+    } else if (hatId === 'krona') {
+      hat =
+        '<path d="M12.5 16.5 L12.5 8 L17.5 12 L23 4.5 L28.5 12 L33.5 8 L33.5 16.5 Z" fill="#ffce6b" stroke="#c67c2e" stroke-width="1.3"/>' +
+        '<circle cx="23" cy="5" r="1.8" fill="#ff6dc8"/>' +
+        '<circle cx="13" cy="8.4" r="1.5" fill="#2fc2a5"/>' +
+        '<circle cx="33" cy="8.4" r="1.5" fill="#7d5cff"/>' +
+        '<rect x="12.5" y="14.2" width="21" height="2.6" fill="#e8a94b"/>';
+    } else if (hatId === 'blomster') {
+      hat =
+        '<circle cx="14" cy="13.5" r="3.4" fill="#ff6dc8"/><circle cx="14" cy="13.5" r="1.5" fill="#ffce6b"/>' +
+        '<circle cx="23" cy="10" r="3.8" fill="#7d5cff"/><circle cx="23" cy="10" r="1.6" fill="#ffce6b"/>' +
+        '<circle cx="32" cy="13.5" r="3.4" fill="#2fc2a5"/><circle cx="32" cy="13.5" r="1.5" fill="#ffce6b"/>' +
+        '<path d="M17 15 Q20 12.5 20.5 12 M26 12.5 Q28.5 14 29 14.5" stroke="#2a5745" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
+    } else if (hatId === 'riddare') {
+      hat =
+        '<path d="M23 0.5 Q28 1.5 27 5.5 L19 5.5 Q18 1.5 23 0.5 Z" fill="#ff5d6c"/>' +
+        '<path d="M11.5 16.5 Q11.5 5.5 23 5.5 Q34.5 5.5 34.5 16.5 Z" fill="#c3cede" stroke="#7e8ba3" stroke-width="1.3"/>' +
+        '<rect x="21.5" y="5" width="3" height="7" rx="1.3" fill="#8fa0b8"/>' +
+        '<path d="M13 13 Q23 10 33 13" stroke="#9dabc0" stroke-width="1.4" fill="none"/>';
+    } else if (hatId === 'tomte') {
+      hat =
+        '<path d="M13 15 Q13.5 4 23 3 Q30.5 3.5 31.5 10 Q32 13 30 14.5 Z" fill="#d84a5f"/>' +
+        '<circle cx="31.8" cy="12" r="2.7" fill="#fff"/>' +
+        '<path d="M11.5 16.5 Q23 12.5 34.5 16.5 L34.5 19 Q23 15 11.5 19 Z" fill="#fff"/>';
+    } else {
+      hat =
+        '<path d="M14 11 Q17 4 21 9" stroke="' + col.body + '" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+        '<path d="M32 11 Q29 4 25 9" stroke="' + col.body + '" stroke-width="4" fill="none" stroke-linecap="round"/>';
+    }
+    return '<svg viewBox="0 0 46 50" width="' + size + '" height="' + Math.round(size * 50 / 46) + '" aria-hidden="true">' +
+      '<ellipse cx="23" cy="30" rx="17" ry="18" fill="' + col.body + '"/>' +
+      '<ellipse cx="23" cy="35" rx="10" ry="9" fill="' + col.belly + '"/>' +
+      '<circle cx="17" cy="24" r="3.1" fill="#fff"/><circle cx="29" cy="24" r="3.1" fill="#fff"/>' +
+      '<circle cx="17.8" cy="24.7" r="1.6" fill="' + eye + '"/><circle cx="29.8" cy="24.7" r="1.6" fill="' + eye + '"/>' +
+      '<path d="M19 31 Q23 34.5 27 31" stroke="' + eye + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+      hat + '</svg>';
+  }
+
+  function showWardrobe() {
+    var av = getAvatar();
+    function itemHtml(type, it) {
+      var owned = av.owned[type].indexOf(it.id) >= 0;
+      var equipped = av[type] === it.id;
+      var preview = type === 'hat' ? avatarSvg(it.id, av.color, 38) : avatarSvg(av.hat, it.id, 38);
+      return '<button class="ward-item' + (equipped ? ' equipped' : '') + '" data-type="' + type + '" data-id="' + it.id + '">' +
+        preview +
+        '<span class="ward-name">' + it.name + '</span>' +
+        '<span class="ward-price">' + (equipped ? '✓ Vald' : owned ? 'Byt' : it.price + ' 💰') + '</span>' +
+        '</button>';
+    }
+    showOverlay({
+      title: '🎩 Garderob',
+      html:
+        '<div class="ward-preview">' + avatarSvg(av.hat, av.color, 92) + '</div>' +
+        '<p class="ward-coins">Dina mynt: <b>' + store.getCoins() + '</b> 💰</p>' +
+        '<p class="ward-head">Hattar</p>' +
+        '<div class="ward-row">' + AVATAR_HATS.map(function (h) { return itemHtml('hat', h); }).join('') + '</div>' +
+        '<p class="ward-head">Färger</p>' +
+        '<div class="ward-row">' + AVATAR_COLORS.map(function (c) { return itemHtml('color', c); }).join('') + '</div>',
+      buttons: [{ label: 'Klart', primary: true, fn: function () {} }]
+    });
+    document.querySelectorAll('#ov-text .ward-item').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var type = btn.getAttribute('data-type');
+        var id = btn.getAttribute('data-id');
+        var list = type === 'hat' ? AVATAR_HATS : AVATAR_COLORS;
+        var it = list.filter(function (x) { return x.id === id; })[0];
+        var a = getAvatar();
+        var owned = a.owned[type].indexOf(id) >= 0;
+        if (!owned) {
+          if (!store.spendCoins(it.price)) {
+            showToast('Du behöver ' + it.price + ' 💰 – spela banor och utmaningar!');
+            return;
+          }
+          a.owned[type].push(id);
+          Sound.coin();
+          showToast('🎉 ' + it.name + ' köpt!');
+        } else {
+          Sound.click();
+        }
+        a[type] = id;
+        saveAvatar(a);
+        showWardrobe();
+        if (screens.levels.classList.contains('active')) renderLevelMap();
       });
     });
   }
@@ -1701,9 +1826,14 @@
     var pin = null;
     if (nodes[currentIdx] && !nodes[currentIdx].classList.contains('locked')) {
       if (!animateUnlock) nodes[currentIdx].classList.add('current');
+      var av = getAvatar();
       pin = document.createElement('div');
-      pin.className = 'map-pin';
-      pin.innerHTML = twe('📍');
+      pin.className = 'map-pin map-avatar';
+      pin.innerHTML = avatarSvg(av.hat, av.color, 46);
+      pin.style.pointerEvents = 'auto';
+      pin.style.cursor = 'pointer';
+      pin.setAttribute('aria-label', 'Din avatar – öppna garderoben');
+      pin.addEventListener('click', function () { Sound.click(); showWardrobe(); });
       var pinIdx = animateUnlock ? pu.idx : currentIdx;
       pin.style.left = points[pinIdx][0] + '%';
       pin.style.top = points[pinIdx][1] + 'px';
@@ -1828,6 +1958,7 @@
   $('#btn-daily').addEventListener('click', function () { boot(); withTutorial(startDaily); });
   $('#btn-help').addEventListener('click', function () { boot(); showHelp(); });
   $('#btn-settings').addEventListener('click', function () { boot(); showSettings(); });
+  $('#btn-wardrobe').addEventListener('click', function () { boot(); showWardrobe(); });
   $('#btn-achievements').addEventListener('click', function () { boot(); showAchievements(); });
   $('#btn-restart').addEventListener('click', restartCurrent);
   document.querySelectorAll('.btn-back').forEach(function (btn) {
