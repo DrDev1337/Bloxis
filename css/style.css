@@ -352,7 +352,12 @@ html, body {
 }
 
 /* ===== Spelskärm ===== */
-#screen-game { align-items: center; }
+#screen-game {
+  align-items: center;
+  background:
+    radial-gradient(120% 52% at 50% 34%,
+      hsla(var(--world-hue, 258), 70%, 62%, 0.16), transparent 72%);
+}
 #hud-objective {
   background: var(--panel);
   border: 1px solid var(--panel-border);
