@@ -56,24 +56,31 @@
   })();
   function saveSettings() { store.setJson('bloxis.settings', settings); }
 
-  /* ===== Twemoji: byter emojitecken mot lokala SVG:er (CC-BY 4.0) så
-     ikonerna ser likadana ut på alla plattformar. ===== */
+  /* ===== Ikoner: UI-kärnikonerna är våra egna SVG:er i sagostil
+     (assets/icons). Twemoji (CC-BY 4.0) används bara som naturdekor
+     på kartan och för enstaka listikoner. ===== */
+  var ICONS = {
+    '💰': 'coin', '⭐': 'star', '🌟': 'star-glow', '🔥': 'flame',
+    '🔨': 'hammer', '💣': 'bomb', '🔄': 'swap', '↩': 'undo',
+    '🎩': 'hat', '🏅': 'medal', '⚙': 'gear', '🧩': 'puzzle',
+    '📅': 'calendar', '💎': 'gem', '🧊': 'ice', '🎨': 'palette',
+    '🎯': 'target', '🔒': 'lock', '🎉': 'party', '🏆': 'trophy',
+    '👁': 'eye', '🔊': 'sound', '🎵': 'note', '📳': 'vibrate'
+  };
   var TWEMOJI = {
-    '🏅': '1f3c5', '⚙': '2699', '📅': '1f4c5', '🧩': '1f9e9', '💰': '1f4b0',
-    '🔥': '1f525', '🔨': '1f528', '💣': '1f4a3', '🔄': '1f504', '↩': '21a9',
-    '🔒': '1f512', '💎': '1f48e', '🧊': '1f9ca', '🎨': '1f3a8', '🎯': '1f3af',
     '📍': '1f4cd', '☁': '2601', '🌲': '1f332', '🌳': '1f333', '🌷': '1f337',
     '🍄': '1f344', '🦋': '1f98b', '🏔': '1f3d4', '❄': '2744', '⛄': '26c4',
-    '🌵': '1f335', '☀': '2600', '🪨': '1faa8', '🦂': '1f982', '⭐': '2b50',
-    '🌙': '1f319', '☄': '2604', '🪐': '1fa90', '🌿': '1f33f', '🌟': '1f31f',
-    '🎉': '1f389', '🏆': '1f3c6', '👆': '1f446', '🔊': '1f50a', '🎵': '1f3b5',
-    '📳': '1f4f3', '👁': '1f441', '🌱': '1f331', '🧹': '1f9f9', '💥': '1f4a5',
-    '🌋': '1f30b', '⚡': '26a1', '🗺': '1f5fa', '🧰': '1f9f0', '🎩': '1f3a9'
+    '🌵': '1f335', '☀': '2600', '🪨': '1faa8', '🦂': '1f982',
+    '🌙': '1f319', '☄': '2604', '🪐': '1fa90', '🌿': '1f33f',
+    '👆': '1f446', '🌱': '1f331', '🧹': '1f9f9', '💥': '1f4a5',
+    '🌋': '1f30b', '⚡': '26a1', '🗺': '1f5fa', '🧰': '1f9f0'
   };
-  var TW_RE = new RegExp('(' + Object.keys(TWEMOJI).join('|') + ')\\uFE0F?', 'g');
+  var TW_RE = new RegExp('(' + Object.keys(ICONS).concat(Object.keys(TWEMOJI)).join('|') + ')\\uFE0F?', 'g');
   function twe(html) {
     return String(html).replace(TW_RE, function (_, ch) {
-      return '<img class="twe" draggable="false" alt="' + ch + '" src="assets/twemoji/' + TWEMOJI[ch] + '.svg">';
+      var src = ICONS[ch] ? 'assets/icons/' + ICONS[ch] + '.svg'
+        : 'assets/twemoji/' + TWEMOJI[ch] + '.svg';
+      return '<img class="twe" draggable="false" alt="' + ch + '" src="' + src + '">';
     });
   }
 
@@ -941,6 +948,15 @@
     ctx.closePath();
   }
 
+  /* Ljusar/mörkar en #rrggbb-färg med amt (-255..255). */
+  function shade(hex, amt) {
+    var n = parseInt(hex.slice(1), 16);
+    var r = Math.min(255, Math.max(0, (n >> 16) + amt));
+    var g = Math.min(255, Math.max(0, ((n >> 8) & 255) + amt));
+    var b = Math.min(255, Math.max(0, (n & 255) + amt));
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+
   function drawBlock(ctx, x, y, size, colorIdx, opts) {
     opts = opts || {};
     var pad = size * 0.06;
@@ -957,29 +973,69 @@
     var color = opts.gem ? Shapes.GEM_COLOR
       : opts.ice ? (opts.ice > 1 ? '#bfe6ff' : '#8fd0f5')
       : Shapes.PALETTE[colorIdx % Shapes.PALETTE.length];
+    // bas med djup: ljus topp -> mörkare botten
+    var base = ctx.createLinearGradient(0, y + pad, 0, y + pad + s);
+    base.addColorStop(0, shade(color, 42));
+    base.addColorStop(0.5, color);
+    base.addColorStop(1, shade(color, -34));
     roundRectPath(ctx, x + pad, y + pad, s, s, rad);
-    ctx.fillStyle = color;
+    ctx.fillStyle = base;
     ctx.fill();
-    // glans upptill
-    var grad = ctx.createLinearGradient(0, y + pad, 0, y + pad + s);
-    grad.addColorStop(0, 'rgba(255,255,255,0.35)');
-    grad.addColorStop(0.45, 'rgba(255,255,255,0.05)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.18)');
-    ctx.fillStyle = grad;
+    // kantlinje i mörkare nyans håller ihop blocket
+    ctx.strokeStyle = shade(color, -62);
+    ctx.lineWidth = Math.max(1, size * 0.045);
+    ctx.stroke();
+    // glansband upptill
+    roundRectPath(ctx, x + pad + s * 0.1, y + pad + s * 0.07, s * 0.8, s * 0.3, rad * 0.7);
+    var gloss = ctx.createLinearGradient(0, y + pad, 0, y + pad + s * 0.42);
+    gloss.addColorStop(0, 'rgba(255,255,255,0.45)');
+    gloss.addColorStop(1, 'rgba(255,255,255,0.02)');
+    ctx.fillStyle = gloss;
+    ctx.fill();
+    // liten glanspunkt
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.arc(x + pad + s * 0.2, y + pad + s * 0.2, s * 0.06, 0, Math.PI * 2);
     ctx.fill();
     if (opts.gem) {
-      var cx2 = x + size / 2, cy2 = y + size / 2, d = s * 0.28;
+      // fasetterad ädelsten
+      var cx2 = x + size / 2, cy2 = y + size / 2, d = s * 0.32;
       ctx.beginPath();
       ctx.moveTo(cx2, cy2 - d);
       ctx.lineTo(cx2 + d, cy2);
       ctx.lineTo(cx2, cy2 + d);
       ctx.lineTo(cx2 - d, cy2);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(0,120,110,0.5)';
+      ctx.beginPath();
+      ctx.moveTo(cx2, cy2 - d);
+      ctx.lineTo(cx2 + d, cy2);
+      ctx.lineTo(cx2, cy2);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(120,235,215,0.75)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx2, cy2 + d);
+      ctx.lineTo(cx2 - d, cy2);
+      ctx.lineTo(cx2, cy2);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(30,150,130,0.55)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx2, cy2 - d);
+      ctx.lineTo(cx2 + d, cy2);
+      ctx.lineTo(cx2, cy2 + d);
+      ctx.lineTo(cx2 - d, cy2);
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(0,110,100,0.6)';
       ctx.lineWidth = Math.max(1, size * 0.03);
       ctx.stroke();
+      // gnista i övre facetten
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.beginPath();
+      ctx.arc(cx2 - d * 0.3, cy2 - d * 0.35, s * 0.05, 0, Math.PI * 2);
+      ctx.fill();
     }
     if (settings.colorblind && !opts.gem && !opts.ice) {
       drawCbSymbol(ctx, x, y, size, colorIdx % 8);
@@ -996,11 +1052,17 @@
       ctx.lineTo(x + size * 0.75, y + size * 0.42);
       ctx.stroke();
     } else if (opts.ice > 1) {
-      // frostglans
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.beginPath();
-      ctx.arc(x + size * 0.32, y + size * 0.32, size * 0.08, 0, Math.PI * 2);
-      ctx.fill();
+      // frostgnistor och ljus innerkant
+      roundRectPath(ctx, x + pad + size * 0.05, y + pad + size * 0.05, s - size * 0.1, s - size * 0.1, rad * 0.7);
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = Math.max(1, size * 0.03);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      [[0.35, 0.4, 0.06], [0.68, 0.6, 0.045], [0.5, 0.75, 0.035]].forEach(function (p) {
+        ctx.beginPath();
+        ctx.arc(x + size * p[0], y + size * p[1], size * p[2], 0, Math.PI * 2);
+        ctx.fill();
+      });
     }
     ctx.restore();
   }
@@ -1356,11 +1418,17 @@
     });
   }
 
+  /* Tonar spelskärmens glöd efter världen (banläge) eller läget. */
+  function setGameGlow(hue) {
+    screens.game.style.setProperty('--world-hue', hue);
+  }
+
   function startEndless(cfg) {
     endlessCfg = cfg || endlessCfg;
     mode = 'endless';
     game = new Game({ mode: 'endless', size: endlessCfg.size, shapeRamp: DIFFS[endlessCfg.diff].ramp });
     armedBooster = null;
+    setGameGlow(258);
     showScreen('game');
     updateHud();
     renderTray(true);
@@ -1405,6 +1473,7 @@
     levelIndex = idx;
     game = new Game({ mode: 'level', level: LEVELS[idx] });
     armedBooster = null;
+    setGameGlow(WORLDS[Math.min(Math.floor(idx / 10), WORLDS.length - 1)].hue);
     showScreen('game');
     updateHud();
     renderTray(true);
@@ -1499,6 +1568,7 @@
     // slumpade dagliga bräden för nyckfulla
     game = new Game({ mode: 'level', level: lv, rng: mulberry32(lv.pieceSeed), shapeRamp: { t2: 0, t3: 9999 } });
     armedBooster = null;
+    setGameGlow(45);
     $('#boosters').classList.remove('hidden');
     showScreen('game');
     updateHud();

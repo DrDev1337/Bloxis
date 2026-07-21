@@ -73,6 +73,19 @@ köper du boosters direkt i spelet:
 | 🔄 Byt | 20 | Slumpa om de tre pjäserna |
 | ↩️ Ångra | 25 | Ångra senaste draget |
 
+## Grafisk identitet
+
+- **Eget ikonset** i sagostil (`assets/icons/`) för all UI-krom: mynt,
+  stjärnor, boosters, medaljer, kalender m.m. Twemoji används numera bara
+  som naturdekor på bankartan.
+- **Block med djup**: färggradienter, kantlinjer, glansband och
+  fasetterade ädelstenar – ritas i Canvas utan bildfiler.
+- **Världstonad spelskärm**: bakgrundsglöden skiftar med världens färg
+  (grönt i Ängarna, blått i Frostbergen, orange i Öknen, lila i
+  Stjärnhimlen och guld i Dagens utmaning).
+- **Appikon** med spelets block och avatar (`icons/icon.svg` +
+  PNG-varianter för hemskärm/App Store).
+
 ## Juice
 
 Partikelexplosioner, flygande poängsiffror, skärmskak vid multirensningar,
