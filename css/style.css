@@ -262,6 +262,27 @@ html, body {
 .propimg { display: block; width: 100%; height: auto; user-select: none; }
 .deco .propimg { filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.3)); }
 .cloud .propimg { filter: none; }
+/* Stora landmärken per värld */
+.map-landmark {
+  position: absolute;
+  transform: translate(-50%, -58%);
+  pointer-events: none;
+  z-index: 1;
+}
+.map-landmark .propimg { filter: drop-shadow(0 6px 8px rgba(10, 8, 24, 0.35)); }
+.map-landmark::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -4%;
+  width: 82%;
+  height: 10%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(10, 8, 24, 0.35), transparent 68%);
+  border-radius: 50%;
+  z-index: -1;
+}
+
 /* Skattkistor på kartan */
 .map-chest {
   position: absolute;
