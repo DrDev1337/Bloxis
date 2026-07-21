@@ -258,6 +258,10 @@ html, body {
   padding: 2px 9px;
 }
 .world-banner .wb-stars .twe { width: 0.85em; height: 0.85em; }
+.world-banner .wb-icon .propimg { width: 1.35em; height: 1.35em; display: block; }
+.propimg { display: block; width: 100%; height: auto; user-select: none; }
+.deco .propimg { filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35)); }
+.cloud .propimg { filter: none; }
 
 /* Ambient väder på kartan */
 .snowflake, .ember, .glint, .fogband {
