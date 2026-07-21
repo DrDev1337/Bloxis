@@ -346,17 +346,18 @@ html, body {
   to { transform: translateX(calc(100vw + 90px)); }
 }
 
-/* Kartnoder */
+/* Kartnoder – knubbiga kupoler som sitter på vägen */
 .map-node {
   position: absolute;
   transform: translate(-50%, -50%);
   width: 66px;
-  height: 66px;
-  border-radius: 50%;
-  border: 3px solid hsla(var(--hue, 220), 70%, 75%, 0.5);
+  height: 60px;
+  border-radius: 50% 50% 48% 48% / 56% 56% 44% 44%;
+  border: 3px solid rgba(255, 255, 255, 0.65);
   background:
-    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%),
-    linear-gradient(160deg, hsla(var(--hue, 220), 45%, 38%, 0.9), hsla(var(--hue, 220), 50%, 22%, 0.9));
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 52%),
+    linear-gradient(175deg, hsl(var(--hue, 220), 62%, 60%), hsl(var(--hue, 220), 55%, 38%) 70%, hsl(var(--hue, 220), 50%, 30%));
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.35), inset 0 -6px 10px hsla(var(--hue, 220), 60%, 18%, 0.55);
   color: var(--text);
   font: inherit;
   display: flex;
@@ -387,18 +388,49 @@ html, body {
   to { transform: translate(-50%, -50%) scale(1); }
 }
 .map-node:active { transform: translate(-50%, -50%) scale(0.92); }
-.map-node .num { font-size: 1.25rem; font-weight: 800; line-height: 1; }
-.map-node .stars { font-size: 0.62rem; letter-spacing: 1px; color: var(--gold); line-height: 1.4; }
+.map-node .num {
+  font-family: 'Grenze Gotisch', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.45);
+}
+.map-node .ntype { margin-top: 1px; line-height: 1; }
+.map-node .ntype .twe, .map-node .ntype { font-size: 0.85rem; }
+.map-node .ntype .twe { width: 0.95em; height: 0.95em; }
+.map-node .nlock .twe { width: 1.4em; height: 1.4em; opacity: 0.9; }
+
+/* Stjärnsolfjäder ovanför klarade noder */
+.map-node .starfan {
+  position: absolute;
+  top: -21px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  pointer-events: none;
+}
+.map-node .sf {
+  font-size: 1.05rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.28);
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+}
+.map-node .sf.on {
+  color: var(--gold);
+  text-shadow: 0 0 6px rgba(255, 206, 107, 0.55), 0 2px 3px rgba(0, 0, 0, 0.4);
+}
+.map-node .sf1 { transform: rotate(-24deg) translateY(4px); }
+.map-node .sf2 { font-size: 1.3rem; transform: translateY(-1px); }
+.map-node .sf3 { transform: rotate(24deg) translateY(4px); }
+
 .map-node.done {
-  background:
-    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%),
-    linear-gradient(150deg, var(--accent), var(--accent2));
-  border-color: rgba(255, 214, 69, 0.6);
-  box-shadow: 0 0 12px rgba(125, 92, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 214, 69, 0.75);
 }
 .map-node.locked {
-  filter: saturate(0.35);
-  border-style: dashed;
+  filter: saturate(0.25) brightness(0.75);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 .map-node.current {
   animation: node-pop 0.4s cubic-bezier(0.4, 1.6, 0.5, 1) var(--d, 0s) both,
