@@ -2660,6 +2660,24 @@
       inner.appendChild(el);
     });
 
+    // stort landmärke per värld vid vägkanten (svampstuga, isslott, pyramid …)
+    var LANDMARKS = ['lm-mushroomhouse', 'lm-icecastle', 'lm-pyramid',
+      'lm-wizardtower', 'lm-dragoncave', 'lm-treehouse', 'lm-crystalgate'];
+    var firstNode = inner.querySelector('.map-node');
+    WORLDS.forEach(function (w, wi) {
+      var a = w.from + 8;
+      if (a + 1 >= points.length || !LANDMARKS[wi]) return;
+      var mid = bezPoint(points, a, 0.5);
+      var cxPct = Math.max(17, Math.min(83, mid[0] + (mid[0] < 50 ? 27 : -27)));
+      var lm = document.createElement('div');
+      lm.className = 'map-landmark';
+      lm.innerHTML = propImg(LANDMARKS[wi]);
+      lm.style.left = cxPct + '%';
+      lm.style.top = mid[1] + 'px';
+      lm.style.width = Math.round(102 + seeded(wi * 3 + 1) * 16) + 'px';
+      inner.insertBefore(lm, firstNode);
+    });
+
     // skattkistor: en per värld vid vägkanten halvvägs in – öppnas
     // (en gång) när banan intill är klarad och ger mynt
     var chestsOpen = store.getJson('bloxis.chests', {});
