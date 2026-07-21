@@ -262,6 +262,49 @@ html, body {
 .propimg { display: block; width: 100%; height: auto; user-select: none; }
 .deco .propimg { filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.3)); }
 .cloud .propimg { filter: none; }
+/* Skattkistor på kartan */
+.map-chest {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: default;
+  z-index: 3;
+}
+.map-chest .propimg { filter: drop-shadow(0 4px 5px rgba(10, 8, 24, 0.4)); }
+.map-chest.waiting { filter: saturate(0.3) brightness(0.8); opacity: 0.8; }
+.map-chest.ready {
+  cursor: pointer;
+  animation: chest-bounce 1.1s ease-in-out infinite;
+}
+.map-chest.ready .propimg {
+  filter: drop-shadow(0 0 10px rgba(255, 206, 107, 0.7)) drop-shadow(0 4px 5px rgba(10, 8, 24, 0.4));
+}
+.map-chest.ready:active { transform: translate(-50%, -50%) scale(0.9); }
+.map-chest.opened { opacity: 0.95; }
+@keyframes chest-bounce {
+  0%, 100% { transform: translate(-50%, -50%); }
+  50% { transform: translate(-50%, calc(-50% - 7px)); }
+}
+.chest-coins {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 2px;
+  background: rgba(10, 8, 24, 0.55);
+  border: 1px solid rgba(255, 206, 107, 0.5);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.chest-coins .twe { width: 0.85em; height: 0.85em; }
+
 /* Slagskugga under markstående rekvisita */
 .deco.grounded::after {
   content: '';
