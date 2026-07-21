@@ -74,12 +74,41 @@
 
   /* ===== Inställningar ===== */
   var settings = (function () {
-    var def = { sound: true, music: true, vibration: true, colorblind: false };
+    var def = { sound: true, music: true, vibration: true, colorblind: false, language: 'sv' };
     var saved = store.getJson('bloxis.settings', {});
     for (var k in saved) def[k] = saved[k];
     return def;
   })();
   function saveSettings() { store.setJson('bloxis.settings', settings); }
+
+  /* ===== Språk ===== */
+  var LANGS = window.BloxisLang;
+  function t(key, vars) {
+    var s = (LANGS[settings.language] || {})[key];
+    if (s == null) s = LANGS.sv[key];
+    if (s == null) return key;
+    if (vars) {
+      for (var k in vars) s = s.split('{' + k + '}').join(vars[k]);
+    }
+    return s;
+  }
+  /* Som t() men med inline-svenska som reserv (namn på föremål m.m.). */
+  function tOpt(key, fallback) {
+    var s = (LANGS[settings.language] || {})[key];
+    return s != null ? s : fallback;
+  }
+  function itemName(it) { return tOpt('it_' + it.id, it.name); }
+  function worldName(wi) { return tOpt('world_' + wi, WORLDS[wi].name); }
+  function achName(a) { return tOpt('ach_' + a.id + '_n', a.name); }
+  function achDesc(a) { return tOpt('ach_' + a.id + '_d', a.desc); }
+
+  /* Uppdaterar statiska texter i index.html (märkta med data-l). */
+  function applyStaticLang() {
+    document.documentElement.lang = settings.language;
+    document.querySelectorAll('[data-l]').forEach(function (el) {
+      el.textContent = t(el.getAttribute('data-l'));
+    });
+  }
 
   /* ===== Ikoner: UI-kärnikonerna är våra egna SVG:er i sagostil
      (assets/icons). Twemoji (CC-BY 4.0) används bara som naturdekor
@@ -271,9 +300,9 @@
   /* ===== Oändligt läge: svårighet och brädstorlek ===== */
   var DIFF_ORDER = ['latt', 'klassisk', 'svar'];
   var DIFFS = {
-    latt: { label: '🌱 Lätt', ramp: { t2: 15, t3: 40 } },
-    klassisk: { label: '🎯 Klassisk', ramp: { t2: 6, t3: 16 } },
-    svar: { label: '🔥 Svår', ramp: null }
+    latt: { key: 'diffEasy', ramp: { t2: 15, t3: 40 } },
+    klassisk: { key: 'diffClassic', ramp: { t2: 6, t3: 16 } },
+    svar: { key: 'diffHard', ramp: null }
   };
   var SIZE_OPTS = [8, 10, 12];
 
@@ -351,6 +380,132 @@
     return html + '</div>';
   }
 
+  /* ===== Veckouppdrag =====
+     Tre deterministiska uppdrag per ISO-vecka (samma för alla spelare).
+     Progressen uppdateras via spelhändelser och belöningen hämtas i
+     uppdragsdialogen. */
+  var QUEST_POOL = [
+    { id: 'lines', target: [50, 80], coins: [40, 60] },
+    { id: 'multi', target: [6, 10], coins: [45, 65] },
+    { id: 'combo3', target: [3, 5], coins: [45, 65] },
+    { id: 'wins', target: [4, 7], coins: [50, 70] },
+    { id: 'stars', target: [9, 15], coins: [50, 75] },
+    { id: 'daily', target: [2, 3], coins: [50, 70] },
+    { id: 'boosters', target: [3, 5], coins: [40, 60] },
+    { id: 'endless', target: [1500, 2500], coins: [45, 70] }
+  ];
+
+  function isoWeekStr(d) {
+    var date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var day = (date.getUTCDay() + 6) % 7;
+    date.setUTCDate(date.getUTCDate() - day + 3);
+    var firstThu = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+    var fday = (firstThu.getUTCDay() + 6) % 7;
+    firstThu.setUTCDate(firstThu.getUTCDate() - fday + 3);
+    var week = 1 + Math.round((date - firstThu) / 604800000);
+    return date.getUTCFullYear() + '-W' + (week < 10 ? '0' : '') + week;
+  }
+
+  function getQuests() {
+    var week = isoWeekStr(new Date());
+    var q = store.getJson('bloxis.quests', null);
+    if (!q || q.week !== week) {
+      var rng = mulberry32(dateSeed(week + '#uppdrag'));
+      var picks = [];
+      while (picks.length < 3) {
+        var idx = Math.floor(rng() * QUEST_POOL.length);
+        if (picks.indexOf(idx) < 0) picks.push(idx);
+      }
+      q = {
+        week: week,
+        defs: picks.map(function (pi) {
+          var p = QUEST_POOL[pi];
+          var tier = rng() < 0.55 ? 0 : 1;
+          return { id: p.id, target: p.target[tier], coins: p.coins[tier] };
+        }),
+        prog: [0, 0, 0],
+        claimed: [false, false, false]
+      };
+      store.setJson('bloxis.quests', q);
+    }
+    return q;
+  }
+
+  function questClaimable(q) {
+    var n = 0;
+    q.defs.forEach(function (d, i) {
+      if (!q.claimed[i] && q.prog[i] >= d.target) n++;
+    });
+    return n;
+  }
+
+  function questEvent(type, amount) {
+    var q = getQuests();
+    var changed = false;
+    q.defs.forEach(function (d, i) {
+      if (d.id !== type || q.claimed[i]) return;
+      var before = q.prog[i];
+      if (type === 'endless') q.prog[i] = Math.max(before, amount);
+      else q.prog[i] = Math.min(d.target, before + amount);
+      if (q.prog[i] !== before) changed = true;
+      if (before < d.target && q.prog[i] >= d.target) {
+        setTimeout(function () {
+          showToast('🗒️ ' + t('questDone') + ': ' + questText(d) + ' • ' + t('questClaimHint'));
+          Sound.star(1);
+        }, 600);
+      }
+    });
+    if (changed) store.setJson('bloxis.quests', q);
+  }
+
+  function questText(d) {
+    return t('quest_' + d.id, { n: d.target });
+  }
+
+  function updateQuestBadge() {
+    var el = $('#quest-badge');
+    if (el) el.classList.toggle('hidden', questClaimable(getQuests()) === 0);
+  }
+
+  function showQuests() {
+    var q = getQuests();
+    var html = '<p class="quest-week">' + t('questWeek') + ' ' + q.week.replace('-W', ' • ' + t('questWeekShort') + ' ') + '</p>' +
+      q.defs.map(function (d, i) {
+        var done = q.prog[i] >= d.target;
+        var claimed = q.claimed[i];
+        var pct = Math.min(100, Math.round(100 * q.prog[i] / d.target));
+        return '<div class="quest-row' + (claimed ? ' claimed' : done ? ' done' : '') + '">' +
+          '<div class="quest-info"><div class="quest-name">' + questText(d) + '</div>' +
+          '<div class="q-bar"><div class="q-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="quest-prog">' + Math.min(q.prog[i], d.target) + ' / ' + d.target + '</div></div>' +
+          (claimed
+            ? '<span class="quest-check">✓</span>'
+            : done
+            ? '<button class="btn quest-claim" data-q="' + i + '">' + t('questClaim') + ' +' + d.coins + ' 💰</button>'
+            : '<span class="quest-reward">+' + d.coins + ' 💰</span>') +
+          '</div>';
+      }).join('');
+    showOverlay({
+      title: '🗒️ ' + t('menuQuests'),
+      html: html,
+      buttons: [{ label: t('close'), primary: true, fn: function () { updateQuestBadge(); } }]
+    });
+    document.querySelectorAll('#ov-text .quest-claim').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var i = +btn.getAttribute('data-q');
+        var qq = getQuests();
+        if (qq.claimed[i] || qq.prog[i] < qq.defs[i].target) return;
+        qq.claimed[i] = true;
+        store.setJson('bloxis.quests', qq);
+        store.addCoins(qq.defs[i].coins);
+        Sound.coin();
+        buzz([30, 40, 30]);
+        showQuests();
+        if ($('#menu-coins')) $('#menu-coins').textContent = store.getCoins();
+      });
+    });
+  }
+
   /* ===== Statistik och utmärkelser ===== */
   function getStats() {
     return store.getJson('bloxis.stats', {
@@ -409,7 +564,7 @@
       store.setJson('bloxis.ach', unlocked);
       newOnes.forEach(function (a, i) {
         setTimeout(function () {
-          showToast('🏅 ' + a.name + '  +' + a.coins + ' 💰' +
+          showToast('🏅 ' + achName(a) + '  +' + a.coins + ' 💰' +
             (ACH_GEAR[a.id] ? ' • 🎁 ' + ACH_GEAR[a.id] + '!' : ''));
           Sound.coin();
         }, i * 3200);
@@ -435,41 +590,59 @@
       var gear = ACH_GEAR[a.id] ? ' • 🎁 ' + ACH_GEAR[a.id] : '';
       return '<div class="ach-row' + (got ? '' : ' locked') + '">' +
         '<span class="ach-icon">' + a.icon + '</span>' +
-        '<span><div class="ach-name">' + a.name + '</div><div class="ach-desc">' + a.desc + gear + '</div></span>' +
+        '<span><div class="ach-name">' + achName(a) + '</div><div class="ach-desc">' + achDesc(a) + gear + '</div></span>' +
         '<span class="ach-coins">' + (got ? '✓' : '+' + a.coins + ' 💰') + '</span></div>';
     }).join('');
     showOverlay({
-      title: '🏅 Utmärkelser',
+      title: t('achTitle'),
       html: html,
-      buttons: [{ label: 'Stäng', primary: true, fn: function () {} }]
+      buttons: [{ label: t('close'), primary: true, fn: function () {} }]
     });
   }
 
   function showSettings() {
     var rows = [
-      ['sound', '🔊 Ljudeffekter'],
-      ['music', '🎵 Musik'],
-      ['vibration', '📳 Vibration'],
-      ['colorblind', '👁️ Färgblindläge']
+      ['sound', t('setSound')],
+      ['music', t('setMusic')],
+      ['vibration', t('setVibration')],
+      ['colorblind', t('setColorblind')]
     ];
     var html = rows.map(function (r) {
       return '<div class="toggle-row"><span>' + r[1] + '</span>' +
         '<button class="toggle' + (settings[r[0]] ? ' on' : '') + '" data-k="' + r[0] + '" aria-label="' + r[1] + '"></button></div>';
-    }).join('');
+    }).join('') +
+      '<div class="toggle-row"><span>' + t('setLanguage') + '</span>' +
+      '<span class="choice-row lang-row">' +
+      '<button class="choice' + (settings.language === 'sv' ? ' sel' : '') + '" data-lang="sv">Svenska</button>' +
+      '<button class="choice' + (settings.language === 'en' ? ' sel' : '') + '" data-lang="en">English</button>' +
+      '</span></div>';
     showOverlay({
-      title: '⚙️ Inställningar',
+      title: t('settingsTitle'),
       html: html,
-      buttons: [{ label: 'Klart', primary: true, fn: function () {} }]
+      buttons: [{ label: t('done'), primary: true, fn: function () {} }]
     });
-    document.querySelectorAll('#ov-text .toggle').forEach(function (t) {
-      t.addEventListener('click', function () {
-        var k = t.getAttribute('data-k');
+    document.querySelectorAll('#ov-text .toggle').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var k = el.getAttribute('data-k');
         settings[k] = !settings[k];
         saveSettings();
-        t.classList.toggle('on', settings[k]);
+        el.classList.toggle('on', settings[k]);
         Sound.click();
         if (k === 'music') Music.sync();
         if (k === 'colorblind' && game) { renderBoard(); renderTray(false); }
+      });
+    });
+    document.querySelectorAll('#ov-text [data-lang]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var lang = el.getAttribute('data-lang');
+        if (settings.language === lang) return;
+        settings.language = lang;
+        saveSettings();
+        Sound.click();
+        applyStaticLang();
+        if (screens.levels.classList.contains('active')) renderLevelMap();
+        if (game) updateHud();
+        showSettings();
       });
     });
   }
@@ -556,8 +729,8 @@
     eyes: AVATAR_EYES, back: AVATAR_BACKS, face: AVATAR_FACES
   };
   var AVATAR_SECTIONS = [
-    ['hat', 'Hattar'], ['item', 'Föremål'], ['back', 'Rygg'],
-    ['face', 'Ansikte'], ['color', 'Färger'], ['eyes', 'Ögonfärg']
+    ['hat', 'wardHats'], ['item', 'wardItems'], ['back', 'wardBack'],
+    ['face', 'wardFace'], ['color', 'wardColors'], ['eyes', 'wardEyes']
   ];
 
   function getAvatar() {
@@ -843,26 +1016,26 @@
     var coins = store.getCoins();
     var afford = coins >= it.price;
     showOverlay({
-      title: 'Köpa ' + it.name + '?',
+      title: t('buyTitle', { name: itemName(it) }),
       html:
         '<div class="ward-preview buy-preview">' + avatarSvg(avatarWith(av, type, it.id), 120) + '</div>' +
-        '<p class="buy-line">Så här skulle det se ut!</p>' +
-        '<p class="ward-coins">Pris: <b>' + it.price + '</b> 💰 &ensp;•&ensp; Du har: <b>' + coins + '</b> 💰</p>' +
-        (afford ? '' : '<p class="buy-warn">Du behöver ' + (it.price - coins) + ' 💰 till – spela banor och utmaningar!</p>'),
+        '<p class="buy-line">' + t('buyPreview') + '</p>' +
+        '<p class="ward-coins">' + t('buyPrice', { price: it.price, coins: coins }) + '</p>' +
+        (afford ? '' : '<p class="buy-warn">' + t('buyMissing', { n: it.price - coins }) + '</p>'),
       buttons: afford ? [
-        { label: 'Köp – ' + it.price + ' mynt', primary: true, fn: function () {
+        { label: t('buyBtn', { n: it.price }), primary: true, fn: function () {
           var a = getAvatar();
           if (!store.spendCoins(it.price)) { showWardrobe(); return; }
           a.owned[type].push(it.id);
           saveAvatar(a);
           equipAvatar(type, it.id);
           Sound.coin();
-          showToast('🎉 ' + it.name + ' köpt!');
+          showToast(t('bought', { name: itemName(it) }));
           showWardrobe();
         } },
-        { label: 'Avbryt', fn: showWardrobe }
+        { label: t('cancel'), fn: showWardrobe }
       ] : [
-        { label: 'Tillbaka', primary: true, fn: showWardrobe }
+        { label: t('back'), primary: true, fn: showWardrobe }
       ]
     });
   }
@@ -872,29 +1045,29 @@
     function itemHtml(type, it) {
       var owned = avatarOwns(av, type, it);
       var equipped = av[type] === it.id;
-      var label = equipped ? '✓ Vald'
-        : owned ? (it.price || it.ach ? 'Byt' : 'Gratis')
-        : it.ach ? '🏅 Utmärkelse'
+      var label = equipped ? t('wardChosen')
+        : owned ? (it.price || it.ach ? t('wardSwap') : t('wardFree'))
+        : it.ach ? t('achievementBadge')
         : it.price + ' 💰';
       return '<button class="ward-item' + (equipped ? ' equipped' : '') + (it.ach && !owned ? ' ach-locked' : '') + '"' +
         ' data-type="' + type + '" data-id="' + it.id + '">' +
         avatarSvg(avatarWith(av, type, it.id), 38) +
-        '<span class="ward-name">' + it.name + '</span>' +
+        '<span class="ward-name">' + itemName(it) + '</span>' +
         '<span class="ward-price">' + label + '</span>' +
         '</button>';
     }
     showOverlay({
-      title: '🎩 Garderob',
+      title: t('wardTitle'),
       html:
         '<div class="ward-preview">' + avatarSvg(av, 92) + '</div>' +
-        '<p class="ward-coins">Dina mynt: <b>' + store.getCoins() + '</b> 💰</p>' +
+        '<p class="ward-coins">' + t('wardCoins') + ' <b>' + store.getCoins() + '</b> 💰</p>' +
         AVATAR_SECTIONS.map(function (sec) {
-          return '<p class="ward-head">' + sec[1] + '</p>' +
+          return '<p class="ward-head">' + t(sec[1]) + '</p>' +
             '<div class="ward-row">' +
             AVATAR_LISTS[sec[0]].map(function (it) { return itemHtml(sec[0], it); }).join('') +
             '</div>';
         }).join(''),
-      buttons: [{ label: 'Klart', primary: true, fn: function () {} }]
+      buttons: [{ label: t('done'), primary: true, fn: function () {} }]
     });
     document.querySelectorAll('#ov-text .ward-item').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -905,7 +1078,7 @@
         if (!avatarOwns(a, type, it)) {
           if (it.ach) {
             var req = ACH_BY_ID[it.ach];
-            showToast('🏅 Lås upp "' + req.name + '": ' + req.desc);
+            showToast(t('unlockReq', { name: achName(req), desc: achDesc(req) }));
             return;
           }
           hideOverlay();
@@ -958,6 +1131,7 @@
       var d = getDaily();
       $('#menu-streak').textContent = effectiveStreak(d);
       $('#daily-badge').classList.toggle('hidden', !!d.history[todayStr()]);
+      updateQuestBadge();
     }
     if (name === 'levels') renderLevelMap();
     if (name === 'game') requestAnimationFrame(layout);
@@ -1484,40 +1658,43 @@
     $('#game-coins').textContent = store.getCoins();
     updateBoosterBar();
     if (mode === 'tutorial') {
-      hudSub.textContent = 'Guide';
+      hudSub.textContent = t('guide');
       hudObjective.classList.add('hidden');
       return;
     }
     if (mode === 'endless') {
-      hudSub.textContent = endlessCfg.size + '×' + endlessCfg.size + ' • Rekord: ' +
+      hudSub.textContent = endlessCfg.size + '×' + endlessCfg.size + ' • ' + t('record') + ' ' +
         Math.max(store.getBestFor(endlessCfg), game.score);
       hudObjective.classList.add('hidden');
       return;
     }
-    hudSub.textContent = mode === 'daily' ? 'Dagens utmaning' : 'Bana ' + (levelIndex + 1);
+    hudSub.textContent = mode === 'daily' ? t('menuDaily') : t('levelN', { n: levelIndex + 1 });
     hudObjective.classList.remove('hidden');
-    var left = game.movesLeft();
+    var left = t('movesLeft', { n: game.movesLeft() });
     var lv = game.level;
+    var count = function (icon, n) {
+      return icon + ' <b>' + n + '</b> ' + t('nLeft', { n: '' }).trim() + ' • ' + left;
+    };
     if (lv.type === 'score') {
-      hudObjective.innerHTML = twe('🎯 Mål: <b>' + lv.target + '</b> p • ' + left + ' drag kvar');
+      hudObjective.innerHTML = twe(t('hudGoal', { n: lv.target }) + ' • ' + left);
     } else if (lv.type === 'gems') {
-      hudObjective.innerHTML = twe('💎 <b>' + game.gemsLeft + '</b> kvar • ' + left + ' drag kvar');
+      hudObjective.innerHTML = twe(count('💎', game.gemsLeft));
     } else if (lv.type === 'ice') {
-      hudObjective.innerHTML = twe('🧊 <b>' + game.iceLeft + '</b> kvar • ' + left + ' drag kvar');
+      hudObjective.innerHTML = twe(count('🧊', game.iceLeft));
     } else if (lv.type === 'sand') {
-      hudObjective.innerHTML = ic('sand') + ' <b>' + game.sandLeft + '</b> kvar • ' + left + ' drag kvar';
+      hudObjective.innerHTML = count(ic('sand'), game.sandLeft);
     } else if (lv.type === 'mist') {
-      hudObjective.innerHTML = ic('mist') + ' <b>' + game.mistLeft + '</b> kvar • ' + left + ' drag kvar';
+      hudObjective.innerHTML = count(ic('mist'), game.mistLeft);
     } else if (lv.type === 'eggs') {
-      hudObjective.innerHTML = ic('egg') + ' <b>' + game.eggsLeft + '</b> kvar • ' + left + ' drag kvar';
+      hudObjective.innerHTML = count(ic('egg'), game.eggsLeft);
     } else if (lv.type === 'ghosts') {
-      hudObjective.innerHTML = ic('ghost') + ' <b>' + game.ghostsLeft + '</b> kvar • ' + left + ' drag kvar';
+      hudObjective.innerHTML = count(ic('ghost'), game.ghostsLeft);
     } else if (lv.type === 'keys') {
-      hudObjective.innerHTML = ic('key') + ' <b>' + game.keysLeft + '</b> kvar • ' + left + ' drag kvar';
+      hudObjective.innerHTML = count(ic('key'), game.keysLeft);
     } else {
-      hudObjective.innerHTML = twe(
-        '<span class="collect-chip" style="background:' + Shapes.PALETTE[lv.color] + '"></span>' +
-        '<b>' + game.collectLeft() + '</b> kvar • ' + left + ' drag kvar');
+      hudObjective.innerHTML = twe(count(
+        '<span class="collect-chip" style="background:' + Shapes.PALETTE[lv.color] + '"></span>',
+        game.collectLeft()));
     }
   }
 
@@ -1583,24 +1760,24 @@
   function showEndlessChooser() {
     var cfg = getEndlessCfg();
     var html =
-      '<p><b>Brädstorlek</b></p>' +
+      '<p><b>' + t('boardSize') + '</b></p>' +
       '<div class="choice-row" data-group="size">' +
       SIZE_OPTS.map(function (s) {
         return '<button class="choice' + (s === cfg.size ? ' sel' : '') + '" data-v="' + s + '">' + s + '&times;' + s + '</button>';
       }).join('') +
       '</div>' +
-      '<p style="margin-top:12px"><b>Svårighet</b></p>' +
+      '<p style="margin-top:12px"><b>' + t('difficulty') + '</b></p>' +
       '<div class="choice-row" data-group="diff">' +
       DIFF_ORDER.map(function (d) {
-        return '<button class="choice' + (d === cfg.diff ? ' sel' : '') + '" data-v="' + d + '">' + DIFFS[d].label + '</button>';
+        return '<button class="choice' + (d === cfg.diff ? ' sel' : '') + '" data-v="' + d + '">' + t(DIFFS[d].key) + '</button>';
       }).join('') +
       '</div>' +
-      '<p class="choice-hint">Större bräde ger mer plats. Lätt och Klassisk börjar med enkla former och släpper in svårare efter hand &ndash; Svår kör alla former direkt.</p>';
+      '<p class="choice-hint">' + t('chooserHint') + '</p>';
     showOverlay({
-      title: 'Oändligt läge',
+      title: t('chooserTitle'),
       html: html,
       buttons: [{
-        label: 'Starta', primary: true,
+        label: t('start'), primary: true,
         fn: function () {
           var size = +document.querySelector('#ov-text .choice-row[data-group="size"] .sel').getAttribute('data-v');
           var diff = document.querySelector('#ov-text .choice-row[data-group="diff"] .sel').getAttribute('data-v');
@@ -1638,8 +1815,6 @@
     renderBoard();
   }
 
-  var COLOR_NAMES = ['röda', 'orange', 'gula', 'gröna', 'ljusblå', 'blå', 'lila', 'rosa'];
-
   function countChar(board, ch) {
     return board.join('').split('').filter(function (c) { return c === ch; }).length;
   }
@@ -1650,49 +1825,44 @@
   }
 
   function objectiveHtml(lv) {
+    var head, sub;
     if (lv.type === 'sand') {
-      return '<p style="font-size:1.05rem">' + ic('sand') + ' Rensa all <b>sand</b> (' + countChar(lv.board, 'S') + ' rutor) på högst <b>' + lv.moves + ' drag</b>.</p>' +
-        '<p>Sanden <b>sprider sig</b> till en tom granne var ' + (lv.sandEvery || 3) + ':e drag – rensa den snabbare än den växer!</p>';
+      head = ic('sand') + ' ' + t('objSand', { n: countChar(lv.board, 'S'), moves: lv.moves });
+      sub = t('objSandSub', { every: lv.sandEvery || 3 });
+    } else if (lv.type === 'mist') {
+      head = ic('mist') + ' ' + t('objMist', { n: countChar(lv.board, 'M'), moves: lv.moves });
+      sub = t('objMistSub');
+    } else if (lv.type === 'eggs') {
+      head = ic('egg') + ' ' + t('objEggs', { n: countChar(lv.board, 'E') });
+      sub = t('objEggsSub', { timer: lv.eggTimer || 12 });
+    } else if (lv.type === 'ghosts') {
+      head = ic('ghost') + ' ' + t('objGhosts', { n: countChar(lv.board, 'A'), moves: lv.moves });
+      sub = t('objGhostsSub', { every: lv.ghostEvery || 2 });
+    } else if (lv.type === 'keys') {
+      head = ic('key') + ' ' + t('objKeys', { n: countChar(lv.board, 'K'), moves: lv.moves });
+      sub = ic('lock') + ' ' + t('objKeysSub');
+    } else if (lv.type === 'score') {
+      head = t('objScore', { target: lv.target, moves: lv.moves });
+      sub = t('objScoreSub');
+    } else if (lv.type === 'gems') {
+      head = t('objGems', { n: countChar(lv.board, 'G'), moves: lv.moves });
+      sub = t('objGemsSub');
+    } else if (lv.type === 'ice') {
+      head = t('objIce', { n: countChar(lv.board, 'I'), moves: lv.moves });
+      sub = t('objIceSub');
+    } else {
+      head = '<span class="collect-chip" style="background:' + Shapes.PALETTE[lv.color] + '"></span>' +
+        t('objCollect', { n: lv.count, moves: lv.moves, color: t('colorName' + lv.color) });
+      sub = t('objCollectSub');
     }
-    if (lv.type === 'mist') {
-      return '<p style="font-size:1.05rem">' + ic('mist') + ' Lyft all <b>stjärndimma</b> (' + countChar(lv.board, 'M') + ' rutor) på högst <b>' + lv.moves + ' drag</b>.</p>' +
-        '<p>Det går inte att bygga i dimman – men en <b>rensning i rutan intill</b> blåser bort den.</p>';
-    }
-    if (lv.type === 'eggs') {
-      return '<p style="font-size:1.05rem">' + ic('egg') + ' Rädda alla <b>' + countChar(lv.board, 'E') + ' drakägg</b> innan de kläcks!</p>' +
-        '<p>Varje ägg har en <b>nedräkning</b> (' + (lv.eggTimer || 12) + ' drag). Rensa äggets rad eller kolumn i tid – kläcks ett ägg är banan förlorad.</p>';
-    }
-    if (lv.type === 'ghosts') {
-      return '<p style="font-size:1.05rem">' + ic('ghost') + ' Fånga alla <b>' + countChar(lv.board, 'A') + ' andar</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
-        '<p>Andarna <b>svävar</b> till en ny ruta var ' + (lv.ghostEvery || 2) + ':e drag – rensa raden eller kolumnen där en ande står innan den smiter!</p>';
-    }
-    if (lv.type === 'keys') {
-      return '<p style="font-size:1.05rem">' + ic('key') + ' Samla alla <b>' + countChar(lv.board, 'K') + ' nycklar</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
-        '<p>' + ic('lock') + ' Låsen kan <b>inte rensas</b> och står i vägen tills alla nycklar är samlade – då krossas de på en gång.</p>';
-    }
-    if (lv.type === 'score') {
-      return '<p style="font-size:1.05rem">🎯 Nå <b>' + lv.target + ' poäng</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
-        '<p>Rensa flera linjer samtidigt och kedja rensningar för kombobonus.</p>';
-    }
-    if (lv.type === 'gems') {
-      return '<p style="font-size:1.05rem">💎 Rensa alla <b>' + countChar(lv.board, 'G') + ' ädelstenar</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
-        '<p>En ädelsten försvinner när dess rad eller kolumn blir full.</p>';
-    }
-    if (lv.type === 'ice') {
-      return '<p style="font-size:1.05rem">🧊 Rensa all is (<b>' + countChar(lv.board, 'I') + ' rutor</b>) på högst <b>' + lv.moves + ' drag</b>.</p>' +
-        '<p>Is kräver <b>två</b> rensningar: den första spräcker isen, den andra tar bort den.</p>';
-    }
-    var name = COLOR_NAMES[lv.color];
-    return '<p style="font-size:1.05rem"><span class="collect-chip" style="background:' + Shapes.PALETTE[lv.color] + '"></span>' +
-      'Samla <b>' + lv.count + ' ' + name + ' block</b> på högst <b>' + lv.moves + ' drag</b>.</p>' +
-      '<p>Ett block räknas när det <b>rensas</b> i en full rad eller kolumn. Minst en ' + name.replace(/a$/, '') + ' pjäs finns alltid bland dina tre.</p>';
+    return '<p style="font-size:1.05rem">' + head + '</p><p>' + sub + '</p>';
   }
 
   function showObjectiveIntro(idx, isStart) {
     showOverlay({
-      title: 'Bana ' + (idx + 1),
+      title: t('levelN', { n: idx + 1 }),
       html: objectiveHtml(LEVELS[idx]),
-      buttons: [{ label: isStart ? 'Kör!' : 'Fortsätt', primary: true, fn: function () {} }]
+      buttons: [{ label: isStart ? t('go') : t('goContinue'), primary: true, fn: function () {} }]
     });
   }
 
@@ -1804,11 +1974,11 @@
     renderBoard();
     var d = getDaily();
     showOverlay({
-      title: '📅 Dagens utmaning',
-      html: '<p><b>' + dstr + '</b> &ndash; samma bana för alla, ny varje dag!</p>' +
+      title: '📅 ' + t('menuDaily'),
+      html: '<p>' + t('dailySame', { date: dstr }) + '</p>' +
         objectiveHtml(lv) +
-        '<p>🔥 Streak: <b>' + effectiveStreak(d) + '</b> dagar</p>' + calendarHtml(),
-      buttons: [{ label: 'Kör!', primary: true, fn: function () {} }]
+        '<p>' + t('streak', { n: effectiveStreak(d) }) + '</p>' + calendarHtml(),
+      buttons: [{ label: t('go'), primary: true, fn: function () {} }]
     });
   }
 
@@ -1932,18 +2102,19 @@
         saveStats();
         var coins = Math.floor(g.score / 200);
         if (coins > 0) { store.addCoins(coins); Sound.coin(); }
+        questEvent('endless', g.score);
         Sound.lose();
         showOverlay({
-          title: 'Spelet är slut!',
-          html: (isRecord ? '🎉 Nytt rekord!' : 'Bra spelat!') +
+          title: t('gameOverTitle'),
+          html: (isRecord ? t('newRecord') : t('wellPlayed')) +
             '<span class="score-big">' + g.score + ' p</span>' +
-            endlessCfg.size + '×' + endlessCfg.size + ' ' + DIFFS[endlessCfg.diff].label +
-            ' &bull; Rekord: ' + store.getBestFor(endlessCfg) +
+            endlessCfg.size + '×' + endlessCfg.size + ' ' + t(DIFFS[endlessCfg.diff].key) +
+            ' &bull; ' + t('record') + ' ' + store.getBestFor(endlessCfg) +
             (coins > 0 ? ' &bull; +' + coins + ' 💰' : ''),
           buttons: [
-            { label: 'Spela igen', primary: true, fn: function () { startEndless(endlessCfg); } },
-            { label: 'Ändra läge', fn: showEndlessChooser },
-            { label: 'Till menyn', fn: function () { showScreen('menu'); } }
+            { label: t('playAgain'), primary: true, fn: function () { startEndless(endlessCfg); } },
+            { label: t('changeMode'), fn: showEndlessChooser },
+            { label: t('toMenu'), fn: function () { showScreen('menu'); } }
           ]
         });
       } else if (mode === 'daily') {
@@ -1962,29 +2133,28 @@
           }
           var dCoins = firstWinToday ? 30 + 5 * Math.min(d.streak, 10) : 0;
           if (dCoins) store.addCoins(dCoins);
+          if (firstWinToday) questEvent('daily', 1);
           Sound.win();
-          celebrate(g.stars(), 'Utmaning klarad!', null, function () {
+          celebrate(g.stars(), t('dailyCleared'), null, function () {
             if (game !== g) return;
             showOverlay({
-              title: 'Dagens utmaning klarad!',
+              title: t('dailyWonTitle'),
               stars: g.stars(),
               html: '<span class="score-big">' + g.score + ' p</span>' +
-                '🔥 Streak: <b>' + d.streak + '</b> dagar' +
+                t('streak', { n: d.streak }) +
                 (dCoins ? ' &bull; +' + dCoins + ' 💰' : '') +
                 calendarHtml(),
-              buttons: [{ label: 'Till menyn', primary: true, fn: function () { showScreen('menu'); } }]
+              buttons: [{ label: t('toMenu'), primary: true, fn: function () { showScreen('menu'); } }]
             });
           });
         } else {
           Sound.lose();
           showOverlay({
-            title: 'Det gick inte den här gången',
-            html: g.lossReason === 'moves'
-              ? 'Dragen tog slut. Du kan försöka igen så många gånger du vill!'
-              : 'Ingen pjäs fick plats på brädet. Försök igen!',
+            title: t('loseTitle'),
+            html: g.lossReason === 'moves' ? t('loseMovesDaily') : t('loseStuckDaily'),
             buttons: [
-              { label: 'Försök igen', primary: true, fn: startDaily },
-              { label: 'Till menyn', fn: function () { showScreen('menu'); } }
+              { label: t('tryAgain'), primary: true, fn: startDaily },
+              { label: t('toMenu'), fn: function () { showScreen('menu'); } }
             ]
           });
         }
@@ -1996,9 +2166,11 @@
         store.addCoins(coinsWon);
         stats.levelsWon++;
         saveStats();
+        questEvent('wins', 1);
+        questEvent('stars', stars);
         Sound.win();
         // firande → direkt tillbaka till kartan där progressionen spelas upp
-        celebrate(stars, 'Bana ' + (levelIndex + 1) + ' klarad!',
+        celebrate(stars, t('levelCleared', { n: levelIndex + 1 }),
           '<b>' + g.score + ' p</b> • +' + coinsWon + ' 💰',
           function () {
             if (game !== g || !screens.game.classList.contains('active')) return;
@@ -2008,15 +2180,13 @@
       } else {
         Sound.lose();
         showOverlay({
-          title: 'Det gick inte den här gången',
-          html: g.lossReason === 'moves'
-            ? 'Dragen tog slut innan målet nåddes.'
-            : g.lossReason === 'egg'
-            ? ic('egg') + ' Ett drakägg kläcktes! Rensa äggens rader eller kolumner innan nedräkningen når noll.'
-            : 'Ingen pjäs fick plats på brädet.',
+          title: t('loseTitle'),
+          html: g.lossReason === 'moves' ? t('loseMoves')
+            : g.lossReason === 'egg' ? ic('egg') + ' ' + t('loseEgg')
+            : t('loseStuck'),
           buttons: [
-            { label: 'Försök igen', primary: true, fn: function () { startLevel(levelIndex); } },
-            { label: 'Till kartan', fn: function () { showScreen('levels'); } }
+            { label: t('tryAgain'), primary: true, fn: function () { startLevel(levelIndex); } },
+            { label: t('toMap'), fn: function () { showScreen('levels'); } }
           ]
         });
       }
@@ -2024,10 +2194,9 @@
   }
 
   function praiseText(res) {
-    if (res.nLines >= 3) return 'MÄSTERLIGT!';
-    if (res.nLines === 2) return 'FANTASTISKT!';
-    if (res.combo >= 4) return 'Kombo x' + res.combo + '!';
-    if (res.combo >= 2) return 'Kombo x' + res.combo + '!';
+    if (res.nLines >= 3) return t('praise3');
+    if (res.nLines === 2) return t('praise2');
+    if (res.combo >= 2) return t('praiseCombo', { n: res.combo });
     return null;
   }
 
@@ -2058,6 +2227,9 @@
       stats.maxLines = Math.max(stats.maxLines, res.nLines);
       stats.maxCombo = Math.max(stats.maxCombo, res.combo);
       saveStats();
+      questEvent('lines', res.nLines);
+      if (res.nLines >= 2) questEvent('multi', 1);
+      if (res.combo >= 3) questEvent('combo3', 1);
     }
     renderBoard();
     if (game.status !== 'playing') finishGame();
@@ -2083,6 +2255,7 @@
       Sound.swap();
       stats.boosters.swap = true;
       saveStats();
+      questEvent('boosters', 1);
       renderTray(true);
       updateHud();
       renderBoard();
@@ -2096,6 +2269,7 @@
       Sound.click();
       stats.boosters.undo = true;
       saveStats();
+      questEvent('boosters', 1);
       renderTray(false);
       updateHud();
       renderBoard();
@@ -2116,6 +2290,7 @@
     store.spendCoins(BOOSTER_PRICES[kind]);
     stats.boosters[kind] = true;
     saveStats();
+    questEvent('boosters', 1);
     armedBooster = null;
     spawnEffects(removed);
     if (kind === 'bomb') { Sound.boom(); shakeBoard(); buzz([50, 30, 60]); }
@@ -2553,7 +2728,7 @@
       for (var li = w.from; li <= w.to; li++) wStars += stars[li] || 0;
       var banner = document.createElement('div');
       banner.className = 'world-banner';
-      banner.innerHTML = '<span class="wb-icon">' + propImg(WORLD_BADGE[wi]) + '</span>' + w.name +
+      banner.innerHTML = '<span class="wb-icon">' + propImg(WORLD_BADGE[wi]) + '</span>' + worldName(wi) +
         '<span class="wb-stars">' + twe('⭐') + ' ' + wStars + '/' + wMax + '</span>';
       banner.style.top = (bottomY - 58) + 'px';
       inner.appendChild(banner);
@@ -2705,7 +2880,7 @@
           store.addCoins(reward);
           Sound.coin();
           buzz([30, 40, 30]);
-          showToast('🎉 Kistan öppnad: +' + reward + ' 💰');
+          showToast(t('chestOpened', { n: reward }));
           renderLevelMap();
         });
       }
@@ -2841,23 +3016,25 @@
 
   /* ===== Hjälp ===== */
   function showHelp() {
+    var icons5 = { sand: ic('sand'), mist: ic('mist'), egg: ic('egg') };
+    var icons6 = { ghost: ic('ghost'), key: ic('key'), lock: ic('lock') };
     showOverlay({
-      title: 'Så spelar du',
+      title: t('helpTitle'),
       html:
         '<ul>' +
-        '<li><b>Dra</b> pjäserna från lådan och släpp dem på brädet.</li>' +
-        '<li>Fyll en hel <b>rad eller kolumn</b> så rensas den och ger poäng.</li>' +
-        '<li>Rensa flera linjer samtidigt och kedja ihop rensningar för <b>kombopoäng</b>.</li>' +
-        '<li><b>🧊 Is</b> kräver två rensningar. <b>💎 Ädelstenar</b> rensas med sin rad.</li>' +
-        '<li>' + ic('sand') + ' <b>Sand</b> sprider sig om den får stå. ' + ic('mist') + ' <b>Stjärndimma</b> lyfts av en rensning intill. ' + ic('egg') + ' <b>Drakägg</b> måste rensas innan nedräkningen når noll.</li>' +
-        '<li>' + ic('ghost') + ' <b>Andar</b> svävar till en ny ruta med jämna mellanrum. ' + ic('key') + ' <b>Nycklar</b> öppnar ' + ic('lock') + ' <b>låsen</b> – lås kan inte rensas förrän alla nycklar är samlade.</li>' +
-        '<li><b>Boosters</b> köps med mynt: 🔨 ta bort ett block, 💣 spräng 3&times;3, 🔄 byt pjäser, ↩️ ångra.</li>' +
-        '<li>Mynt tjänar du på banor, dagliga utmaningar och utmärkelser.</li>' +
+        '<li>' + t('help1') + '</li>' +
+        '<li>' + t('help2') + '</li>' +
+        '<li>' + t('help3') + '</li>' +
+        '<li>' + t('help4') + '</li>' +
+        '<li>' + t('help5', icons5) + '</li>' +
+        '<li>' + t('help6', icons6) + '</li>' +
+        '<li>' + t('help7') + '</li>' +
+        '<li>' + t('help8') + '</li>' +
         '</ul>' +
         '<p style="font-size:0.72rem;opacity:0.7;margin-top:10px">Ikoner: Twemoji (CC-BY 4.0) &bull; Ljud: Kenney.nl (CC0) &bull; Typsnitt: Grenze Gotisch &amp; Averia Serif Libre (OFL)</p>',
       buttons: [
-        { label: 'Spela guiden', fn: function () { startTutorial(function () { showScreen('menu'); }); } },
-        { label: 'Stäng', primary: true, fn: function () {} }
+        { label: t('playGuide'), fn: function () { startTutorial(function () { showScreen('menu'); }); } },
+        { label: t('close'), primary: true, fn: function () {} }
       ]
     });
   }
@@ -2867,6 +3044,7 @@
   $('#btn-endless').addEventListener('click', function () { boot(); withTutorial(showEndlessChooser); });
   $('#btn-levels').addEventListener('click', function () { boot(); withTutorial(function () { showScreen('levels'); }); });
   $('#btn-daily').addEventListener('click', function () { boot(); withTutorial(startDaily); });
+  $('#btn-quests').addEventListener('click', function () { boot(); showQuests(); });
   $('#btn-help').addEventListener('click', function () { boot(); showHelp(); });
   $('#btn-settings').addEventListener('click', function () { boot(); showSettings(); });
   $('#btn-wardrobe').addEventListener('click', function () { boot(); showWardrobe(); });
@@ -2932,5 +3110,6 @@
     avatarSvg: avatarSvg
   };
 
+  applyStaticLang();
   showScreen('menu');
 })();

@@ -989,6 +989,42 @@ html, body {
 .ward-item.ach-locked svg { filter: grayscale(1) brightness(0.65); }
 .ward-item.ach-locked .ward-price { font-size: 0.64rem; }
 
+/* Veckouppdrag */
+.quest-week { color: var(--text-dim); font-size: 0.82rem; margin-bottom: 10px; }
+.quest-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.quest-row.done { border-color: rgba(255, 206, 107, 0.55); }
+.quest-row.claimed { opacity: 0.55; }
+.quest-info { flex: 1; min-width: 0; }
+.quest-name { font-weight: 700; font-size: 0.92rem; margin-bottom: 5px; }
+.q-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.q-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent2), var(--gold));
+  transition: width 0.4s ease;
+}
+.quest-prog { color: var(--text-dim); font-size: 0.75rem; margin-top: 4px; }
+.quest-claim { padding: 8px 12px; font-size: 0.8rem; white-space: nowrap; }
+.quest-reward { color: var(--gold); font-size: 0.82rem; white-space: nowrap; }
+.quest-check { color: var(--accent2); font-size: 1.3rem; }
+.lang-row { display: flex; gap: 6px; }
+.lang-row .choice { padding: 6px 12px; font-size: 0.82rem; }
+
 /* Köpdialog med förhandsvisning */
 .buy-preview {
   padding: 10px 0 6px;
