@@ -54,6 +54,8 @@
     }
     return WORLDS.length - 1;
   }
+  /* Bannummer inom världen – varje värld börjar om från 1. */
+  function levelNo(i) { return i - WORLDS[worldOf(i)].from + 1; }
 
   /* Engångsmigrering: banlistan växte från 5 världar à 10 banor till
      7 världar à 12 – flytta sparade stjärnor till de nya indexen
@@ -1864,7 +1866,8 @@
       hudObjective.classList.add('hidden');
       return;
     }
-    hudSub.textContent = mode === 'daily' ? t('menuDaily') : t('levelN', { n: levelIndex + 1 });
+    hudSub.textContent = mode === 'daily' ? t('menuDaily')
+      : worldName(worldOf(levelIndex)) + ' • ' + t('levelN', { n: levelNo(levelIndex) });
     hudObjective.classList.remove('hidden');
     var lv = game.level;
     var left = objectiveLeft(lv);
@@ -2080,7 +2083,7 @@
 
   function showObjectiveIntro(idx, isStart) {
     showOverlay({
-      title: t('levelN', { n: idx + 1 }),
+      title: worldName(worldOf(idx)) + ' – ' + t('levelN', { n: levelNo(idx) }),
       html: objectiveHtml(LEVELS[idx]),
       buttons: [{ label: isStart ? t('go') : t('goContinue'), primary: true, fn: function () {} }]
     });
@@ -2398,7 +2401,7 @@
         questEvent('stars', stars);
         Sound.win();
         // firande → direkt tillbaka till kartan där progressionen spelas upp
-        celebrate(stars, t('levelCleared', { n: levelIndex + 1 }),
+        celebrate(stars, t('levelCleared', { n: levelNo(levelIndex) }),
           '<b>' + g.score + ' p</b> • +' + coinsWon + ' 💰',
           function () {
             if (game !== g || !screens.game.classList.contains('active')) return;
@@ -3175,7 +3178,7 @@
         : '🎯';
       el.innerHTML = twe(fan +
         (unlocked
-          ? '<span class="num">' + (i + 1) + '</span>' +
+          ? '<span class="num">' + levelNo(i) + '</span>' +
             (done ? '' : '<span class="ntype">' + typeIcon + '</span>')
           : '<span class="nlock">🔒</span>'));
       el.style.left = x + '%';
