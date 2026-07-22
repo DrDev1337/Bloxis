@@ -718,7 +718,9 @@
       '<span class="choice-row lang-row">' +
       '<button class="choice' + (settings.language === 'sv' ? ' sel' : '') + '" data-lang="sv">Svenska</button>' +
       '<button class="choice' + (settings.language === 'en' ? ' sel' : '') + '" data-lang="en">English</button>' +
-      '</span></div>';
+      '</span></div>' +
+      '<div class="toggle-row"><span>' + t('setReset') + '</span>' +
+      '<button id="ov-reset" class="btn danger">' + t('resetBtn') + '</button></div>';
     showOverlay({
       title: t('settingsTitle'),
       html: html,
@@ -746,6 +748,25 @@
         if (screens.levels.classList.contains('active')) renderLevelMap();
         if (game) updateHud();
         showSettings();
+      });
+    });
+    var resetBtn = document.getElementById('ov-reset');
+    if (resetBtn) resetBtn.addEventListener('click', function () {
+      Sound.click();
+      showOverlay({
+        title: t('resetTitle'),
+        html: '<p>' + t('resetBody') + '</p>',
+        buttons: [
+          { label: t('resetConfirm'), primary: true, fn: function () {
+            localStorage.removeItem('bloxis.stars');
+            localStorage.removeItem('bloxis.chests');
+            showToast(t('resetDone'));
+            if ($('#menu-stars')) $('#menu-stars').textContent = '0';
+            if (screens.levels.classList.contains('active')) renderLevelMap();
+            showSettings();
+          } },
+          { label: t('cancel'), fn: showSettings }
+        ]
       });
     });
   }
