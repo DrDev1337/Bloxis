@@ -54,8 +54,6 @@
     }
     return WORLDS.length - 1;
   }
-  /* Bannummer inom världen – varje värld börjar om från 1. */
-  function levelNo(i) { return i - WORLDS[worldOf(i)].from + 1; }
 
   /* Engångsmigrering: banlistan växte från 5 världar à 10 banor till
      7 världar à 12 – flytta sparade stjärnor till de nya indexen
@@ -720,7 +718,9 @@
       '<span class="choice-row lang-row">' +
       '<button class="choice' + (settings.language === 'sv' ? ' sel' : '') + '" data-lang="sv">Svenska</button>' +
       '<button class="choice' + (settings.language === 'en' ? ' sel' : '') + '" data-lang="en">English</button>' +
-      '</span></div>';
+      '</span></div>' +
+      '<div class="toggle-row"><span>' + t('setReset') + '</span>' +
+      '<button id="ov-reset" class="btn danger">' + t('resetBtn') + '</button></div>';
     showOverlay({
       title: t('settingsTitle'),
       html: html,
@@ -748,6 +748,25 @@
         if (screens.levels.classList.contains('active')) renderLevelMap();
         if (game) updateHud();
         showSettings();
+      });
+    });
+    var resetBtn = document.getElementById('ov-reset');
+    if (resetBtn) resetBtn.addEventListener('click', function () {
+      Sound.click();
+      showOverlay({
+        title: t('resetTitle'),
+        html: '<p>' + t('resetBody') + '</p>',
+        buttons: [
+          { label: t('resetConfirm'), primary: true, fn: function () {
+            localStorage.removeItem('bloxis.stars');
+            localStorage.removeItem('bloxis.chests');
+            showToast(t('resetDone'));
+            if ($('#menu-stars')) $('#menu-stars').textContent = '0';
+            if (screens.levels.classList.contains('active')) renderLevelMap();
+            showSettings();
+          } },
+          { label: t('cancel'), fn: showSettings }
+        ]
       });
     });
   }
@@ -1866,8 +1885,7 @@
       hudObjective.classList.add('hidden');
       return;
     }
-    hudSub.textContent = mode === 'daily' ? t('menuDaily')
-      : worldName(worldOf(levelIndex)) + ' • ' + t('levelN', { n: levelNo(levelIndex) });
+    hudSub.textContent = mode === 'daily' ? t('menuDaily') : t('levelN', { n: levelIndex + 1 });
     hudObjective.classList.remove('hidden');
     var lv = game.level;
     var left = objectiveLeft(lv);
@@ -2083,7 +2101,7 @@
 
   function showObjectiveIntro(idx, isStart) {
     showOverlay({
-      title: worldName(worldOf(idx)) + ' – ' + t('levelN', { n: levelNo(idx) }),
+      title: t('levelN', { n: idx + 1 }),
       html: objectiveHtml(LEVELS[idx]),
       buttons: [{ label: isStart ? t('go') : t('goContinue'), primary: true, fn: function () {} }]
     });
@@ -2401,7 +2419,7 @@
         questEvent('stars', stars);
         Sound.win();
         // firande → direkt tillbaka till kartan där progressionen spelas upp
-        celebrate(stars, t('levelCleared', { n: levelNo(levelIndex) }),
+        celebrate(stars, t('levelCleared', { n: levelIndex + 1 }),
           '<b>' + g.score + ' p</b> • +' + coinsWon + ' 💰',
           function () {
             if (game !== g || !screens.game.classList.contains('active')) return;
@@ -3178,7 +3196,7 @@
         : '🎯';
       el.innerHTML = twe(fan +
         (unlocked
-          ? '<span class="num">' + levelNo(i) + '</span>' +
+          ? '<span class="num">' + (i + 1) + '</span>' +
             (done ? '' : '<span class="ntype">' + typeIcon + '</span>')
           : '<span class="nlock">🔒</span>'));
       el.style.left = x + '%';
