@@ -144,7 +144,8 @@
     var ctx = null;
     var buffers = {};
     var samplesRequested = false;
-    var SAMPLE_FILES = ['click', 'place', 'confirm', 'coin', 'boom', 'swap'];
+    var SAMPLE_FILES = ['click', 'place', 'confirm', 'coin', 'boom', 'swap',
+      'jingle-win1', 'jingle-win2', 'jingle-win3', 'jingle-win4', 'jingle-win5', 'jingle-chest'];
     function ac() {
       if (!ctx) {
         var AC = window.AudioContext || window.webkitAudioContext;
@@ -196,6 +197,49 @@
       o.start(t);
       o.stop(t + dur + 0.03);
     }
+    /* Brusbuffert för jubel och applåder (skapas vid behov). */
+    var noiseBuf = null;
+    function noise(c) {
+      if (!noiseBuf) {
+        noiseBuf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+        var d = noiseBuf.getChannelData(0);
+        for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      return noiseBuf;
+    }
+    /* Ett brussvall genom bandpass – låter som en jublande publik. */
+    function crowdSwell(c, t, dur, freq, vol) {
+      var src = c.createBufferSource();
+      var bp = c.createBiquadFilter();
+      var g = c.createGain();
+      src.buffer = noise(c);
+      src.loop = true;
+      bp.type = 'bandpass';
+      bp.frequency.setValueAtTime(freq, t);
+      bp.frequency.linearRampToValueAtTime(freq * 1.5, t + dur * 0.4);
+      bp.Q.value = 0.8;
+      src.connect(bp); bp.connect(g); g.connect(c.destination);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(vol, t + dur * 0.25);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.start(t); src.stop(t + dur + 0.05);
+    }
+    /* Korta brusknäppar i oregelbunden rytm – applåder. */
+    function claps(c, t, count, vol) {
+      for (var i = 0; i < count; i++) {
+        var ct = t + i * 0.09 + Math.random() * 0.05;
+        var src = c.createBufferSource();
+        var hp = c.createBiquadFilter();
+        var g = c.createGain();
+        src.buffer = noise(c);
+        hp.type = 'highpass';
+        hp.frequency.value = 1800 + Math.random() * 800;
+        src.connect(hp); hp.connect(g); g.connect(c.destination);
+        g.gain.setValueAtTime(vol * (0.6 + Math.random() * 0.4), ct);
+        g.gain.exponentialRampToValueAtTime(0.0001, ct + 0.05);
+        src.start(ct); src.stop(ct + 0.07);
+      }
+    }
     return {
       unlock: function () { ac(); loadSamples(); },
       ctx: ac,
@@ -219,13 +263,39 @@
         if (!sample('coin', 0.4)) { tone(988, 0.07, 'square', 0.05); tone(1319, 0.14, 'square', 0.05, 0.07); }
       },
       win: function () {
-        sample('confirm', 0.6);
-        [[523, 0], [659, 0.09], [784, 0.18], [1047, 0.3]].forEach(function (n) {
-          tone(n[0], 0.24, 'triangle', 0.22, n[1]);
-        });
-        tone(262, 0.6, 'sine', 0.14, 0.3);      // bas under fanfaren
-        tone(1047, 0.75, 'triangle', 0.18, 0.46);
-        tone(1568, 0.6, 'sine', 0.1, 0.52);     // skimmer överst
+        // slumpad segersjingel (Kenney pizzicato) med syntfanfar som reserv
+        var v = 1 + Math.floor(Math.random() * 5);
+        if (!sample('jingle-win' + v, 0.6)) {
+          sample('confirm', 0.6);
+          [[523, 0], [659, 0.09], [784, 0.18], [1047, 0.3]].forEach(function (n) {
+            tone(n[0], 0.24, 'triangle', 0.22, n[1]);
+          });
+          tone(262, 0.6, 'sine', 0.14, 0.3);
+          tone(1047, 0.75, 'triangle', 0.18, 0.46);
+        }
+        tone(1568, 0.6, 'sine', 0.08, 0.52);    // skimmer överst
+      },
+      /* Jubel: publiksvall + applåder, intensitet 1-3. */
+      cheer: function (n) {
+        if (!settings.sound) return;
+        var c = ac();
+        if (!c) return;
+        var t = c.currentTime + 0.05;
+        crowdSwell(c, t, 1.4 + n * 0.3, 900, 0.05 + n * 0.02);
+        crowdSwell(c, t + 0.15, 1.2 + n * 0.3, 1600, 0.035 + n * 0.015);
+        claps(c, t + 0.1, 8 + n * 5, 0.05);
+        if (n >= 3) claps(c, t + 0.9, 10, 0.04);
+      },
+      /* Kistöppning: jingel + stigande glissando + myntkaskad. */
+      chest: function () {
+        if (!sample('jingle-chest', 0.55)) {
+          [[523, 0], [659, 0.08], [784, 0.16], [988, 0.24], [1319, 0.34]].forEach(function (n) {
+            tone(n[0], 0.2, 'triangle', 0.18, n[1]);
+          });
+        }
+        for (var i = 0; i < 6; i++) {
+          tone(900 + i * 180, 0.1, 'square', 0.035, 0.5 + i * 0.09);
+        }
       },
       lose: function () { [330, 262, 196].forEach(function (f, i) { tone(f, 0.22, 'sawtooth', 0.06, i * 0.16); }); }
     };
@@ -236,11 +306,35 @@
     if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* ok */ } }
   }
 
-  /* ===== Bakgrundsmusik (genererad, lugn arpeggio-loop) ===== */
+  /* ===== Bakgrundsmusik (genererad arpeggio-loop med teman) =====
+     Fyra teman med egen skala, tempo och klangfärg. Menyn/kartan får det
+     lugna temat, dagsvärldarna det ljusa, nattvärldarna det mystiska och
+     Drakberget det mörka. */
   var Music = (function () {
     var timer = null, nextTime = 0, step = 0;
-    var SCALE = [262, 294, 330, 392, 440, 523, 587, 659, 784];
-    var CHORDS = [0, 3, 4, 2];
+    var THEMES = {
+      lugn: {
+        scale: [262, 294, 330, 392, 440, 523, 587, 659, 784],
+        chords: [0, 3, 4, 2], tempo: 0.26, wave: 'triangle', bassWave: 'sine',
+        vol: 0.03, bassVol: 0.045
+      },
+      ljus: {
+        scale: [294, 330, 370, 440, 494, 587, 659, 740, 880],
+        chords: [0, 4, 2, 5], tempo: 0.22, wave: 'triangle', bassWave: 'triangle',
+        vol: 0.032, bassVol: 0.04
+      },
+      mystisk: {
+        scale: [220, 247, 262, 330, 349, 440, 494, 523, 659],
+        chords: [0, 5, 3, 4], tempo: 0.32, wave: 'sine', bassWave: 'sine',
+        vol: 0.03, bassVol: 0.05
+      },
+      eld: {
+        scale: [165, 196, 220, 247, 294, 330, 392, 440, 494],
+        chords: [0, 3, 5, 2], tempo: 0.2, wave: 'sawtooth', bassWave: 'sine',
+        vol: 0.016, bassVol: 0.055
+      }
+    };
+    var current = 'lugn';
     var ARP = [0, 2, 4, 7, 4, 2, 5, 2];
     function note(c, freq, t, dur, vol, type) {
       var o = c.createOscillator(), g = c.createGain();
@@ -254,16 +348,22 @@
     function schedule() {
       var c = Sound.ctx();
       if (!c) return;
+      var th = THEMES[current];
       while (nextTime < c.currentTime + 0.6) {
-        var chord = CHORDS[Math.floor(step / 8) % CHORDS.length];
-        var idx = (chord + ARP[step % 8]) % SCALE.length;
-        note(c, SCALE[idx], nextTime, 0.32, 0.03, 'triangle');
-        if (step % 8 === 0) note(c, SCALE[chord] / 2, nextTime, 1.8, 0.045, 'sine');
-        nextTime += 0.26;
+        var chord = th.chords[Math.floor(step / 8) % th.chords.length];
+        var idx = (chord + ARP[step % 8]) % th.scale.length;
+        note(c, th.scale[idx], nextTime, th.tempo * 1.25, th.vol, th.wave);
+        if (step % 8 === 0) note(c, th.scale[chord] / 2, nextTime, th.tempo * 7, th.bassVol, th.bassWave);
+        nextTime += th.tempo;
         step++;
       }
     }
     return {
+      setTheme: function (name) {
+        if (!THEMES[name] || name === current) return;
+        current = name;
+        step = 0;
+      },
       start: function () {
         if (timer || !settings.music) return;
         var c = Sound.ctx();
@@ -1135,6 +1235,7 @@
       $('#daily-badge').classList.toggle('hidden', !!d.history[todayStr()]);
       updateQuestBadge();
     }
+    if (name === 'menu' || name === 'levels') Music.setTheme('lugn');
     if (name === 'levels') renderLevelMap();
     if (name === 'game') requestAnimationFrame(layout);
   }
@@ -1833,6 +1934,7 @@
     mode = 'endless';
     game = new Game({ mode: 'endless', size: endlessCfg.size, shapeRamp: DIFFS[endlessCfg.diff].ramp });
     armedBooster = null;
+    Music.setTheme('ljus');
     setGameGlow(258);
     showScreen('game');
     updateHud();
@@ -1898,7 +2000,9 @@
     armedBooster = null;
     hudGameRef = null;
     objMax = 0;
-    setGameGlow(WORLDS[worldOf(idx)].hue);
+    var wIdx = worldOf(idx);
+    Music.setTheme(wIdx <= 2 ? 'ljus' : wIdx === 4 ? 'eld' : 'mystisk');
+    setGameGlow(WORLDS[wIdx].hue);
     showScreen('game');
     updateHud();
     renderTray(true);
@@ -1978,6 +2082,7 @@
     }
 
     playStarSounds(starCount, 450, 450);
+    Sound.cheer(starCount);
     buzz([40, 60, 40]);
     setTimeout(function () {
       cel.classList.add('hidden');
@@ -1995,6 +2100,7 @@
     armedBooster = null;
     hudGameRef = null;
     objMax = 0;
+    Music.setTheme('mystisk');
     setGameGlow(45);
     $('#boosters').classList.remove('hidden');
     showScreen('game');
@@ -2717,6 +2823,127 @@
     return svg;
   }
 
+  /* Megaöppning av skattkista: skak, ljusexplosion, myntregn som flyger
+     upp till myntsaldot (som tickar upp mynt för mynt) och en stigande
+     belöningstext. Allt med WAAPI så det funkar i WebKit. */
+  function chestBurst(chestEl, reward, after) {
+    var rect = chestEl.getBoundingClientRect();
+    var cx = rect.left + rect.width / 2;
+    var cy = rect.top + rect.height / 2;
+    var target = $('#map-coins');
+    var tRect = target ? target.getBoundingClientRect() : { left: cx, top: 40, width: 0, height: 0 };
+    var tx = tRect.left + tRect.width / 2;
+    var ty = tRect.top + tRect.height / 2;
+    var startCoins = store.getCoins() - reward;
+    if (target) target.textContent = startCoins;
+
+    Sound.chest();
+    buzz([40, 30, 60, 30, 40]);
+
+    // 1. kistan skakar och poppar upp i öppnat läge
+    chestEl.animate([
+      { transform: 'translate(-50%, -50%) rotate(0deg)' },
+      { transform: 'translate(-50%, -52%) rotate(-7deg)' },
+      { transform: 'translate(-50%, -50%) rotate(7deg)' },
+      { transform: 'translate(-50%, -53%) rotate(-5deg)' },
+      { transform: 'translate(-50%, -50%) rotate(0deg) scale(1.25)' },
+      { transform: 'translate(-50%, -50%) scale(1)' }
+    ], { duration: 620, easing: 'ease-in-out' });
+    setTimeout(function () {
+      chestEl.innerHTML = propImg('chest-open');
+      chestEl.classList.remove('ready');
+      chestEl.classList.add('opened');
+    }, 450);
+
+    // 2. roterande ljusstrålar + blixt bakom kistan
+    var rays = document.createElement('div');
+    rays.className = 'chest-rays';
+    rays.style.left = cx + 'px';
+    rays.style.top = cy + 'px';
+    document.body.appendChild(rays);
+    rays.animate([
+      { transform: 'translate(-50%, -50%) scale(0.2) rotate(0deg)', opacity: 0 },
+      { transform: 'translate(-50%, -50%) scale(1.15) rotate(60deg)', opacity: 1, offset: 0.35 },
+      { transform: 'translate(-50%, -50%) scale(1.5) rotate(140deg)', opacity: 0 }
+    ], { duration: 1500, delay: 380, easing: 'ease-out', fill: 'both' });
+    var flash = document.createElement('div');
+    flash.className = 'chest-flash';
+    flash.style.left = cx + 'px';
+    flash.style.top = cy + 'px';
+    document.body.appendChild(flash);
+    flash.animate([
+      { transform: 'translate(-50%, -50%) scale(0.3)', opacity: 0 },
+      { transform: 'translate(-50%, -50%) scale(1.4)', opacity: 0.9, offset: 0.4 },
+      { transform: 'translate(-50%, -50%) scale(2)', opacity: 0 }
+    ], { duration: 700, delay: 400, easing: 'ease-out', fill: 'both' });
+
+    // 3. myntregn: spruta upp, ligg kvar ett ögonblick, flyg till saldot
+    var nCoins = Math.min(16, 8 + Math.round(reward / 10));
+    var landed = 0;
+    for (var i = 0; i < nCoins; i++) {
+      (function (i) {
+        var coin = document.createElement('img');
+        coin.src = 'assets/icons/coin.svg';
+        coin.className = 'fly-coin';
+        coin.style.left = cx + 'px';
+        coin.style.top = cy + 'px';
+        document.body.appendChild(coin);
+        var ang = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;
+        var burst = 60 + Math.random() * 70;
+        var bx = Math.cos(ang) * burst;
+        var by = Math.sin(ang) * burst;
+        var dx = tx - cx;
+        var dy = ty - cy;
+        var anim = coin.animate([
+          { transform: 'translate(-50%, -50%) scale(0.4)', opacity: 0 },
+          { transform: 'translate(calc(-50% + ' + bx + 'px), calc(-50% + ' + by + 'px)) scale(1.15) rotate(' + ((Math.random() - 0.5) * 300) + 'deg)', opacity: 1, offset: 0.3 },
+          { transform: 'translate(calc(-50% + ' + bx + 'px), calc(-50% + ' + (by + 14) + 'px)) scale(1.05)', opacity: 1, offset: 0.45 },
+          { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(0.5)', opacity: 0.9 }
+        ], {
+          duration: 1150,
+          delay: 480 + i * 55,
+          easing: 'cubic-bezier(0.5, 0, 0.6, 1)',
+          fill: 'both'
+        });
+        anim.onfinish = function () {
+          coin.remove();
+          landed++;
+          if (target) target.textContent = Math.round(startCoins + reward * landed / nCoins);
+          if (landed % 3 === 1) Sound.coin();
+          if (landed === nCoins) {
+            if (target) {
+              target.textContent = startCoins + reward;
+              target.parentElement.animate([
+                { transform: 'scale(1)' },
+                { transform: 'scale(1.35)' },
+                { transform: 'scale(1)' }
+              ], { duration: 320, easing: 'ease-out' });
+            }
+            setTimeout(function () {
+              rays.remove();
+              flash.remove();
+              if (after) after();
+            }, 250);
+          }
+        };
+      })(i);
+    }
+
+    // 4. stigande belöningstext
+    var label = document.createElement('div');
+    label.className = 'chest-label';
+    label.innerHTML = twe('+' + reward + ' 💰');
+    label.style.left = cx + 'px';
+    label.style.top = (cy - 40) + 'px';
+    document.body.appendChild(label);
+    label.animate([
+      { transform: 'translate(-50%, 0) scale(0.5)', opacity: 0 },
+      { transform: 'translate(-50%, -30px) scale(1.25)', opacity: 1, offset: 0.3 },
+      { transform: 'translate(-50%, -85px) scale(1)', opacity: 0 }
+    ], { duration: 1600, delay: 430, easing: 'ease-out', fill: 'both' });
+    setTimeout(function () { label.remove(); }, 2200);
+  }
+
   function renderLevelMap() {
     $('#map-coins').textContent = store.getCoins();
     var stars = store.getStars();
@@ -2907,10 +3134,7 @@
           co[wi] = true;
           store.setJson('bloxis.chests', co);
           store.addCoins(reward);
-          Sound.coin();
-          buzz([30, 40, 30]);
-          showToast(t('chestOpened', { n: reward }));
-          renderLevelMap();
+          chestBurst(chest, reward, function () { renderLevelMap(); });
         });
       }
       inner.appendChild(chest);
