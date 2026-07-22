@@ -1014,6 +1014,43 @@ html, body {
 /* ===== Avatar på kartan ===== */
 .map-avatar svg { display: block; filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.45)); }
 
+/* ===== Levande kosmetika: glitter, lågor, glöd och gnistor ===== */
+.av-tw {
+  animation: avTw 1.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes avTw {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.25; transform: scale(0.55); }
+}
+.av-flick {
+  animation: avFlick 0.45s ease-in-out infinite alternate;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+@keyframes avFlick {
+  from { transform: scaleY(1) scaleX(1); }
+  to { transform: scaleY(0.78) scaleX(1.15); }
+}
+.av-glow { animation: avGlow 2.2s ease-in-out infinite; }
+@keyframes avGlow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.av-ember {
+  animation: avEmber 1.9s ease-in infinite;
+  transform-box: fill-box;
+}
+@keyframes avEmber {
+  0% { transform: translateY(0); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(-9px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .av-tw, .av-flick, .av-glow, .av-ember { animation: none; }
+}
+
 /* ===== Garderob ===== */
 .ward-preview { display: flex; justify-content: center; margin-bottom: 4px; }
 .ward-coins { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 4px; }
