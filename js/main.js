@@ -1258,6 +1258,59 @@
     return img;
   });
 
+  /* ===== Blocklogotyp =====
+     BLOXIS byggs av spelets riktiga block: varje färg renderas en gång
+     med drawBlock till en liten bild som blir bokstävernas "pixlar".
+     Entrén fyller hela väggen rad för rad, sedan rensas utfyllnaden
+     som en radrensning och bokstäverna blir kvar. */
+  var LOGO_GLYPHS = {
+    B: ['1110', '1001', '1110', '1001', '1110'],
+    L: ['100', '100', '100', '100', '111'],
+    O: ['0110', '1001', '1001', '1001', '0110'],
+    X: ['10001', '01010', '00100', '01010', '10001'],
+    I: ['111', '010', '010', '010', '111'],
+    S: ['0111', '1000', '0110', '0001', '1110']
+  };
+  var LOGO_COLORS = { B: 2, L: 6, O: 3, X: 0, I: 4, S: 1 };
+  var LOGO_CLEAR_MS = 1150;   // när radrensningen startar
+  var logoBlockCache = {};
+  function logoBlockUrl(colorIdx) {
+    if (!logoBlockCache[colorIdx]) {
+      var cv = document.createElement('canvas');
+      cv.width = cv.height = 48;
+      drawBlock(cv.getContext('2d'), 0, 0, 48, colorIdx);
+      logoBlockCache[colorIdx] = cv.toDataURL();
+    }
+    return logoBlockCache[colorIdx];
+  }
+  function renderLogo() {
+    var host = document.querySelector('.logo');
+    if (!host) return;
+    var letters = 'BLOXIS'.split('');
+    var totalCols = letters.reduce(function (s, ch) { return s + LOGO_GLYPHS[ch][0].length; }, 0) +
+      letters.length - 1;
+    function cellHtml(row, col, ch) {
+      var drop = (4 - row) * 55 + col * 14;
+      var inner = ch
+        ? '<span class="lg-b lb" style="background-image:url(' + logoBlockUrl(LOGO_COLORS[ch]) + ');' +
+          'animation-delay:' + (LOGO_CLEAR_MS + 140 + col * 8) + 'ms"></span>'
+        : '<span class="lg-b fill" style="animation-delay:' + (LOGO_CLEAR_MS + col * 10) + 'ms"></span>';
+      return '<span class="lg-c" style="animation-delay:' + drop + 'ms">' + inner + '</span>';
+    }
+    var html = '<div class="logo-grid" style="grid-template-columns:repeat(' + totalCols + ', var(--lgc))" aria-hidden="true">';
+    for (var row = 0; row < 5; row++) {
+      var col = 0;
+      letters.forEach(function (ch, li) {
+        var g = LOGO_GLYPHS[ch];
+        for (var c = 0; c < g[0].length; c++, col++) {
+          html += cellHtml(row, col, g[row].charAt(c) === '1' ? ch : null);
+        }
+        if (li < letters.length - 1) { html += cellHtml(row, col, null); col++; }
+      });
+    }
+    host.innerHTML = html + '</div>';
+  }
+
   /* ===== Skärmbyten ===== */
   function showScreen(name) {
     Object.keys(screens).forEach(function (k) {
@@ -1273,6 +1326,7 @@
       var stars = store.getJson('bloxis.stars', {}) || {};
       $('#menu-stars').textContent = Object.keys(stars).reduce(function (s, k) { return s + stars[k]; }, 0);
       $('#menu-avatar').innerHTML = avatarSvg(getAvatar(), 40);
+      renderLogo();
     }
     if (name === 'menu' || name === 'levels') Music.setTheme('lugn');
     if (name === 'levels') renderLevelMap();

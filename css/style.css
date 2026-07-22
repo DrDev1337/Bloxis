@@ -172,29 +172,73 @@ html, body {
 /* ===== Meny ===== */
 #screen-menu { align-items: center; justify-content: center; }
 .menu-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 24px; }
+/* ===== Blocklogotyp =====
+   BLOXIS byggd av spelets riktiga block (renderade med drawBlock till
+   små bilder). Entré: en hel blockvägg faller på plats rad för rad,
+   sedan rensas utfyllnadsblocken som en radrensning och bokstäverna
+   blir kvar. */
 .logo {
-  font-family: 'Grenze Gotisch', serif;
-  font-size: clamp(3.4rem, 16vw, 6rem);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  display: flex;
-  filter: drop-shadow(0 0 18px rgba(255, 206, 107, 0.35));
+  position: relative;
+  filter: drop-shadow(0 0 18px rgba(255, 206, 107, 0.3));
 }
-.logo span {
-  display: inline-block;
-  animation: bob 2.8s ease-in-out infinite;
-  background: linear-gradient(180deg, #ffedb8 15%, #f2b45c 55%, #c67c2e 90%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.logo-grid {
+  --lgc: clamp(8px, 3.1vw, 14px);
+  display: grid;
+  gap: 1px;
+  animation: logo-float 3.6s ease-in-out 2.8s infinite;
 }
-.logo span:nth-child(1) { animation-delay: 0s; }
-.logo span:nth-child(2) { animation-delay: 0.12s; }
-.logo span:nth-child(3) { animation-delay: 0.24s; }
-.logo span:nth-child(4) { animation-delay: 0.36s; }
-.logo span:nth-child(5) { animation-delay: 0.48s; }
-.logo span:nth-child(6) { animation-delay: 0.6s; }
-@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.lg-c {
+  width: var(--lgc);
+  height: var(--lgc);
+  animation: lg-drop 0.42s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+.lg-b {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-size: 100% 100%;
+}
+.lg-b.fill {
+  background: linear-gradient(180deg, rgba(150, 140, 190, 0.35), rgba(70, 62, 110, 0.33));
+  border-radius: 24%;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 3px rgba(0, 0, 0, 0.25);
+  animation: lg-clear 0.34s ease-in forwards;
+}
+.lg-b.lb { animation: lg-pop 0.32s ease both; }
+@keyframes lg-drop {
+  from { transform: translateY(-52px); opacity: 0; }
+  70% { transform: translateY(4px); opacity: 1; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes lg-clear {
+  0% { opacity: 1; filter: brightness(1); }
+  25% { filter: brightness(2.2); }
+  100% { transform: scale(0.15) rotate(12deg); opacity: 0; filter: brightness(2.2); }
+}
+@keyframes lg-pop {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.16); }
+}
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+/* glittrande stjärnor vid logotypens hörn */
+.logo::before, .logo::after {
+  content: '';
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background: url('../assets/icons/star.svg') no-repeat center / contain;
+  animation: avTw 1.9s ease-in-out 2.4s infinite;
+  pointer-events: none;
+}
+.logo::before { top: -14px; left: -17px; }
+.logo::after { bottom: -10px; right: -17px; animation-delay: 3.1s; }
+@media (prefers-reduced-motion: reduce) {
+  .logo-grid, .lg-c, .lg-b, .logo::before, .logo::after { animation: none; }
+  .lg-b.fill { display: none; }
+}
 .tagline { color: var(--text-dim); margin-bottom: 10px; }
 .menu-buttons { display: flex; flex-direction: column; gap: 13px; width: min(340px, 84vw); }
 .menu-buttons .btn { width: 100%; }
