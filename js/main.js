@@ -708,8 +708,11 @@
       ['colorblind', t('setColorblind')]
     ];
     var html = rows.map(function (r) {
+      /* aria-label måste vara ren text – twe() får inte expandera emoji
+         inuti attributet, då spricker citattecknen. */
+      var plain = String(r[1]).replace(TW_RE, '').trim();
       return '<div class="toggle-row"><span>' + r[1] + '</span>' +
-        '<button class="toggle' + (settings[r[0]] ? ' on' : '') + '" data-k="' + r[0] + '" aria-label="' + r[1] + '"></button></div>';
+        '<button class="toggle' + (settings[r[0]] ? ' on' : '') + '" data-k="' + r[0] + '" aria-label="' + plain + '"></button></div>';
     }).join('') +
       '<div class="toggle-row"><span>' + t('setLanguage') + '</span>' +
       '<span class="choice-row lang-row">' +
@@ -1140,6 +1143,7 @@
     a[type] = id;
     saveAvatar(a);
     if (screens.levels.classList.contains('active')) renderLevelMap();
+    if ($('#menu-avatar')) $('#menu-avatar').innerHTML = avatarSvg(a, 40);
   }
 
   /* Köpdialog med förhandsvisning – köpet sker först när man bekräftar. */
@@ -1266,6 +1270,9 @@
       $('#menu-streak').textContent = effectiveStreak(d);
       $('#daily-badge').classList.toggle('hidden', !!d.history[todayStr()]);
       updateQuestBadge();
+      var stars = store.getJson('bloxis.stars', {}) || {};
+      $('#menu-stars').textContent = Object.keys(stars).reduce(function (s, k) { return s + stars[k]; }, 0);
+      $('#menu-avatar').innerHTML = avatarSvg(getAvatar(), 40);
     }
     if (name === 'menu' || name === 'levels') Music.setTheme('lugn');
     if (name === 'levels') renderLevelMap();

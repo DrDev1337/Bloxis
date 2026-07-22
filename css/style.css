@@ -104,25 +104,47 @@ html, body {
 }
 .screen.active { display: flex; }
 
-/* ===== Knappar ===== */
+/* ===== Knappar =====
+   "Saftigt" bevel-system som i toppspelen: gradient + ljus överkant +
+   mörk 3D-kant under. Tryck = knappen trycks NER (translateY), inte krymper. */
 .btn {
-  border: 1px solid var(--panel-border);
-  background: var(--panel);
+  border: 1px solid rgba(255, 214, 130, 0.22);
+  background: linear-gradient(180deg, #35305c, #262147);
   color: var(--text);
   font: inherit;
   font-weight: 600;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 12px 20px;
   cursor: pointer;
-  transition: transform 0.08s ease, background 0.15s ease;
+  box-shadow:
+    0 4px 0 #16122e,
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 240, 210, 0.14);
+  transition: transform 0.07s ease, box-shadow 0.07s ease, filter 0.15s ease;
   touch-action: manipulation;
 }
-.btn:active { transform: scale(0.96); background: rgba(255, 255, 255, 0.12); }
+.btn:active {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 #16122e,
+    0 3px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 240, 210, 0.1);
+  filter: brightness(1.12);
+}
 .btn.big { font-size: 1.2rem; padding: 16px 24px; }
 .btn.primary {
-  background: linear-gradient(135deg, #6d4dd8, #8f5cff);
+  background: linear-gradient(180deg, #8f5cff, #6d4dd8 55%, #5636b8);
   border: 1px solid rgba(255, 206, 107, 0.5);
-  box-shadow: 0 6px 22px rgba(125, 92, 255, 0.45), 0 0 14px rgba(255, 206, 107, 0.15);
+  box-shadow:
+    0 4px 0 #3b2d73,
+    0 8px 22px rgba(125, 92, 255, 0.45),
+    inset 0 1px 0 rgba(255, 240, 210, 0.28);
+}
+.btn.primary:active {
+  box-shadow:
+    0 1px 0 #3b2d73,
+    0 3px 10px rgba(125, 92, 255, 0.35),
+    inset 0 1px 0 rgba(255, 240, 210, 0.2);
 }
 .btn.icon {
   width: 44px;
@@ -134,7 +156,18 @@ html, body {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
+  border-radius: 14px;
 }
+.btn.ghost {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(168, 155, 196, 0.45);
+}
+.btn.ghost:active { transform: none; filter: brightness(1.3); }
 
 /* ===== Meny ===== */
 #screen-menu { align-items: center; justify-content: center; }
@@ -163,39 +196,152 @@ html, body {
 .logo span:nth-child(6) { animation-delay: 0.6s; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 .tagline { color: var(--text-dim); margin-bottom: 10px; }
-.menu-buttons { display: flex; flex-direction: column; gap: 12px; width: min(320px, 80vw); }
+.menu-buttons { display: flex; flex-direction: column; gap: 13px; width: min(340px, 84vw); }
 .menu-buttons .btn { width: 100%; }
 .best-line { margin-top: 14px; color: var(--text-dim); }
 #menu-best { color: var(--gold); font-weight: 700; }
+#menu-stars { color: var(--gold); font-weight: 700; }
 
-/* ===== Toppbar ===== */
+/* Hero-knappen: gyllene, med svepande glans som i toppspelens "Spela". */
+.btn.hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: 'Grenze Gotisch', serif;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 15px 24px;
+  color: #3b2500;
+  text-shadow: 0 1px 0 rgba(255, 245, 215, 0.55);
+  background: linear-gradient(180deg, #ffe9a8, #f2b45c 55%, #d98f38);
+  border: 1px solid rgba(255, 235, 190, 0.75);
+  box-shadow:
+    0 5px 0 #8a5a1e,
+    0 10px 26px rgba(242, 180, 92, 0.4),
+    inset 0 2px 0 rgba(255, 250, 235, 0.65);
+  animation: hero-pulse 2.6s ease-in-out infinite;
+}
+.btn.hero:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 1px 0 #8a5a1e,
+    0 4px 12px rgba(242, 180, 92, 0.3),
+    inset 0 2px 0 rgba(255, 250, 235, 0.5);
+  animation: none;
+}
+.hero-ic { font-size: 1.5em; line-height: 0.6; margin-top: -4px; }
+.btn.hero .shine {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -35%;
+  width: 26%;
+  background: linear-gradient(100deg, transparent, rgba(255, 252, 240, 0.75), transparent);
+  transform: skewX(-18deg);
+  animation: hero-shine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes hero-shine {
+  0%, 55% { left: -35%; }
+  85%, 100% { left: 125%; }
+}
+@keyframes hero-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.022); }
+}
+
+/* Lägesrader: ikonplatta till vänster, etikett, liten pil till höger. */
+.btn.row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  text-align: left;
+  font-size: 1.08rem;
+  padding: 10px 14px 10px 10px;
+}
+.mb-label { flex: 1; }
+.mb-arrow {
+  color: var(--text-dim);
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-top: -3px;
+  opacity: 0.7;
+}
+.mb-ic {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  box-shadow: inset 0 1px 0 rgba(255, 245, 215, 0.3), inset 0 -3px 6px rgba(0, 0, 0, 0.28);
+}
+.mb-ic .twe { width: 1.5em; height: 1.5em; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3)); }
+.ic-purple { background: linear-gradient(180deg, #8f5cff, #5636b8); }
+.ic-teal { background: linear-gradient(180deg, #3ed3b4, #1e8a72); }
+.ic-rose { background: linear-gradient(180deg, #ff7d92, #c93a56); }
+
+/* ===== Toppbar =====
+   Dockad panel med gradient, guldkantad underkant och mjuk skugga. */
 .bar {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(46, 40, 84, 0.92), rgba(28, 24, 54, 0.78));
+  border-bottom: 1px solid rgba(255, 206, 107, 0.16);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
 }
 .bar h2 { flex: 1; text-align: center; font-family: 'Grenze Gotisch', serif; font-size: 1.5rem; font-weight: 600; }
 .bar-spacer { width: 44px; }
 #hud-center { flex: 1; text-align: center; min-width: 0; }
-#hud-score { font-family: 'Grenze Gotisch', serif; font-size: 1.9rem; font-weight: 700; line-height: 1.05; }
+#hud-score {
+  font-family: 'Grenze Gotisch', serif;
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.05;
+  background: linear-gradient(180deg, #fff3d0 20%, #ffce6b 60%, #e8a94b 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
 #hud-sub { font-size: 0.85rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ===== Bankarta ===== */
+/* ===== Valutakapslar =====
+   Mörk kapsel med guldtext och ikon som sticker ut över vänsterkanten. */
 .coin-chip {
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
+  position: relative;
+  background: rgba(10, 8, 24, 0.55);
+  border: 1px solid rgba(255, 214, 130, 0.28);
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 6px 13px 6px 26px;
+  margin-left: 9px;
   font-size: 0.9rem;
   font-weight: 700;
+  color: var(--gold);
   white-space: nowrap;
   flex: 0 0 auto;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 240, 210, 0.08);
+}
+.coin-chip .twe {
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
 }
 .coin-chip.flash { animation: coin-flash 0.4s ease; }
 @keyframes coin-flash {
-  0%, 100% { background: var(--panel); }
-  50% { background: rgba(255, 93, 108, 0.45); }
+  0%, 100% { background: rgba(10, 8, 24, 0.55); }
+  50% { background: rgba(255, 93, 108, 0.5); }
 }
 
 #level-map {
@@ -590,6 +736,13 @@ html, body {
     radial-gradient(120% 52% at 50% 34%,
       hsla(var(--world-hue, 258), 70%, 62%, 0.16), transparent 72%);
 }
+/* Fullbred bar med centrerat innehåll på breda skärmar. */
+#screen-game .bar {
+  width: 100%;
+  padding-left: max(12px, calc((100% - 620px) / 2));
+  padding-right: max(12px, calc((100% - 620px) / 2));
+}
+#hud-objective { margin-top: 8px; }
 #hud-objective {
   display: flex;
   align-items: center;
@@ -838,14 +991,40 @@ html, body {
   to { transform: scale(1); opacity: 1; }
 }
 
-/* ===== Menytopp och badge ===== */
+/* ===== Menytopp och badge =====
+   Profilrad som i toppspelen: avatar till vänster, valutor i kapslar,
+   runda systemknappar till höger. */
 .menu-top {
   position: absolute;
-  top: calc(12px + env(safe-area-inset-top));
-  right: 14px;
+  top: calc(10px + env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
   display: flex;
+  align-items: center;
   gap: 10px;
 }
+.menu-top-spacer { flex: 1; }
+.avatar-btn {
+  width: 54px;
+  height: 54px;
+  padding: 2px 0 0;
+  border: 2px solid rgba(255, 206, 107, 0.65);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #3b3468, #201b40 75%);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+  box-shadow:
+    0 4px 0 rgba(22, 18, 46, 0.9),
+    0 8px 18px rgba(0, 0, 0, 0.4),
+    inset 0 2px 6px rgba(255, 240, 210, 0.12);
+  transition: transform 0.07s ease, box-shadow 0.07s ease;
+}
+.avatar-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(22, 18, 46, 0.9), 0 3px 8px rgba(0, 0, 0, 0.35); }
+.avatar-btn svg { display: block; margin-bottom: -4px; }
 .badge {
   display: inline-flex;
   align-items: center;
