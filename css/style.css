@@ -326,6 +326,49 @@ html, body {
 }
 .chest-coins .twe { width: 0.85em; height: 0.85em; }
 
+/* Megaöppning av kista */
+.chest-rays {
+  position: fixed;
+  width: 260px;
+  height: 260px;
+  pointer-events: none;
+  z-index: 200;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(rgba(255, 214, 69, 0.28) 0deg 14deg, transparent 14deg 32deg);
+  -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.9), transparent 70%);
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.9), transparent 70%);
+}
+.chest-flash {
+  position: fixed;
+  width: 150px;
+  height: 150px;
+  pointer-events: none;
+  z-index: 201;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 246, 214, 0.95), rgba(255, 206, 107, 0.5) 45%, transparent 70%);
+}
+.fly-coin {
+  position: fixed;
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+  z-index: 202;
+  filter: drop-shadow(0 2px 3px rgba(10, 8, 24, 0.5));
+}
+.chest-label {
+  position: fixed;
+  pointer-events: none;
+  z-index: 203;
+  font-family: 'Grenze Gotisch', serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 12px rgba(255, 206, 107, 0.7), 0 2px 4px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+.chest-label .twe { width: 1em; height: 1em; }
+
 /* Slagskugga under markstående rekvisita */
 .deco.grounded::after {
   content: '';

@@ -25,8 +25,8 @@ Alla resurser nedan tillåter kommersiell användning.
 ## Ljud
 
 **Kenney** – `assets/kenney/audio/*.ogg`
-- Skapade av Kenney (https://kenney.nl), ur paketen *Interface Sounds*
-  och *Digital Audio*
+- Skapade av Kenney (https://kenney.nl), ur paketen *Interface Sounds*,
+  *Digital Audio* och *Music Jingles*
 - Licens: CC0 1.0 Universal (public domain) – ingen attribution krävs,
   men Kenney uppskattar kredit och donationer
 
