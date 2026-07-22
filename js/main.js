@@ -10,41 +10,74 @@
 
   var BOOSTER_PRICES = { hammer: 30, bomb: 60, swap: 20, undo: 25 };
 
+  /* ===== Karaktärer =====
+     Flera karaktärer med varsin progression. Karaktären med id 0
+     använder de ursprungliga nycklarna (bloxis.stars …) så befintlig
+     progress automatiskt blir första karaktären; övriga får prefixet
+     bloxis.c<id>. Inställningar och språk delas. */
+  var PER_CHAR_RE = /^bloxis\.(stars|chests|coins|best|ach|stats|quests|daily|endless|avatar|tutorialDone)(\.|$)/;
+  var profiles = (function () {
+    try {
+      var p = JSON.parse(localStorage.getItem('bloxis.profiles'));
+      if (p && p.chars && p.chars.length) return p;
+    } catch (e) { /* korrupt – börja om */ }
+    return { chars: [{ id: 0, name: 'Karaktär 1' }], cur: 0, next: 1 };
+  })();
+  function saveProfiles() { localStorage.setItem('bloxis.profiles', JSON.stringify(profiles)); }
+  function curChar() {
+    var c = profiles.chars.filter(function (x) { return x.id === profiles.cur; })[0];
+    return c || profiles.chars[0];
+  }
+  function charKey(id, key) {
+    if (id === 0 || !PER_CHAR_RE.test(key)) return key;
+    return 'bloxis.c' + id + '.' + key.slice(7);
+  }
+  var LS = {
+    get: function (key) { return localStorage.getItem(charKey(curChar().id, key)); },
+    set: function (key, v) { localStorage.setItem(charKey(curChar().id, key), v); },
+    remove: function (key) { localStorage.removeItem(charKey(curChar().id, key)); }
+  };
+  /* Läser en annan karaktärs sparade JSON-värde (för listan i väljaren). */
+  function readCharJson(id, key, fallback) {
+    try { return JSON.parse(localStorage.getItem(charKey(id, key))) || fallback; }
+    catch (e) { return fallback; }
+  }
+
   /* ===== Lagring ===== */
   var store = {
-    getBest: function () { return +localStorage.getItem('bloxis.best') || 0; },
-    setBest: function (v) { localStorage.setItem('bloxis.best', String(v)); },
+    getBest: function () { return +LS.get('bloxis.best') || 0; },
+    setBest: function (v) { LS.set('bloxis.best', String(v)); },
     /* Rekord per oändligt-konfiguration (storlek + svårighet). */
     getBestFor: function (cfg) {
-      var v = +localStorage.getItem('bloxis.best.' + cfg.size + '.' + cfg.diff) || 0;
+      var v = +LS.get('bloxis.best.' + cfg.size + '.' + cfg.diff) || 0;
       if (!v && cfg.size === 8 && cfg.diff === 'klassisk') v = this.getBest();
       return v;
     },
     setBestFor: function (cfg, v) {
-      localStorage.setItem('bloxis.best.' + cfg.size + '.' + cfg.diff, String(v));
+      LS.set('bloxis.best.' + cfg.size + '.' + cfg.diff, String(v));
       if (v > this.getBest()) this.setBest(v); // totalrekordet på menyn
     },
-    getCoins: function () { return +localStorage.getItem('bloxis.coins') || 0; },
-    addCoins: function (n) { localStorage.setItem('bloxis.coins', String(this.getCoins() + n)); },
+    getCoins: function () { return +LS.get('bloxis.coins') || 0; },
+    addCoins: function (n) { LS.set('bloxis.coins', String(this.getCoins() + n)); },
     spendCoins: function (n) {
       if (this.getCoins() < n) return false;
-      localStorage.setItem('bloxis.coins', String(this.getCoins() - n));
+      LS.set('bloxis.coins', String(this.getCoins() - n));
       return true;
     },
     getStars: function () {
-      try { return JSON.parse(localStorage.getItem('bloxis.stars')) || {}; }
+      try { return JSON.parse(LS.get('bloxis.stars')) || {}; }
       catch (e) { return {}; }
     },
     setStars: function (levelIdx, stars) {
       var all = this.getStars();
       all[levelIdx] = Math.max(all[levelIdx] || 0, stars);
-      localStorage.setItem('bloxis.stars', JSON.stringify(all));
+      LS.set('bloxis.stars', JSON.stringify(all));
     },
     getJson: function (key, fallback) {
-      try { return JSON.parse(localStorage.getItem(key)) || fallback; }
+      try { return JSON.parse(LS.get(key)) || fallback; }
       catch (e) { return fallback; }
     },
-    setJson: function (key, v) { localStorage.setItem(key, JSON.stringify(v)); }
+    setJson: function (key, v) { LS.set(key, JSON.stringify(v)); }
   };
 
   /* Vilken värld hör bana i till? */
@@ -60,7 +93,10 @@
      (position 0-8 behålls, gamla finalen på plats 9 blir plats 11). */
   (function migrateStars() {
     if ((+localStorage.getItem('bloxis.levelsVer') || 1) >= 2) return;
-    var old = store.getStars();
+    /* gammalt format kan bara finnas i de oprefixade nycklarna (id 0) */
+    var old;
+    try { old = JSON.parse(localStorage.getItem('bloxis.stars')) || {}; }
+    catch (e) { old = {}; }
     var moved = {};
     Object.keys(old).forEach(function (k) {
       var i = +k;
@@ -119,7 +155,8 @@
     '🎩': 'hat', '🏅': 'medal', '⚙': 'gear', '🧩': 'puzzle',
     '📅': 'calendar', '💎': 'gem', '🧊': 'ice', '🎨': 'palette',
     '🎯': 'target', '🔒': 'lock', '🎉': 'party', '🏆': 'trophy',
-    '👁': 'eye', '🔊': 'sound', '🎵': 'note', '📳': 'vibrate'
+    '👁': 'eye', '🔊': 'sound', '🎵': 'note', '📳': 'vibrate',
+    '👥': 'team'
   };
   var TWEMOJI = {
     '📍': '1f4cd', '☁': '2601', '🌲': '1f332', '🌳': '1f333', '🌷': '1f337',
@@ -136,6 +173,12 @@
       var src = ICONS[ch] ? 'assets/icons/' + ICONS[ch] + '.svg'
         : 'assets/twemoji/' + TWEMOJI[ch] + '.svg';
       return '<img class="twe" draggable="false" alt="' + ch + '" src="' + src + '">';
+    });
+  }
+  /* HTML-escape för användartext (karaktärsnamn m.m.). */
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
   }
 
@@ -408,7 +451,7 @@
 
   function getEndlessCfg() {
     try {
-      var c = JSON.parse(localStorage.getItem('bloxis.endless.cfg'));
+      var c = JSON.parse(LS.get('bloxis.endless.cfg'));
       if (c && SIZE_OPTS.indexOf(c.size) >= 0 && DIFFS[c.diff]) return c;
     } catch (e) { /* ok */ }
     return { size: 8, diff: 'klassisk' };
@@ -719,6 +762,8 @@
       '<button class="choice' + (settings.language === 'sv' ? ' sel' : '') + '" data-lang="sv">Svenska</button>' +
       '<button class="choice' + (settings.language === 'en' ? ' sel' : '') + '" data-lang="en">English</button>' +
       '</span></div>' +
+      '<div class="toggle-row"><span>' + t('setChar') + '</span>' +
+      '<button id="ov-chars" class="btn charbtn">' + esc(curChar().name) + '</button></div>' +
       '<div class="toggle-row"><span>' + t('setReset') + '</span>' +
       '<button id="ov-reset" class="btn danger">' + t('resetBtn') + '</button></div>';
     showOverlay({
@@ -750,6 +795,11 @@
         showSettings();
       });
     });
+    var charsBtn = document.getElementById('ov-chars');
+    if (charsBtn) charsBtn.addEventListener('click', function () {
+      Sound.click();
+      showCharacters();
+    });
     var resetBtn = document.getElementById('ov-reset');
     if (resetBtn) resetBtn.addEventListener('click', function () {
       Sound.click();
@@ -758,8 +808,8 @@
         html: '<p>' + t('resetBody') + '</p>',
         buttons: [
           { label: t('resetConfirm'), primary: true, fn: function () {
-            localStorage.removeItem('bloxis.stars');
-            localStorage.removeItem('bloxis.chests');
+            LS.remove('bloxis.stars');
+            LS.remove('bloxis.chests');
             showToast(t('resetDone'));
             if ($('#menu-stars')) $('#menu-stars').textContent = '0';
             if (screens.levels.classList.contains('active')) renderLevelMap();
@@ -768,6 +818,117 @@
           { label: t('cancel'), fn: showSettings }
         ]
       });
+    });
+  }
+
+  /* ===== Karaktärsväljaren ===== */
+  function charStars(id) {
+    var st = readCharJson(id, 'bloxis.stars', {}) || {};
+    return Object.keys(st).reduce(function (s, k) { return s + st[k]; }, 0);
+  }
+  function charCoins(id) {
+    return +localStorage.getItem(charKey(id, 'bloxis.coins')) || 0;
+  }
+  /* Raderar alla sparade nycklar som tillhör en karaktär. */
+  function wipeChar(id) {
+    var doomed = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (id === 0 ? PER_CHAR_RE.test(k) : k.indexOf('bloxis.c' + id + '.') === 0) doomed.push(k);
+    }
+    doomed.forEach(function (k) { localStorage.removeItem(k); });
+  }
+  function switchChar(id) {
+    profiles.cur = id;
+    saveProfiles();
+    endlessCfg = getEndlessCfg();
+    showToast(t('charSwitched', { name: esc(curChar().name) }));
+    showScreen('menu');
+  }
+  function showCharacters() {
+    var html = profiles.chars.map(function (c) {
+      var av = readCharJson(c.id, 'bloxis.avatar', {}) || {};
+      var cfg = {
+        hat: av.hat || 'wizard', color: av.color || 'rosa', item: av.item || 'ingen',
+        eyes: av.eyes || 'brun', back: av.back || 'ingen', face: av.face || 'ingen'
+      };
+      var active = c.id === profiles.cur;
+      return '<div class="char-row' + (active ? ' active' : '') + '">' +
+        '<span class="char-av">' + avatarSvg(cfg, 44) + '</span>' +
+        '<span class="char-info"><b>' + esc(c.name) + '</b>' +
+        '<span class="char-meta">⭐ ' + charStars(c.id) + ' &ensp; 💰 ' + charCoins(c.id) + '</span></span>' +
+        (active
+          ? '<span class="char-cur">' + t('charCurrent') + '</span>'
+          : '<button class="btn char-play" data-cid="' + c.id + '">' + t('charPlay') + '</button>' +
+            '<button class="btn icon danger char-del" data-cid="' + c.id + '" aria-label="' + t('charDelete') + '">&#10005;</button>');
+    }).map(function (row) { return row + '</div>'; }).join('') +
+      (profiles.chars.length < 4
+        ? '<button id="char-new" class="btn row char-new"><span class="mb-ic ic-teal">👥</span>' +
+          '<span class="mb-label">' + t('charNew') + '</span></button>'
+        : '<p class="char-max">' + t('charMax') + '</p>');
+    showOverlay({
+      title: t('charTitle'),
+      html: html,
+      buttons: [{ label: t('back'), primary: true, fn: showSettings }]
+    });
+    document.querySelectorAll('#ov-text .char-play').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        Sound.click();
+        hideOverlay();
+        switchChar(+btn.getAttribute('data-cid'));
+      });
+    });
+    document.querySelectorAll('#ov-text .char-del').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        Sound.click();
+        hideOverlay();
+        confirmDeleteChar(+btn.getAttribute('data-cid'));
+      });
+    });
+    var newBtn = document.getElementById('char-new');
+    if (newBtn) newBtn.addEventListener('click', function () {
+      Sound.click();
+      hideOverlay();
+      showNewChar();
+    });
+  }
+  function showNewChar() {
+    var defName = t('charDefault', { n: profiles.chars.length + 1 });
+    showOverlay({
+      title: t('charNew'),
+      html: '<p>' + t('charNameLabel') + '</p>' +
+        '<input id="char-name" class="char-input" maxlength="14" value="' + esc(defName) + '">',
+      buttons: [
+        { label: t('charCreate'), primary: true, fn: function () {
+          var name = (document.getElementById('char-name').value || '').trim().slice(0, 14) || defName;
+          var c = { id: profiles.next, name: name };
+          profiles.chars.push(c);
+          profiles.next++;
+          saveProfiles();
+          switchChar(c.id);
+        } },
+        { label: t('cancel'), fn: showCharacters }
+      ]
+    });
+    var inp = document.getElementById('char-name');
+    if (inp) { inp.focus(); inp.select(); }
+  }
+  function confirmDeleteChar(id) {
+    var c = profiles.chars.filter(function (x) { return x.id === id; })[0];
+    if (!c) { showCharacters(); return; }
+    showOverlay({
+      title: t('charDelTitle', { name: esc(c.name) }),
+      html: '<p>' + t('charDelBody') + '</p>',
+      buttons: [
+        { label: t('charDelConfirm'), primary: true, fn: function () {
+          wipeChar(id);
+          profiles.chars = profiles.chars.filter(function (x) { return x.id !== id; });
+          saveProfiles();
+          showToast(t('charDeleted', { name: esc(c.name) }));
+          showCharacters();
+        } },
+        { label: t('cancel'), fn: showCharacters }
+      ]
     });
   }
 
@@ -2022,7 +2183,7 @@
           var size = +document.querySelector('#ov-text .choice-row[data-group="size"] .sel').getAttribute('data-v');
           var diff = document.querySelector('#ov-text .choice-row[data-group="diff"] .sel').getAttribute('data-v');
           endlessCfg = { size: size, diff: diff };
-          localStorage.setItem('bloxis.endless.cfg', JSON.stringify(endlessCfg));
+          LS.set('bloxis.endless.cfg', JSON.stringify(endlessCfg));
           startEndless(endlessCfg);
         }
       }]
@@ -2277,7 +2438,7 @@
     var after = tutor && tutor.after;
     tutor = null;
     if (completed) {
-      localStorage.setItem('bloxis.tutorialDone', '1');
+      LS.set('bloxis.tutorialDone', '1');
       mode = 'endless';
       showOverlay({
         title: 'Klart! 🎉',
@@ -2323,7 +2484,7 @@
     return true;
   }
 
-  function tutorialDone() { return !!localStorage.getItem('bloxis.tutorialDone'); }
+  function tutorialDone() { return !!LS.get('bloxis.tutorialDone'); }
 
   /* Kör guiden först för helt nya spelare, sedan den valda handlingen. */
   function withTutorial(fn) {
