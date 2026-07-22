@@ -34,13 +34,98 @@
   }
   var LS = {
     get: function (key) { return localStorage.getItem(charKey(curChar().id, key)); },
-    set: function (key, v) { localStorage.setItem(charKey(curChar().id, key), v); },
-    remove: function (key) { localStorage.removeItem(charKey(curChar().id, key)); }
+    set: function (key, v) {
+      localStorage.setItem(charKey(curChar().id, key), v);
+      cloudSyncSoon();
+    },
+    remove: function (key) {
+      localStorage.removeItem(charKey(curChar().id, key));
+      cloudSyncSoon();
+    }
   };
   /* Läser en annan karaktärs sparade JSON-värde (för listan i väljaren). */
   function readCharJson(id, key, fallback) {
     try { return JSON.parse(localStorage.getItem(charKey(id, key))) || fallback; }
     catch (e) { return fallback; }
+  }
+  /* Alla sparade nycklar för en karaktär som { kortnyckel: råvärde },
+     t.ex. { stars: '{"0":3}', coins: '245' }. Grunden för både
+     export/import och molnsynk. */
+  function charBlob(id) {
+    var out = {};
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (id === 0 ? PER_CHAR_RE.test(k) : k.indexOf('bloxis.c' + id + '.') === 0) {
+        out[id === 0 ? k.slice(7) : k.slice(('bloxis.c' + id + '.').length)] = localStorage.getItem(k);
+      }
+    }
+    return out;
+  }
+  function writeCharBlob(id, keys) {
+    Object.keys(keys).forEach(function (short) {
+      if (!PER_CHAR_RE.test('bloxis.' + short)) return;  // släpp bara igenom kända nycklar
+      localStorage.setItem(charKey(id, 'bloxis.' + short), String(keys[short]));
+    });
+  }
+
+  /* ===== Premium och molnsynk =====
+     Klientflaggan styr bara vad UI:t visar – den riktiga spärren för
+     molnsparning är backendens säkerhetsregler (se js/cloud.js). */
+  var Cloud = window.BloxisCloud || { id: 'local', ready: false };
+  function isPremium() { return localStorage.getItem('bloxis.premium') === '1'; }
+  var cloudTimer = null;
+  function cloudSyncSoon() {
+    if (!isPremium() || !Cloud.ready || !Cloud.user || !Cloud.user()) return;
+    clearTimeout(cloudTimer);
+    cloudTimer = setTimeout(function () {
+      var chars = profiles.chars.map(function (c) {
+        return { id: c.id, name: c.name, updated: Date.now(), keys: charBlob(c.id) };
+      });
+      Cloud.push(chars, function () {});
+    }, 3000);
+  }
+
+  /* ===== Export/import av spardata =====
+     Formatet BLX1.<base64url-json>.<fnv1a-kontrollsumma> är en hel
+     karaktär som textkod – manuell flytt mellan enheter i dag, och
+     felsäkring/supportverktyg när molnsynken finns. */
+  function fnv1a(str) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+    }
+    return ('0000000' + h.toString(16)).slice(-8);
+  }
+  function b64uEnc(str) {
+    return btoa(unescape(encodeURIComponent(str)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function b64uDec(str) {
+    var b = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (b.length % 4) b += '=';
+    return decodeURIComponent(escape(atob(b)));
+  }
+  function exportChar(id) {
+    var c = profiles.chars.filter(function (x) { return x.id === id; })[0];
+    var payload = b64uEnc(JSON.stringify({ v: 1, name: c ? c.name : '?', keys: charBlob(id) }));
+    return 'BLX1.' + payload + '.' + fnv1a(payload);
+  }
+  /* Skapar en NY karaktär från en kod. Returnerar { ok, name } eller { ok:false, err }. */
+  function importChar(code) {
+    var m = /^\s*BLX1\.([A-Za-z0-9_-]+)\.([0-9a-f]{8})\s*$/.exec(String(code));
+    if (!m || fnv1a(m[1]) !== m[2]) return { ok: false, err: 'bad' };
+    var data;
+    try { data = JSON.parse(b64uDec(m[1])); } catch (e) { return { ok: false, err: 'bad' }; }
+    if (!data || data.v !== 1 || !data.keys) return { ok: false, err: 'bad' };
+    if (profiles.chars.length >= 4) return { ok: false, err: 'full' };
+    var name = String(data.name || t('charDefault', { n: profiles.chars.length + 1 })).slice(0, 14);
+    var c = { id: profiles.next, name: name };
+    profiles.chars.push(c);
+    profiles.next++;
+    saveProfiles();
+    writeCharBlob(c.id, data.keys);
+    return { ok: true, id: c.id, name: name };
   }
 
   /* ===== Lagring ===== */
@@ -764,6 +849,14 @@
       '</span></div>' +
       '<div class="toggle-row"><span>' + t('setChar') + '</span>' +
       '<button id="ov-chars" class="btn charbtn">' + esc(curChar().name) + '</button></div>' +
+      '<div class="toggle-row"><span>' + t('setData') + '</span>' +
+      '<span class="choice-row">' +
+      '<button id="ov-export" class="btn charbtn">' + t('dataExport') + '</button>' +
+      '<button id="ov-import" class="btn charbtn">' + t('dataImport') + '</button>' +
+      '</span></div>' +
+      '<div class="toggle-row"><span>' + t('setCloud') + '</span>' +
+      '<button id="ov-cloud" class="btn charbtn">' +
+      (isPremium() && Cloud.ready ? t('cloudOn') : '🔒 ' + t('cloudLocked')) + '</button></div>' +
       '<div class="toggle-row"><span>' + t('setReset') + '</span>' +
       '<button id="ov-reset" class="btn danger">' + t('resetBtn') + '</button></div>';
     showOverlay({
@@ -799,6 +892,18 @@
     if (charsBtn) charsBtn.addEventListener('click', function () {
       Sound.click();
       showCharacters();
+    });
+    document.getElementById('ov-export').addEventListener('click', function () {
+      Sound.click();
+      showExport();
+    });
+    document.getElementById('ov-import').addEventListener('click', function () {
+      Sound.click();
+      showImport();
+    });
+    document.getElementById('ov-cloud').addEventListener('click', function () {
+      Sound.click();
+      showCloudInfo();
     });
     var resetBtn = document.getElementById('ov-reset');
     if (resetBtn) resetBtn.addEventListener('click', function () {
@@ -929,6 +1034,62 @@
         } },
         { label: t('cancel'), fn: showCharacters }
       ]
+    });
+  }
+
+  /* ===== Export/import-dialoger och molninfo ===== */
+  function showExport() {
+    var code = exportChar(profiles.cur);
+    showOverlay({
+      title: t('exportTitle'),
+      html: '<p>' + t('exportBody', { name: esc(curChar().name) }) + '</p>' +
+        '<textarea id="save-code" class="char-input code-area" readonly>' + code + '</textarea>' +
+        '<button id="copy-code" class="btn charbtn">' + t('copyBtn') + '</button>',
+      buttons: [{ label: t('back'), primary: true, fn: showSettings }]
+    });
+    var area = document.getElementById('save-code');
+    area.addEventListener('focus', function () { area.select(); });
+    document.getElementById('copy-code').addEventListener('click', function () {
+      Sound.click();
+      area.select();
+      var done = function () { showToast(t('copied')); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done, function () {
+          document.execCommand('copy'); done();
+        });
+      } else {
+        document.execCommand('copy'); done();
+      }
+    });
+  }
+  function showImport() {
+    showOverlay({
+      title: t('importTitle'),
+      html: '<p>' + t('importBody') + '</p>' +
+        '<textarea id="import-code" class="char-input code-area" placeholder="BLX1.…"></textarea>',
+      buttons: [
+        { label: t('importBtn'), primary: true, fn: function () {
+          var res = importChar(document.getElementById('import-code').value);
+          if (res.ok) {
+            showToast(t('importOk', { name: esc(res.name) }));
+            showCharacters();
+          } else {
+            showToast(res.err === 'full' ? t('importFull') : t('importBad'));
+            showSettings();
+          }
+        } },
+        { label: t('cancel'), fn: showSettings }
+      ]
+    });
+  }
+  function showCloudInfo() {
+    showOverlay({
+      title: t('cloudTitle'),
+      html: '<p>' + t('cloudBody') + '</p>' +
+        (isPremium() && Cloud.ready
+          ? '<p class="ward-coins">' + t('cloudStatusOn', { backend: Cloud.id }) + '</p>'
+          : '<p class="ward-coins">' + t('cloudStatusOff') + '</p>'),
+      buttons: [{ label: t('back'), primary: true, fn: showSettings }]
     });
   }
 
