@@ -18,7 +18,10 @@
     <!-- ===== Huvudmeny ===== -->
     <section id="screen-menu" class="screen active">
       <div class="menu-top">
-        <button id="btn-wardrobe" class="btn icon" aria-label="Garderob"><img class="twe" src="assets/icons/hat.svg" alt=""></button>
+        <button id="btn-wardrobe" class="avatar-btn" aria-label="Garderob"><span id="menu-avatar"></span></button>
+        <span class="coin-chip"><img class="twe" src="assets/icons/coin.svg" alt=""> <span id="menu-coins">0</span></span>
+        <span class="coin-chip"><img class="twe" src="assets/icons/flame.svg" alt=""> <span id="menu-streak">0</span></span>
+        <span class="menu-top-spacer"></span>
         <button id="btn-achievements" class="btn icon" aria-label="Utm&auml;rkelser"><img class="twe" src="assets/icons/medal.svg" alt=""></button>
         <button id="btn-settings" class="btn icon" aria-label="Inst&auml;llningar"><img class="twe" src="assets/icons/gear.svg" alt=""></button>
       </div>
@@ -26,13 +29,13 @@
         <h1 class="logo"><span>B</span><span>L</span><span>O</span><span>X</span><span>I</span><span>S</span></h1>
         <p class="tagline" data-l="tagline">Ett förtrollat blockäventyr</p>
         <div class="menu-buttons">
-          <button id="btn-endless" class="btn big primary">&infin;&ensp;<span data-l="menuEndless">O&auml;ndligt l&auml;ge</span></button>
-          <button id="btn-levels" class="btn big"><img class="twe" src="assets/icons/puzzle.svg" alt="">&ensp;<span data-l="menuLevels">Banor</span></button>
-          <button id="btn-daily" class="btn big"><img class="twe" src="assets/icons/calendar.svg" alt="">&ensp;<span data-l="menuDaily">Dagens utmaning</span><span id="daily-badge" class="badge hidden">!</span></button>
-          <button id="btn-quests" class="btn big"><img class="twe" src="assets/icons/scroll.svg" alt="">&ensp;<span data-l="menuQuests">Veckouppdrag</span><span id="quest-badge" class="badge hidden">!</span></button>
-          <button id="btn-help" class="btn" data-l="menuHelp">S&aring; spelar du</button>
+          <button id="btn-endless" class="btn hero"><span class="shine"></span><span class="hero-ic">&infin;</span><span data-l="menuEndless">O&auml;ndligt l&auml;ge</span></button>
+          <button id="btn-levels" class="btn row"><span class="mb-ic ic-purple"><img class="twe" src="assets/icons/puzzle.svg" alt=""></span><span class="mb-label" data-l="menuLevels">Banor</span><span class="mb-arrow">&rsaquo;</span></button>
+          <button id="btn-daily" class="btn row"><span class="mb-ic ic-teal"><img class="twe" src="assets/icons/calendar.svg" alt=""></span><span class="mb-label" data-l="menuDaily">Dagens utmaning</span><span id="daily-badge" class="badge hidden">!</span><span class="mb-arrow">&rsaquo;</span></button>
+          <button id="btn-quests" class="btn row"><span class="mb-ic ic-rose"><img class="twe" src="assets/icons/scroll.svg" alt=""></span><span class="mb-label" data-l="menuQuests">Veckouppdrag</span><span id="quest-badge" class="badge hidden">!</span><span class="mb-arrow">&rsaquo;</span></button>
+          <button id="btn-help" class="btn ghost" data-l="menuHelp">S&aring; spelar du</button>
         </div>
-        <p class="best-line"><span data-l="record">Rekord:</span> <span id="menu-best">0</span> &ensp;&bull;&ensp; <img class="twe" src="assets/icons/coin.svg" alt=""> <span id="menu-coins">0</span> &ensp;&bull;&ensp; <img class="twe" src="assets/icons/flame.svg" alt=""> <span id="menu-streak">0</span></p>
+        <p class="best-line"><span data-l="record">Rekord:</span> <span id="menu-best">0</span> &ensp;&bull;&ensp; <img class="twe" src="assets/icons/star.svg" alt=""> <span id="menu-stars">0</span></p>
       </div>
     </section>
 
