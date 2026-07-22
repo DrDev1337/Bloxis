@@ -861,8 +861,8 @@
         '<path d="M23 1 L33.5 15.5 Q23 19.5 12.5 15.5 Z" fill="#4b3a8f"/>' +
         '<path d="M23 1 L28 8.5 Q23 10.5 18.5 8.3 Z" fill="#5d49a8"/>' +
         '<ellipse cx="23" cy="16" rx="14" ry="3.6" fill="#3b2d73"/>' +
-        '<circle cx="23" cy="2.2" r="2" fill="#ffce6b"/>' +
-        '<path d="M20 12 l1 -2.2 1 2.2 2.2 0.3 -1.6 1.5 0.4 2.2 -2 -1.1 -2 1.1 0.4 -2.2 -1.6 -1.5 Z" fill="#ffce6b"/>';
+        '<circle cx="23" cy="2.2" r="2" fill="#ffce6b" class="av-tw" style="animation-delay:.5s"/>' +
+        '<path d="M20 12 l1 -2.2 1 2.2 2.2 0.3 -1.6 1.5 0.4 2.2 -2 -1.1 -2 1.1 0.4 -2.2 -1.6 -1.5 Z" fill="#ffce6b" class="av-tw"/>';
     } else if (hatId === 'krona') {
       hat =
         '<path d="M12.5 16.5 L12.5 8 L17.5 12 L23 4.5 L28.5 12 L33.5 8 L33.5 16.5 Z" fill="#ffce6b" stroke="#c67c2e" stroke-width="1.3"/>' +
@@ -923,11 +923,11 @@
         '<ellipse cx="32.5" cy="14" rx="3.1" ry="1.7" fill="#c9b23d" transform="rotate(42 32.5 14)"/>' +
         '<ellipse cx="30" cy="10.5" rx="3.1" ry="1.7" fill="#b8a13d" transform="rotate(22 30 10.5)"/>' +
         '<ellipse cx="26.5" cy="8.3" rx="3.1" ry="1.7" fill="#c9b23d" transform="rotate(8 26.5 8.3)"/>' +
-        '<circle cx="23" cy="7.6" r="1.4" fill="#ffce6b"/>';
+        '<circle cx="23" cy="7.6" r="1.4" fill="#ffce6b" class="av-tw"/>';
     } else if (hatId === 'mankrona') {
       hat =
         '<path d="M13 16.5 L13 10.5 L18 13 L23 8.5 L28 13 L33 10.5 L33 16.5 Z" fill="#d6dde8" stroke="#8fa0b8" stroke-width="1.2"/>' +
-        '<path d="M23.5 1.5 A 4.4 4.4 0 1 0 27.3 8 A 3.4 3.4 0 1 1 23.5 1.5 Z" fill="#ffe9a8"/>' +
+        '<path d="M23.5 1.5 A 4.4 4.4 0 1 0 27.3 8 A 3.4 3.4 0 1 1 23.5 1.5 Z" fill="#ffe9a8" class="av-glow"/>' +
         '<circle cx="17.5" cy="12.6" r="1.1" fill="#7d5cff"/>' +
         '<circle cx="28.5" cy="12.6" r="1.1" fill="#2fc2a5"/>' +
         '<rect x="13" y="14.4" width="20" height="2.2" fill="#b9c4d6"/>';
@@ -935,7 +935,7 @@
       hat =
         '<path d="M14 11 Q17 4 21 9" stroke="' + col.body + '" stroke-width="4" fill="none" stroke-linecap="round"/>' +
         '<path d="M32 11 Q29 4 25 9" stroke="' + col.body + '" stroke-width="4" fill="none" stroke-linecap="round"/>' +
-        '<ellipse cx="23" cy="4.5" rx="9" ry="2.8" fill="none" stroke="rgba(255,233,168,0.45)" stroke-width="5.5"/>' +
+        '<ellipse cx="23" cy="4.5" rx="9" ry="2.8" fill="none" stroke="rgba(255,233,168,0.45)" stroke-width="5.5" class="av-glow"/>' +
         '<ellipse cx="23" cy="4.5" rx="9" ry="2.8" fill="none" stroke="#ffce6b" stroke-width="2.4"/>';
     } else {
       hat =
@@ -946,9 +946,9 @@
     if (itemId === 'stav') {
       item =
         '<line x1="37.5" y1="45" x2="43" y2="29" stroke="#8a5a33" stroke-width="2.8" stroke-linecap="round"/>' +
-        '<path d="M43 22.5 l1.3 2.7 3 0.45 -2.2 2.1 0.55 3 -2.65 -1.45 -2.65 1.45 0.55 -3 -2.2 -2.1 3 -0.45 Z" fill="#ffce6b"/>' +
-        '<circle cx="38.6" cy="33.5" r="0.9" fill="#ffe9a8"/>' +
-        '<circle cx="44.6" cy="31" r="0.7" fill="#ffe9a8"/>';
+        '<path d="M43 22.5 l1.3 2.7 3 0.45 -2.2 2.1 0.55 3 -2.65 -1.45 -2.65 1.45 0.55 -3 -2.2 -2.1 3 -0.45 Z" fill="#ffce6b" class="av-tw"/>' +
+        '<circle cx="38.6" cy="33.5" r="0.9" fill="#ffe9a8" class="av-tw" style="animation-delay:.3s"/>' +
+        '<circle cx="44.6" cy="31" r="0.7" fill="#ffe9a8" class="av-tw" style="animation-delay:.7s"/>';
     } else if (itemId === 'svard') {
       item =
         '<path d="M42.3 19.5 L44.2 23 L43.3 36.5 L41.3 36.5 L40.4 23 Z" fill="#d6dde8" stroke="#8fa0b8" stroke-width="0.8"/>' +
@@ -958,14 +958,17 @@
     } else if (itemId === 'skold') {
       item =
         '<path d="M2.5 26 Q9 23.5 15.5 26 Q15.5 36.5 9 41.5 Q2.5 36.5 2.5 26 Z" fill="#7d5cff" stroke="#c9b8ff" stroke-width="1.4"/>' +
-        '<path d="M9 28 l1.15 2.35 2.6 0.4 -1.9 1.85 0.45 2.6 -2.3 -1.25 -2.3 1.25 0.45 -2.6 -1.9 -1.85 2.6 -0.4 Z" fill="#ffce6b"/>';
+        '<path d="M9 28 l1.15 2.35 2.6 0.4 -1.9 1.85 0.45 2.6 -2.3 -1.25 -2.3 1.25 0.45 -2.6 -1.9 -1.85 2.6 -0.4 Z" fill="#ffce6b" class="av-tw"/>';
     } else if (itemId === 'lykta') {
       item =
-        '<circle cx="41" cy="31.5" r="5.5" fill="rgba(255,220,130,0.22)"/>' +
+        '<circle cx="41" cy="31.5" r="5.5" fill="rgba(255,220,130,0.22)" class="av-glow"/>' +
         '<line x1="41" y1="23.5" x2="41" y2="26.6" stroke="#8a5a33" stroke-width="1.6"/>' +
         '<path d="M37.8 27 h6.4 l-0.9 -2.3 h-4.6 Z" fill="#4a4460"/>' +
         '<rect x="37.5" y="27" width="7" height="9.2" rx="2" fill="rgba(255,206,107,0.35)" stroke="#4a4460" stroke-width="1.4"/>' +
-        '<circle cx="41" cy="31.6" r="2.1" fill="#ffe9a8"/>' +
+        '<g class="av-flick">' +
+        '<path d="M41 28.4 Q43.4 31 41 34.4 Q38.6 31 41 28.4 Z" fill="#ffb84d"/>' +
+        '<path d="M41 30.2 Q42.3 31.7 41 33.5 Q39.7 31.7 41 30.2 Z" fill="#ffe9a8"/>' +
+        '</g>' +
         '<rect x="39.1" y="36" width="3.8" height="1.7" rx="0.8" fill="#4a4460"/>';
     } else if (itemId === 'fana') {
       item =
@@ -980,45 +983,49 @@
         '<rect x="41" y="24.4" width="3.4" height="3" rx="1.2" fill="#6b7a91"/>';
     } else if (itemId === 'kristall') {
       item =
-        '<circle cx="41" cy="31" r="6.5" fill="rgba(160,220,255,0.25)"/>' +
+        '<circle cx="41" cy="31" r="6.5" fill="rgba(160,220,255,0.25)" class="av-glow"/>' +
         '<circle cx="41" cy="31" r="4.6" fill="rgba(140,200,255,0.55)" stroke="#8fd2e8" stroke-width="1.2"/>' +
-        '<path d="M38.8 29 Q40 27.4 42 28" stroke="#eaf7ff" stroke-width="1.3" fill="none" stroke-linecap="round"/>' +
+        '<path d="M38.8 29 Q40 27.4 42 28" stroke="#eaf7ff" stroke-width="1.3" fill="none" stroke-linecap="round" class="av-tw"/>' +
         '<path d="M37.6 36 h6.8 l-1.1 2.6 h-4.6 Z" fill="#8a5a33"/>';
     } else if (itemId === 'manstav') {
       item =
         '<line x1="37.5" y1="45" x2="42.5" y2="28" stroke="#6b5a8f" stroke-width="2.8" stroke-linecap="round"/>' +
-        '<path d="M42 19.5 A 4.9 4.9 0 1 0 45.6 27.4 A 3.7 3.7 0 1 1 42 19.5 Z" fill="#dfe6ff"/>' +
-        '<circle cx="38.4" cy="31.5" r="0.9" fill="#dfe6ff"/>' +
-        '<circle cx="44.4" cy="30.5" r="0.7" fill="#dfe6ff"/>';
+        '<path d="M42 19.5 A 4.9 4.9 0 1 0 45.6 27.4 A 3.7 3.7 0 1 1 42 19.5 Z" fill="#dfe6ff" class="av-glow"/>' +
+        '<circle cx="38.4" cy="31.5" r="0.9" fill="#dfe6ff" class="av-tw"/>' +
+        '<circle cx="44.4" cy="30.5" r="0.7" fill="#dfe6ff" class="av-tw" style="animation-delay:.5s"/>';
     } else if (itemId === 'spira') {
       item =
         '<line x1="38" y1="45" x2="42.5" y2="30" stroke="#c67c2e" stroke-width="2.8" stroke-linecap="round"/>' +
         '<circle cx="43" cy="26.6" r="3.5" fill="#7d5cff" stroke="#ffce6b" stroke-width="1.4"/>' +
-        '<path d="M43 18.5 l1 2.1 2.3 0.35 -1.7 1.6 0.4 2.3 -2 -1.1 -2 1.1 0.4 -2.3 -1.7 -1.6 2.3 -0.35 Z" fill="#ffce6b"/>';
+        '<path d="M43 18.5 l1 2.1 2.3 0.35 -1.7 1.6 0.4 2.3 -2 -1.1 -2 1.1 0.4 -2.3 -1.7 -1.6 2.3 -0.35 Z" fill="#ffce6b" class="av-tw"/>';
     } else if (itemId === 'bok') {
       item =
         '<g transform="rotate(8 40 36)">' +
         '<rect x="35.2" y="29.8" width="9.8" height="12.4" rx="1.6" fill="#5d3a8f" stroke="#3b2d73" stroke-width="1"/>' +
         '<rect x="36.6" y="31.2" width="7" height="9.6" rx="1" fill="#7d5cff"/>' +
-        '<path d="M40.1 33.4 l0.9 1.85 2.05 0.3 -1.5 1.45 0.35 2.05 -1.8 -0.95 -1.8 0.95 0.35 -2.05 -1.5 -1.45 2.05 -0.3 Z" fill="#ffce6b"/>' +
+        '<path d="M40.1 33.4 l0.9 1.85 2.05 0.3 -1.5 1.45 0.35 2.05 -1.8 -0.95 -1.8 0.95 0.35 -2.05 -1.5 -1.45 2.05 -0.3 Z" fill="#ffce6b" class="av-tw"/>' +
         '</g>';
     }
-    /* Rygg ritas bakom kroppen. */
+    /* Rygg ritas bakom kroppen. Mantlarna är bredare än kroppen (x 6–40)
+       så sidorna och fållen alltid syns bakom silhuetten. */
     var back = '';
     if (cfg.back === 'cape') {
       back =
-        '<path d="M10 22 Q4 38 11 47 L35 47 Q42 38 36 22 Q23 15 10 22 Z" fill="#b93a4e"/>' +
-        '<path d="M13 24 Q9 37 13.5 45 L18 45 Q13.5 35 15.5 24.5 Z" fill="#9c2c3f"/>' +
-        '<path d="M33 24 Q37 37 32.5 45 L28 45 Q32.5 35 30.5 24.5 Z" fill="#9c2c3f"/>';
+        '<path d="M8 20.5 Q-2 36 6.5 48.6 L39.5 48.6 Q48 36 38 20.5 Q23 13 8 20.5 Z" fill="#b93a4e"/>' +
+        '<path d="M10.5 23 Q4.5 36 9.5 47 L15 47 Q10 35 13 23.5 Z" fill="#9c2c3f"/>' +
+        '<path d="M35.5 23 Q41.5 36 36.5 47 L31 47 Q36 35 33 23.5 Z" fill="#9c2c3f"/>' +
+        '<path d="M6.5 48.6 L39.5 48.6 Q42 44 42.3 40 L37.5 46.6 L8.5 46.6 L3.7 40 Q4 44 6.5 48.6 Z" fill="#8f2536"/>';
     } else if (cfg.back === 'stjarnmantel') {
       back =
-        '<path d="M10 22 Q4 38 11 47 L35 47 Q42 38 36 22 Q23 15 10 22 Z" fill="#3b2d73"/>' +
-        '<path d="M13 24 Q9 37 13.5 45 L18 45 Q13.5 35 15.5 24.5 Z" fill="#2d2159"/>' +
-        '<path d="M33 24 Q37 37 32.5 45 L28 45 Q32.5 35 30.5 24.5 Z" fill="#2d2159"/>' +
-        '<circle cx="12.5" cy="30" r="1" fill="#ffe9a8"/>' +
-        '<circle cx="14" cy="40" r="0.8" fill="#ffe9a8"/>' +
-        '<circle cx="32" cy="33" r="1" fill="#ffe9a8"/>' +
-        '<circle cx="34" cy="42" r="0.8" fill="#ffe9a8"/>';
+        '<path d="M8 20.5 Q-2 36 6.5 48.6 L39.5 48.6 Q48 36 38 20.5 Q23 13 8 20.5 Z" fill="#3b2d73"/>' +
+        '<path d="M10.5 23 Q4.5 36 9.5 47 L15 47 Q10 35 13 23.5 Z" fill="#2d2159"/>' +
+        '<path d="M35.5 23 Q41.5 36 36.5 47 L31 47 Q36 35 33 23.5 Z" fill="#2d2159"/>' +
+        '<path d="M4.6 30.5 l0.7 1.4 1.4 0.7 -1.4 0.7 -0.7 1.4 -0.7 -1.4 -1.4 -0.7 1.4 -0.7 Z" fill="#ffe9a8" class="av-tw"/>' +
+        '<path d="M7 40 l0.6 1.2 1.2 0.6 -1.2 0.6 -0.6 1.2 -0.6 -1.2 -1.2 -0.6 1.2 -0.6 Z" fill="#ffe9a8" class="av-tw" style="animation-delay:.4s"/>' +
+        '<path d="M41.4 30.5 l0.7 1.4 1.4 0.7 -1.4 0.7 -0.7 1.4 -0.7 -1.4 -1.4 -0.7 1.4 -0.7 Z" fill="#ffe9a8" class="av-tw" style="animation-delay:.8s"/>' +
+        '<path d="M39 40 l0.6 1.2 1.2 0.6 -1.2 0.6 -0.6 1.2 -0.6 -1.2 -1.2 -0.6 1.2 -0.6 Z" fill="#ffe9a8" class="av-tw" style="animation-delay:1.2s"/>' +
+        '<circle cx="11" cy="46" r="0.8" fill="#ffe9a8" class="av-tw" style="animation-delay:.2s"/>' +
+        '<circle cx="35" cy="46" r="0.8" fill="#ffe9a8" class="av-tw" style="animation-delay:.6s"/>';
     } else if (cfg.back === 'alvvingar') {
       back =
         '<path d="M8 26 Q-1 15 3.5 6.5 Q13 11 12 24 Z" fill="rgba(175,240,255,0.5)" stroke="rgba(130,205,235,0.9)" stroke-width="1.1"/>' +
@@ -1045,8 +1052,8 @@
       '<circle cx="17.8" cy="24.7" r="0.95" fill="' + eye + '"/><circle cx="29.8" cy="24.7" r="0.95" fill="' + eye + '"/>';
     if (eyec.star) {
       eyes +=
-        '<path d="M16.4 22.3 l0.5 1 1 0.5 -1 0.5 -0.5 1 -0.5 -1 -1 -0.5 1 -0.5 Z" fill="#fff"/>' +
-        '<path d="M28.4 22.3 l0.5 1 1 0.5 -1 0.5 -0.5 1 -0.5 -1 -1 -0.5 1 -0.5 Z" fill="#fff"/>';
+        '<path d="M16.4 22.3 l0.5 1 1 0.5 -1 0.5 -0.5 1 -0.5 -1 -1 -0.5 1 -0.5 Z" fill="#fff" class="av-tw"/>' +
+        '<path d="M28.4 22.3 l0.5 1 1 0.5 -1 0.5 -0.5 1 -0.5 -1 -1 -0.5 1 -0.5 Z" fill="#fff" class="av-tw" style="animation-delay:.4s"/>';
     } else {
       eyes += '<circle cx="16.4" cy="23.4" r="0.55" fill="#fff"/><circle cx="28.4" cy="23.4" r="0.55" fill="#fff"/>';
     }
@@ -1076,16 +1083,41 @@
         '<circle cx="29" cy="24" r="4" fill="#2b2144"/>' +
         '<path d="M27 23.2 Q29 22 31 23.2" stroke="#4a4460" stroke-width="0.9" fill="none"/>';
     } else if (cfg.face === 'stjarnkind') {
-      face = '<path d="M13 27.2 l0.8 1.6 1.8 0.25 -1.3 1.25 0.3 1.8 -1.6 -0.85 -1.6 0.85 0.3 -1.8 -1.3 -1.25 1.8 -0.25 Z" fill="#ffce6b"/>' +
-        '<circle cx="33" cy="29" r="0.7" fill="#ffe9a8"/>';
+      face = '<path d="M13 27.2 l0.8 1.6 1.8 0.25 -1.3 1.25 0.3 1.8 -1.6 -0.85 -1.6 0.85 0.3 -1.8 -1.3 -1.25 1.8 -0.25 Z" fill="#ffce6b" class="av-tw"/>' +
+        '<circle cx="33" cy="29" r="0.7" fill="#ffe9a8" class="av-tw" style="animation-delay:.5s"/>';
+    }
+    /* Drakfjäll: riktigt fjällmönster klippt mot kroppen + bukplattor. */
+    var scales = '', belly = '';
+    if (col.id === 'drake') {
+      avatarSvg._n = (avatarSvg._n || 0) + 1;
+      var uid = 'avsc' + avatarSvg._n;
+      var sc = '';
+      for (var sy = 15; sy < 49; sy += 4.5) {
+        var off = (Math.round(sy / 4.5) % 2) ? 3 : 0;
+        for (var sx = 3 + off; sx < 43; sx += 6) {
+          sc += '<path d="M' + sx + ' ' + sy + ' a3 3 0 0 1 6 0" fill="none" stroke="#2c8a74" stroke-width="1.1"/>';
+        }
+      }
+      scales = '<clipPath id="' + uid + '"><ellipse cx="23" cy="30" rx="17" ry="18"/></clipPath>' +
+        '<g clip-path="url(#' + uid + ')">' + sc + '</g>';
+      belly = '<path d="M15.5 31.5 Q23 34 30.5 31.5 M14.5 35.5 Q23 38.2 31.5 35.5 M15.5 39.5 Q23 42 30.5 39.5" ' +
+        'stroke="#9fd6bf" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
+    }
+    /* Eldröd: glödande gnistor som stiger längs kroppen. */
+    var fx = '';
+    if (col.id === 'eld') {
+      fx = '<circle cx="8.5" cy="34" r="1.1" fill="#ffb84d" class="av-ember"/>' +
+        '<circle cx="37.5" cy="36" r="0.9" fill="#ff8a5c" class="av-ember" style="animation-delay:.6s"/>' +
+        '<circle cx="5.5" cy="26" r="0.8" fill="#ffe9a8" class="av-ember" style="animation-delay:1.2s"/>';
     }
     return '<svg viewBox="0 0 46 50" width="' + size + '" height="' + Math.round(size * 50 / 46) + '" aria-hidden="true">' +
       back +
       '<ellipse cx="23" cy="30" rx="17" ry="18" fill="' + col.body + '"/>' +
+      scales +
       '<ellipse cx="23" cy="35" rx="10" ry="9" fill="' + col.belly + '"/>' +
-      eyes +
+      belly + eyes +
       '<path d="M19 31 Q23 34.5 27 31" stroke="' + eye + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
-      face + hat + item + '</svg>';
+      face + hat + item + fx + '</svg>';
   }
 
   /* Ägs föremålet? Gratisföremål (pris 0) ägs alltid,
