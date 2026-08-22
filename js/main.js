@@ -2905,6 +2905,7 @@
 
     drag = {
       slot: slotIdx, shape: shape, w: w, h: h, target: null, lines: null,
+      pointerId: ev.pointerId,
       lift: ev.pointerType === 'mouse' ? 0 : TOUCH_LIFT
     };
     slotEl.classList.add('dragging');
@@ -2947,15 +2948,32 @@
       Sound.unlock();
       startDrag(slotEl, i, ev);
     });
-    slotEl.addEventListener('pointermove', function (ev) {
-      if (drag && drag.slot === i) moveDrag(ev);
-    });
-    slotEl.addEventListener('pointerup', function () {
-      if (drag && drag.slot === i) endDrag(true);
-    });
-    slotEl.addEventListener('pointercancel', function () {
-      if (drag && drag.slot === i) endDrag(false);
-    });
+  });
+  /* Draget följs på fönsternivå, filtrerat på pekarens id. Lyssnare på
+     slotten kräver att pointer capture överlever hela gesten – men iOS
+     Safari tappar den ibland mitt i (systemgester, flera fingrar,
+     kantsvep), och då nådde varken up eller cancel fram: pjäsen frös
+     och drag-läget blev kvar för alltid. Fönstret ser alltid slutet. */
+  window.addEventListener('pointermove', function (ev) {
+    if (drag && ev.pointerId === drag.pointerId) moveDrag(ev);
+  });
+  window.addEventListener('pointerup', function (ev) {
+    if (drag && ev.pointerId === drag.pointerId) endDrag(true);
+  });
+  window.addEventListener('pointercancel', function (ev) {
+    if (drag && ev.pointerId === drag.pointerId) endDrag(false);
+  });
+  /* Självläkning: iOS återanvänder pekar-id:n, så en NY nedtryckning med
+     samma id bevisar att förra gesten dog utan att vi såg slutet –
+     släpp det gamla draget innan den nya hanteras (capture-fasen kör
+     före slottens egna lyssnare). */
+  window.addEventListener('pointerdown', function (ev) {
+    if (drag && ev.pointerId === drag.pointerId) endDrag(false);
+  }, true);
+  /* Tappad fokus eller flik i bakgrunden avbryter alltid draget. */
+  window.addEventListener('blur', function () { endDrag(false); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) endDrag(false);
   });
 
   /* ===== Bankarta ===== */
